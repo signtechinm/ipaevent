@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { apiRequest } from './api';
 
 const siteMap = [
     {
@@ -85,7 +86,7 @@ const quickFacts = [
     ['Host', 'IPA Kerala', 'With IPASF and the 14th NSC organizing team.'],
 ];
 
-const registrationDraftKey = 'ipa-nsc-2026-registration-draft';
+const registrationDraftKey = 'ipa-nsc-2026-registration-draft-token';
 
 const categoryOptions = [
     'Student Delegate - IPA SF Member',
@@ -168,9 +169,6 @@ const registrationModes = [
     },
 ];
 
-const adminSessionKey = 'ipa-nsc-2026-admin-session';
-const adminUsersKey = 'ipa-nsc-2026-admin-users';
-const adminRolesKey = 'ipa-nsc-2026-admin-roles';
 const adminThemeKey = 'ipa-nsc-2026-admin-theme';
 
 const permissionGroups = [
@@ -193,43 +191,6 @@ const permissionGroups = [
     {
         title: 'Administration',
         permissions: ['user.view', 'user.create', 'user.update', 'role.manage', 'audit.view'],
-    },
-];
-
-const defaultRoles = [
-    {
-        id: 'role-super-admin',
-        name: 'Super Admin',
-        description: 'Full access to every admin module.',
-        permissions: permissionGroups.flatMap((group) => group.permissions),
-        active: true,
-    },
-    {
-        id: 'role-registration-staff',
-        name: 'Registration Staff',
-        description: 'Can view and update registrations.',
-        permissions: ['registration.view', 'registration.update'],
-        active: true,
-    },
-    {
-        id: 'role-finance-staff',
-        name: 'Finance Staff',
-        description: 'Can verify payments and export payment reports.',
-        permissions: ['registration.view', 'payment.verify', 'report.view', 'report.export'],
-        active: true,
-    },
-];
-
-const defaultUsers = [
-    {
-        id: 'user-super-admin',
-        name: 'Super Admin',
-        email: 'admin@nsc2026.local',
-        mobile: '+91 00000 00000',
-        roleId: 'role-super-admin',
-        status: 'Active',
-        password: 'admin123',
-        lastLogin: '',
     },
 ];
 
@@ -485,25 +446,26 @@ function HomeWelcome() {
 
 function RegistrationPage() {
     const [activeTab, setActiveTab] = useState('general');
-    const [formData, setFormData] = useState(() => {
-        if (typeof window === 'undefined') {
-            return initialRegistration;
-        }
-
-        const savedDraft = window.localStorage.getItem(registrationDraftKey);
-
-        if (!savedDraft) {
-            return initialRegistration;
-        }
-
-        try {
-            return { ...initialRegistration, ...JSON.parse(savedDraft) };
-        } catch {
-            return initialRegistration;
-        }
-    });
+    const [formData, setFormData] = useState(initialRegistration);
     const [savedSections, setSavedSections] = useState({});
     const [notice, setNotice] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        const draftToken = window.localStorage.getItem(registrationDraftKey);
+        if (!draftToken) {
+            return;
+        }
+
+        apiRequest(`registrations/draft?token=${encodeURIComponent(draftToken)}`)
+            .then(({ registration }) => {
+                setFormData({ ...initialRegistration, ...registration });
+                setNotice('Your saved draft was loaded.');
+            })
+            .catch(() => {
+                window.localStorage.removeItem(registrationDraftKey);
+            });
+    }, []);
 
     const totals = useMemo(() => {
         const registrationFee = categoryFees[formData.category] || 0;
@@ -523,12 +485,24 @@ function RegistrationPage() {
         setNotice('');
     }
 
-    function saveSection(sectionId) {
-        const nextDraft = { ...formData };
+    async function saveSection(sectionId) {
+        setIsSaving(true);
+        setNotice('Saving...');
 
-        window.localStorage.setItem(registrationDraftKey, JSON.stringify(nextDraft));
-        setSavedSections((current) => ({ ...current, [sectionId]: true }));
-        setNotice('Section saved.');
+        try {
+            const { registration } = await apiRequest('registrations/draft', {
+                method: 'POST',
+                body: JSON.stringify(formData),
+            });
+            setFormData((current) => ({ ...current, ...registration }));
+            window.localStorage.setItem(registrationDraftKey, registration.draftToken);
+            setSavedSections((current) => ({ ...current, [sectionId]: true }));
+            setNotice('Section saved to the database.');
+        } catch (error) {
+            setNotice(error.message);
+        } finally {
+            setIsSaving(false);
+        }
     }
 
     function toggleCompetition(option) {
@@ -557,17 +531,25 @@ function RegistrationPage() {
         setActiveTab(previousTab.id);
     }
 
-    function submitRegistration() {
-        const registrationPrefix = formData.registrationMode === 'group' ? 'NSC26-GRP' : 'NSC26';
-        const registrationNumber = formData.registrationNumber || `${registrationPrefix}-${Date.now().toString().slice(-6)}`;
-        const submittedAt = new Date().toISOString();
-        const finalDraft = { ...formData, registrationNumber, submittedAt };
+    async function submitRegistration() {
+        setIsSaving(true);
+        setNotice('Submitting...');
 
-        setFormData(finalDraft);
-        window.localStorage.setItem(registrationDraftKey, JSON.stringify(finalDraft));
-        setSavedSections((current) => ({ ...current, payment: true, review: true, confirmation: true }));
-        setActiveTab('confirmation');
-        setNotice('Registration submitted.');
+        try {
+            const { registration } = await apiRequest('registrations/submit', {
+                method: 'POST',
+                body: JSON.stringify(formData),
+            });
+            setFormData((current) => ({ ...current, ...registration }));
+            window.localStorage.setItem(registrationDraftKey, registration.draftToken);
+            setSavedSections((current) => ({ ...current, payment: true, review: true, confirmation: true }));
+            setActiveTab('confirmation');
+            setNotice('Registration submitted to the database.');
+        } catch (error) {
+            setNotice(error.message);
+        } finally {
+            setIsSaving(false);
+        }
     }
 
     function submitAnotherResponse() {
@@ -1062,18 +1044,20 @@ function RegistrationPage() {
                                     <button
                                         type="button"
                                         onClick={() => saveSection(activeTab)}
+                                        disabled={isSaving}
                                         className="rounded-lg border border-emerald-700 px-4 py-2 text-sm font-bold text-emerald-800 hover:bg-emerald-50"
                                     >
-                                        Save Section
+                                        {isSaving ? 'Saving...' : 'Save Section'}
                                     </button>
                                 )}
                                 {activeTab === 'review' ? (
                                     <button
                                         type="button"
                                         onClick={submitRegistration}
+                                        disabled={isSaving}
                                         className="rounded-lg bg-rose-700 px-4 py-2 text-sm font-bold text-white hover:bg-rose-800"
                                     >
-                                        Submit Registration
+                                        {isSaving ? 'Submitting...' : 'Submit Registration'}
                                     </button>
                                 ) : activeTab !== 'confirmation' && (
                                     <button
@@ -1402,30 +1386,26 @@ function Contact() {
 
 function AdminLoginPage() {
     const [theme, toggleTheme] = useAdminTheme();
-    const [email, setEmail] = useState('admin@nsc2026.local');
-    const [password, setPassword] = useState('admin123');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    function handleLogin(event) {
+    async function handleLogin(event) {
         event.preventDefault();
-        const users = loadStoredList(adminUsersKey, defaultUsers);
-        const user = users.find((item) => item.email === email && item.password === password && item.status === 'Active');
+        setError('');
+        setIsSubmitting(true);
 
-        if (!user) {
-            setError('Invalid credentials or inactive user.');
-            return;
+        try {
+            await apiRequest('admin/auth/login', {
+                method: 'POST',
+                body: JSON.stringify({ email, password }),
+            });
+            window.location.href = '/admin';
+        } catch (loginError) {
+            setError(loginError.message);
+            setIsSubmitting(false);
         }
-
-        const session = {
-            userId: user.id,
-            name: user.name,
-            email: user.email,
-            roleId: user.roleId,
-            loggedInAt: new Date().toISOString(),
-        };
-
-        window.localStorage.setItem(adminSessionKey, JSON.stringify(session));
-        window.location.href = '/admin';
     }
 
     return (
@@ -1445,7 +1425,7 @@ function AdminLoginPage() {
 
                 <form onSubmit={handleLogin} className="admin-card rounded-lg bg-white p-6 text-zinc-950 shadow-2xl">
                     <h2 className="text-2xl font-bold">Admin login</h2>
-                    <p className="mt-2 text-sm text-zinc-600">Demo credentials are prefilled until backend auth is connected.</p>
+                    <p className="mt-2 text-sm text-zinc-600">Sign in with your PostgreSQL-backed admin account.</p>
                     <label className="mt-6 block text-sm font-semibold text-zinc-800">
                         Email
                         <input
@@ -1465,32 +1445,17 @@ function AdminLoginPage() {
                         />
                     </label>
                     {error && <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">{error}</p>}
-                    <button type="submit" className="admin-button mt-6 w-full rounded-lg bg-emerald-800 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-900">
-                        Sign in
+                    <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="admin-button mt-6 w-full rounded-lg bg-emerald-800 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-900"
+                    >
+                        {isSubmitting ? 'Signing in...' : 'Sign in'}
                     </button>
                 </form>
             </div>
         </main>
     );
-}
-
-function loadStoredList(key, fallback) {
-    if (typeof window === 'undefined') {
-        return fallback;
-    }
-
-    const stored = window.localStorage.getItem(key);
-
-    if (!stored) {
-        window.localStorage.setItem(key, JSON.stringify(fallback));
-        return fallback;
-    }
-
-    try {
-        return JSON.parse(stored);
-    } catch {
-        return fallback;
-    }
 }
 
 function useAdminTheme() {
@@ -1626,15 +1591,13 @@ function AdminSidebarIcon({ name }) {
 
 function AdminPage() {
     const [theme, toggleTheme] = useAdminTheme();
-    const [session] = useState(() => {
-        const stored = window.localStorage.getItem(adminSessionKey);
-        return stored ? JSON.parse(stored) : null;
-    });
+    const [session, setSession] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [activeModule, setActiveModule] = useState('dashboard');
     const [userModuleTab, setUserModuleTab] = useState('users');
     const [userSearch, setUserSearch] = useState('');
-    const [roles, setRoles] = useState(() => loadStoredList(adminRolesKey, defaultRoles));
-    const [users, setUsers] = useState(() => loadStoredList(adminUsersKey, defaultUsers));
+    const [roles, setRoles] = useState([]);
+    const [users, setUsers] = useState([]);
     const [roleForm, setRoleForm] = useState({ name: '', description: '', permissions: [] });
     const [userForm, setUserForm] = useState({
         name: '',
@@ -1647,13 +1610,23 @@ function AdminPage() {
     const [notice, setNotice] = useState('');
 
     useEffect(() => {
-        if (!session) {
-            window.location.href = '/admin/login';
-        }
-    }, [session]);
+        Promise.all([
+            apiRequest('admin/me'),
+            apiRequest('admin/bootstrap'),
+        ])
+            .then(([sessionPayload, bootstrapPayload]) => {
+                setSession(sessionPayload.session);
+                setRoles(bootstrapPayload.roles);
+                setUsers(bootstrapPayload.users);
+            })
+            .catch(() => {
+                window.location.href = '/admin/login';
+            })
+            .finally(() => setIsLoading(false));
+    }, []);
 
-    if (!session) {
-        return null;
+    if (isLoading || !session) {
+        return <main className="min-h-screen bg-zinc-950 p-8 text-sm font-semibold text-white">Loading admin...</main>;
     }
 
     const currentRole = roles.find((role) => role.id === session.roleId);
@@ -1738,16 +1711,6 @@ function AdminPage() {
         ['Result Manager', 'drafted winner records for Pharma Quiz', '2 hrs ago'],
     ];
 
-    function persistRoles(nextRoles) {
-        setRoles(nextRoles);
-        window.localStorage.setItem(adminRolesKey, JSON.stringify(nextRoles));
-    }
-
-    function persistUsers(nextUsers) {
-        setUsers(nextUsers);
-        window.localStorage.setItem(adminUsersKey, JSON.stringify(nextUsers));
-    }
-
     function togglePermission(permission) {
         setRoleForm((current) => ({
             ...current,
@@ -1757,56 +1720,72 @@ function AdminPage() {
         }));
     }
 
-    function createRole(event) {
+    async function createRole(event) {
         event.preventDefault();
         if (!roleForm.name.trim()) {
             setNotice('Role name is required.');
             return;
         }
 
-        const nextRole = {
-            id: `role-${Date.now()}`,
-            name: roleForm.name.trim(),
-            description: roleForm.description.trim(),
-            permissions: roleForm.permissions,
-            active: true,
-        };
-
-        persistRoles([...roles, nextRole]);
-        setRoleForm({ name: '', description: '', permissions: [] });
-        setUserModuleTab('roles');
-        setNotice('Role created.');
+        try {
+            const { role } = await apiRequest('admin/roles', {
+                method: 'POST',
+                body: JSON.stringify(roleForm),
+            });
+            setRoles((current) => [...current, role]);
+            setRoleForm({ name: '', description: '', permissions: [] });
+            setUserModuleTab('roles');
+            setNotice('Role created in the database.');
+        } catch (error) {
+            setNotice(error.message);
+        }
     }
 
-    function createUser(event) {
+    async function createUser(event) {
         event.preventDefault();
         if (!userForm.name.trim() || !userForm.email.trim() || !userForm.password.trim()) {
             setNotice('Name, email, and password are required.');
             return;
         }
 
-        const nextUser = {
-            id: `user-${Date.now()}`,
-            ...userForm,
-            email: userForm.email.toLowerCase(),
-            lastLogin: '',
-        };
-
-        persistUsers([...users, nextUser]);
-        setUserForm({ name: '', email: '', mobile: '', roleId: 'role-registration-staff', status: 'Active', password: '' });
-        setUserModuleTab('users');
-        setNotice('User created.');
+        try {
+            const { user } = await apiRequest('admin/users', {
+                method: 'POST',
+                body: JSON.stringify(userForm),
+            });
+            setUsers((current) => [...current, user]);
+            setUserForm({ name: '', email: '', mobile: '', roleId: 'role-registration-staff', status: 'Active', password: '' });
+            setUserModuleTab('users');
+            setNotice('User created in the database.');
+        } catch (error) {
+            setNotice(error.message);
+        }
     }
 
-    function updateUserStatus(userId, status) {
-        persistUsers(users.map((user) => (user.id === userId ? { ...user, status } : user)));
-        setNotice(`User marked ${status.toLowerCase()}.`);
+    async function updateUserStatus(userId, status) {
+        try {
+            const { user } = await apiRequest(`admin/users/${userId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ action: 'status', status }),
+            });
+            setUsers((current) => current.map((item) => (item.id === userId ? user : item)));
+            setNotice(`User marked ${status.toLowerCase()}.`);
+        } catch (error) {
+            setNotice(error.message);
+        }
     }
 
-    function resetUserPassword(userId) {
+    async function resetUserPassword(userId) {
         const temporaryPassword = `temp${Date.now().toString().slice(-5)}`;
-        persistUsers(users.map((user) => (user.id === userId ? { ...user, password: temporaryPassword } : user)));
-        setNotice(`Temporary password set: ${temporaryPassword}`);
+        try {
+            await apiRequest(`admin/users/${userId}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ action: 'password', password: temporaryPassword }),
+            });
+            setNotice(`Temporary password set: ${temporaryPassword}`);
+        } catch (error) {
+            setNotice(error.message);
+        }
     }
 
     function getRoleName(roleId) {
@@ -1824,8 +1803,8 @@ function AdminPage() {
             .join(' ');
     }
 
-    function logout() {
-        window.localStorage.removeItem(adminSessionKey);
+    async function logout() {
+        await apiRequest('admin/auth/logout', { method: 'POST' }).catch(() => {});
         window.location.href = '/admin/login';
     }
 

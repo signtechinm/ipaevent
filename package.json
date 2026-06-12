@@ -5,17 +5,22 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
+        "dev:vercel": "vercel dev",
         "build": "vite build",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "db:init": "psql \"$DATABASE_URL_UNPOOLED\" -v ON_ERROR_STOP=1 -f database/schema.sql"
     },
     "dependencies": {
+        "@neondatabase/serverless": "^1.0.2",
         "@vitejs/plugin-react": "^6.0.2",
+        "bcryptjs": "^3.0.2",
         "react": "^19.2.7",
         "react-dom": "^19.2.7"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",
         "tailwindcss": "^4.0.0",
+        "vercel": "^54.12.2",
         "vite": "^8.0.0"
     }
 }

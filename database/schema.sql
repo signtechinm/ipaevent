@@ -1,0 +1,115 @@
+CREATE TABLE IF NOT EXISTS event_registrations (
+    id BIGSERIAL PRIMARY KEY,
+    draft_token UUID NOT NULL UNIQUE,
+    registration_number VARCHAR(30) UNIQUE,
+    registration_mode VARCHAR(20) NOT NULL DEFAULT 'individual',
+    participant_name VARCHAR(180),
+    institution_name TEXT,
+    group_coordinator_name VARCHAR(180),
+    group_coordinator_email VARCHAR(180),
+    group_coordinator_whatsapp VARCHAR(25),
+    expected_participants INTEGER,
+    category VARCHAR(100),
+    state_of_residence VARCHAR(100),
+    whatsapp_number VARCHAR(25),
+    email VARCHAR(180),
+    food_preference VARCHAR(20),
+    course_of_study VARCHAR(80),
+    college_with_state TEXT,
+    competition_fee_acknowledged BOOLEAN DEFAULT FALSE,
+    pre_conference_workshop VARCHAR(80),
+    workshop_fee_acknowledged BOOLEAN DEFAULT FALSE,
+    presentation_type VARCHAR(80),
+    registration_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    competition_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    workshop_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    total_payable_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    transaction_details TEXT,
+    payment_status VARCHAR(40) NOT NULL DEFAULT 'pending',
+    registration_status VARCHAR(40) NOT NULL DEFAULT 'draft',
+    submitted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS registration_competitions (
+    id BIGSERIAL PRIMARY KEY,
+    registration_id BIGINT NOT NULL REFERENCES event_registrations(id) ON DELETE CASCADE,
+    competition_name VARCHAR(160) NOT NULL,
+    fee_amount NUMERIC(10, 2) NOT NULL DEFAULT 100,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (registration_id, competition_name)
+);
+
+CREATE INDEX IF NOT EXISTS event_registrations_email_idx ON event_registrations (email);
+CREATE INDEX IF NOT EXISTS event_registrations_whatsapp_idx ON event_registrations (whatsapp_number);
+CREATE INDEX IF NOT EXISTS event_registrations_status_idx ON event_registrations (registration_status);
+CREATE INDEX IF NOT EXISTS event_registrations_payment_status_idx ON event_registrations (payment_status);
+
+CREATE TABLE IF NOT EXISTS admin_roles (
+    id TEXT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL UNIQUE,
+    description TEXT,
+    permissions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS admin_users (
+    id BIGSERIAL PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    name VARCHAR(160) NOT NULL,
+    email VARCHAR(180) NOT NULL UNIQUE,
+    mobile VARCHAR(25),
+    password_hash TEXT NOT NULL,
+    salt TEXT NOT NULL DEFAULT 'bcrypt',
+    role TEXT NOT NULL DEFAULT 'admin',
+    role_id TEXT REFERENCES admin_roles(id),
+    status VARCHAR(30) NOT NULL DEFAULT 'Active',
+    last_login_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS name VARCHAR(160);
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS email VARCHAR(180);
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS mobile VARCHAR(25);
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS role_id TEXT;
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'Active';
+ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+
+CREATE UNIQUE INDEX IF NOT EXISTS admin_users_email_key ON admin_users (email);
+
+CREATE TABLE IF NOT EXISTS admin_sessions (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS admin_sessions_token_idx ON admin_sessions (token_hash);
+
+INSERT INTO admin_roles (id, name, description, permissions)
+VALUES
+    (
+        'role-super-admin',
+        'Super Admin',
+        'Full access to every admin module.',
+        '["registration.view","registration.update","registration.export","payment.verify","program.view","program.create","program.update","program.delete","winner.view","winner.create","winner.publish","report.view","report.export","user.view","user.create","user.update","role.manage","audit.view"]'::jsonb
+    ),
+    (
+        'role-registration-staff',
+        'Registration Staff',
+        'Can view and update registrations.',
+        '["registration.view","registration.update"]'::jsonb
+    ),
+    (
+        'role-finance-staff',
+        'Finance Staff',
+        'Can verify payments and export payment reports.',
+        '["registration.view","payment.verify","report.view","report.export"]'::jsonb
+    )
+ON CONFLICT (id) DO NOTHING;
