@@ -169,6 +169,79 @@ const registrationModes = [
     },
 ];
 
+const sponsorDraftKey = 'ipa-nsc-2026-sponsor-draft-token';
+
+const premiumSponsorOptions = [
+    { id: 'diamond', label: 'Diamond Sponsor', amount: 300000 },
+    { id: 'platinum', label: 'Platinum Sponsor', amount: 200000 },
+    { id: 'gold', label: 'Gold Sponsor', amount: 100000 },
+    { id: 'silver', label: 'Silver Sponsor', amount: 50000 },
+    { id: 'bronze', label: 'Bronze Sponsor', amount: 25000 },
+];
+
+const standaloneSponsorOptions = [
+    { id: 'exhibition-space', label: 'Exhibition Space (3 m x 2 m)', amount: 25000 },
+    { id: 'conference-bag', label: 'Conference Bag', amount: 200000 },
+    { id: 'writing-kit', label: 'Writing Pads & Ball Pens', amount: 25000 },
+    { id: 'breakfast', label: 'Breakfast', amount: 100000 },
+    { id: 'high-tea', label: 'High Tea', amount: 50000 },
+    { id: 'lunch', label: 'Lunch', amount: 200000 },
+    { id: 'gala-dinner', label: 'Gala Dinner', amount: 300000 },
+    { id: 'session', label: 'Scientific / Career Leadership / Workshop Session', amount: 25000, perUnit: true },
+    { id: 'cultural-event', label: 'Cultural Event (academic institutions only)', amount: 10000, perUnit: true },
+];
+
+const souvenirAdvertisementOptions = [
+    { id: 'outer-back-cover', label: 'Outer Back Cover (colour)', amount: 50000 },
+    { id: 'inside-front-cover', label: 'Inside Front Cover (colour)', amount: 50000 },
+    { id: 'inside-back-cover', label: 'Inside Back Cover (colour)', amount: 40000 },
+    { id: 'full-page', label: 'Full Page (colour)', amount: 25000 },
+    { id: 'half-page', label: 'Half Page', amount: 15000 },
+    { id: 'best-compliments-insert', label: 'Best Compliments Insert', amount: 5000 },
+];
+
+const initialSponsorApplication = {
+    organizationName: '',
+    correspondenceAddress: '',
+    authorizedPersonName: '',
+    authorizedPersonDesignation: '',
+    authorizedPersonMobile: '',
+    email: '',
+    premiumPackage: '',
+    standaloneItems: [],
+    standaloneQuantities: {},
+    otherSponsorshipDescription: '',
+    souvenirAdvertisement: '',
+    paymentMethod: '',
+    amountPaid: '',
+    transactionReference: '',
+    transactionDate: '',
+    paymentProofName: '',
+    paymentProofType: '',
+    paymentProofSize: 0,
+    remarks: '',
+    declarationAccepted: false,
+    applicationNumber: '',
+    submittedAt: '',
+};
+
+const sponsorTabs = [
+    { id: 'organization', label: 'Organization' },
+    { id: 'sponsorship', label: 'Sponsorship' },
+    { id: 'advertisement', label: 'Souvenir Ad' },
+    { id: 'payment', label: 'Payment' },
+    { id: 'review', label: 'Review' },
+    { id: 'confirmation', label: 'Confirmation' },
+];
+
+function formatInr(value) {
+    return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0,
+    }).format(Number(value) || 0);
+}
+
 const adminThemeKey = 'ipa-nsc-2026-admin-theme';
 
 const permissionGroups = [
@@ -1078,6 +1151,660 @@ function RegistrationPage() {
     );
 }
 
+function SponsorRegistrationPage() {
+    const [activeTab, setActiveTab] = useState('organization');
+    const [formData, setFormData] = useState(initialSponsorApplication);
+    const [savedSections, setSavedSections] = useState({});
+    const [notice, setNotice] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        const draftToken = window.localStorage.getItem(sponsorDraftKey);
+        if (!draftToken) {
+            return;
+        }
+
+        apiRequest(`sponsors/draft?token=${encodeURIComponent(draftToken)}`)
+            .then(({ sponsor }) => {
+                setFormData({ ...initialSponsorApplication, ...sponsor });
+                setNotice('Your saved sponsor application was loaded.');
+            })
+            .catch(() => window.localStorage.removeItem(sponsorDraftKey));
+    }, []);
+
+    const totals = useMemo(() => {
+        const premium = premiumSponsorOptions.find((option) => option.id === formData.premiumPackage)?.amount || 0;
+        const standalone = formData.standaloneItems.reduce((sum, id) => {
+            const option = standaloneSponsorOptions.find((item) => item.id === id);
+            const quantity = option?.perUnit ? Math.max(Number(formData.standaloneQuantities[id]) || 1, 1) : 1;
+            return sum + (option?.amount || 0) * quantity;
+        }, 0);
+        const advertisement =
+            souvenirAdvertisementOptions.find((option) => option.id === formData.souvenirAdvertisement)?.amount || 0;
+
+        return { premium, standalone, advertisement, total: premium + standalone + advertisement };
+    }, [
+        formData.premiumPackage,
+        formData.souvenirAdvertisement,
+        formData.standaloneItems,
+        formData.standaloneQuantities,
+    ]);
+
+    function updateField(name, value) {
+        setFormData((current) => ({ ...current, [name]: value }));
+        setNotice('');
+    }
+
+    function toggleStandaloneItem(id) {
+        setFormData((current) => ({
+            ...current,
+            standaloneItems: current.standaloneItems.includes(id)
+                ? current.standaloneItems.filter((item) => item !== id)
+                : [...current.standaloneItems, id],
+        }));
+        setNotice('');
+    }
+
+    function validateSection(sectionId) {
+        if (sectionId === 'organization') {
+            if (
+                !formData.organizationName.trim() ||
+                !formData.correspondenceAddress.trim() ||
+                !formData.authorizedPersonName.trim() ||
+                !formData.authorizedPersonDesignation.trim() ||
+                !formData.authorizedPersonMobile.trim() ||
+                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+            ) {
+                return 'Complete all organization and authorized contact fields with a valid email.';
+            }
+        }
+
+        if (
+            sectionId === 'sponsorship' &&
+            !formData.premiumPackage &&
+            formData.standaloneItems.length === 0 &&
+            !formData.otherSponsorshipDescription.trim()
+        ) {
+            return 'Select a premium package, at least one standalone item, or describe another sponsorship request.';
+        }
+
+        if (sectionId === 'payment') {
+            if (!formData.paymentMethod) {
+                return 'Select account transfer or UPI/QR as the payment method.';
+            }
+            if (!formData.transactionReference.trim() || !formData.transactionDate) {
+                return 'Enter the transaction reference and transaction date.';
+            }
+            if (!formData.amountPaid || Number(formData.amountPaid) <= 0) {
+                return 'Enter a valid amount paid.';
+            }
+            if (!formData.paymentProofName) {
+                return 'Select one transaction receipt or screenshot.';
+            }
+        }
+
+        if (sectionId === 'review' && !formData.declarationAccepted) {
+            return 'Accept the final declaration before submitting.';
+        }
+
+        return '';
+    }
+
+    async function saveSection(sectionId) {
+        const error = validateSection(sectionId);
+        if (error) {
+            setNotice(error);
+            return false;
+        }
+
+        setIsSaving(true);
+        setNotice('Saving...');
+        try {
+            const { sponsor } = await apiRequest('sponsors/draft', {
+                method: 'POST',
+                body: JSON.stringify(formData),
+            });
+            setFormData((current) => ({ ...current, ...sponsor }));
+            window.localStorage.setItem(sponsorDraftKey, sponsor.draftToken);
+            setSavedSections((current) => ({ ...current, [sectionId]: true }));
+            setNotice('Section saved to the database.');
+            return true;
+        } catch (errorMessage) {
+            setNotice(errorMessage.message);
+            return false;
+        } finally {
+            setIsSaving(false);
+        }
+    }
+
+    async function goNext() {
+        if (!(await saveSection(activeTab))) {
+            return;
+        }
+        const currentIndex = sponsorTabs.findIndex((tab) => tab.id === activeTab);
+        setActiveTab(sponsorTabs[Math.min(currentIndex + 1, sponsorTabs.length - 1)].id);
+    }
+
+    function goBack() {
+        const currentIndex = sponsorTabs.findIndex((tab) => tab.id === activeTab);
+        setActiveTab(sponsorTabs[Math.max(currentIndex - 1, 0)].id);
+    }
+
+    async function submitSponsorApplication() {
+        const error = validateSection('review');
+        if (error) {
+            setNotice(error);
+            return;
+        }
+
+        setIsSaving(true);
+        setNotice('Submitting...');
+        try {
+            const { sponsor } = await apiRequest('sponsors/submit', {
+                method: 'POST',
+                body: JSON.stringify(formData),
+            });
+            setFormData((current) => ({ ...current, ...sponsor }));
+            window.localStorage.setItem(sponsorDraftKey, sponsor.draftToken);
+            setSavedSections((current) => ({ ...current, review: true, confirmation: true }));
+            setActiveTab('confirmation');
+            setNotice('Sponsor application submitted.');
+        } catch (errorMessage) {
+            setNotice(errorMessage.message);
+        } finally {
+            setIsSaving(false);
+        }
+    }
+
+    function handlePaymentProof(file) {
+        if (!file) {
+            updateField('paymentProofName', '');
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            setNotice('Payment proof must be 10 MB or smaller.');
+            return;
+        }
+        if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type)) {
+            setNotice('Upload a JPG, PNG, WebP, or PDF file.');
+            return;
+        }
+        setFormData((current) => ({
+            ...current,
+            paymentProofName: file.name,
+            paymentProofType: file.type,
+            paymentProofSize: file.size,
+        }));
+        setNotice('Payment proof selected. File storage can be connected to object storage.');
+    }
+
+    function submitAnotherResponse() {
+        window.localStorage.removeItem(sponsorDraftKey);
+        setFormData(initialSponsorApplication);
+        setSavedSections({});
+        setNotice('');
+        setActiveTab('organization');
+    }
+
+    const fieldClass =
+        'mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100';
+    const labelClass = 'text-sm font-semibold text-zinc-800';
+
+    return (
+        <>
+            <section className="relative overflow-hidden bg-zinc-950 text-white">
+                <img
+                    src="/images/nsc-sponsor-exhibition.png"
+                    alt="Pharmacy event sponsor exhibition"
+                    className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-zinc-950/75" />
+                <div className="relative mx-auto flex min-h-[380px] max-w-7xl flex-col justify-end px-4 pb-10 pt-24 sm:px-6 lg:px-8">
+                    <p className="text-sm font-bold uppercase text-amber-300">Become a Sponsor</p>
+                    <h1 className="mt-3 max-w-4xl text-4xl font-bold leading-tight sm:text-5xl">
+                        Partner with the 14th IPA National Students&apos; Congress 2026
+                    </h1>
+                    <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-100">
+                        Choose premium packages, standalone opportunities, and e-Souvenir advertising, then submit
+                        your organization and payment details in one guided application.
+                    </p>
+                </div>
+            </section>
+
+            <section className="bg-white py-16">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+                        <aside className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+                            <div className="grid gap-2">
+                                {sponsorTabs.map((tab, index) => (
+                                    <button
+                                        key={tab.id}
+                                        type="button"
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`flex items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold transition ${
+                                            activeTab === tab.id
+                                                ? 'bg-emerald-800 text-white shadow-sm'
+                                                : 'bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-emerald-50 hover:text-emerald-800'
+                                        }`}
+                                    >
+                                        <span>{index + 1}. {tab.label}</span>
+                                        {savedSections[tab.id] && <span className="text-xs">Saved</span>}
+                                    </button>
+                                ))}
+                            </div>
+                        </aside>
+
+                        <div className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+                            <div className="flex flex-col gap-2 border-b border-zinc-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p className="text-xs font-bold uppercase text-rose-700">Sponsor Application</p>
+                                    <h2 className="mt-1 text-xl font-bold">
+                                        {sponsorTabs.find((tab) => tab.id === activeTab)?.label}
+                                    </h2>
+                                </div>
+                                <div className="rounded-lg bg-zinc-100 px-3 py-2 text-sm font-bold text-zinc-800">
+                                    Total: {formatInr(totals.total)}
+                                </div>
+                            </div>
+
+                            {activeTab === 'organization' && (
+                                <div className="mt-6 grid gap-5 md:grid-cols-2">
+                                    <label className={`${labelClass} md:col-span-2`}>
+                                        Name of Organization
+                                        <input
+                                            className={fieldClass}
+                                            value={formData.organizationName}
+                                            onChange={(event) => updateField('organizationName', event.target.value.toUpperCase())}
+                                            placeholder="ABC PHARMACEUTICALS PRIVATE LIMITED"
+                                        />
+                                    </label>
+                                    <label className={`${labelClass} md:col-span-2`}>
+                                        Address for Correspondence
+                                        <textarea
+                                            className={`${fieldClass} min-h-28`}
+                                            value={formData.correspondenceAddress}
+                                            onChange={(event) => updateField('correspondenceAddress', event.target.value)}
+                                            placeholder="Full postal address"
+                                        />
+                                    </label>
+                                    <label className={labelClass}>
+                                        Authorized Person Name
+                                        <input
+                                            className={fieldClass}
+                                            value={formData.authorizedPersonName}
+                                            onChange={(event) => updateField('authorizedPersonName', event.target.value)}
+                                            placeholder="Dr. Anil Kumar"
+                                        />
+                                    </label>
+                                    <label className={labelClass}>
+                                        Designation
+                                        <input
+                                            className={fieldClass}
+                                            value={formData.authorizedPersonDesignation}
+                                            onChange={(event) => updateField('authorizedPersonDesignation', event.target.value)}
+                                            placeholder="Director - Corporate Affairs"
+                                        />
+                                    </label>
+                                    <label className={labelClass}>
+                                        Mobile Number
+                                        <input
+                                            className={fieldClass}
+                                            value={formData.authorizedPersonMobile}
+                                            onChange={(event) => updateField('authorizedPersonMobile', event.target.value)}
+                                            placeholder="+91 9876543210"
+                                        />
+                                    </label>
+                                    <label className={labelClass}>
+                                        Email
+                                        <input
+                                            className={fieldClass}
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(event) => updateField('email', event.target.value.toLowerCase())}
+                                            placeholder="sponsor@example.com"
+                                        />
+                                    </label>
+                                </div>
+                            )}
+
+                            {activeTab === 'sponsorship' && (
+                                <div className="mt-6 grid gap-8">
+                                    <div>
+                                        <h3 className="font-bold text-zinc-950">Premium Sponsorship</h3>
+                                        <p className="mt-1 text-sm text-zinc-500">Choose up to one premium package.</p>
+                                        <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                            {premiumSponsorOptions.map((option) => (
+                                                <label
+                                                    key={option.id}
+                                                    className={`rounded-lg border p-4 ${
+                                                        formData.premiumPackage === option.id
+                                                            ? 'border-emerald-600 bg-emerald-50'
+                                                            : 'border-zinc-200'
+                                                    }`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="premiumPackage"
+                                                        className="mr-2"
+                                                        checked={formData.premiumPackage === option.id}
+                                                        onChange={() => updateField('premiumPackage', option.id)}
+                                                    />
+                                                    <span className="font-bold">{option.label}</span>
+                                                    <span className="mt-1 block text-sm text-zinc-600">{formatInr(option.amount)}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        {formData.premiumPackage && (
+                                            <button
+                                                type="button"
+                                                onClick={() => updateField('premiumPackage', '')}
+                                                className="mt-3 text-sm font-bold text-rose-700"
+                                            >
+                                                Clear premium package
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <h3 className="font-bold text-zinc-950">À La Carte Sponsorship</h3>
+                                        <p className="mt-1 text-sm text-zinc-500">Multiple items are allowed.</p>
+                                        <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                            {standaloneSponsorOptions.map((option) => {
+                                                const checked = formData.standaloneItems.includes(option.id);
+                                                return (
+                                                    <div
+                                                        key={option.id}
+                                                        className={`rounded-lg border p-4 ${
+                                                            checked ? 'border-emerald-600 bg-emerald-50' : 'border-zinc-200'
+                                                        }`}
+                                                    >
+                                                        <label className="text-sm font-bold">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="mr-2"
+                                                                checked={checked}
+                                                                onChange={() => toggleStandaloneItem(option.id)}
+                                                            />
+                                                            {option.label}
+                                                        </label>
+                                                        <p className="mt-1 text-sm text-zinc-600">
+                                                            {formatInr(option.amount)}{option.perUnit ? ' per item' : ''}
+                                                        </p>
+                                                        {checked && option.perUnit && (
+                                                            <label className="mt-3 block text-xs font-bold uppercase text-zinc-600">
+                                                                Quantity
+                                                                <input
+                                                                    className={fieldClass}
+                                                                    type="number"
+                                                                    min="1"
+                                                                    value={formData.standaloneQuantities[option.id] || 1}
+                                                                    onChange={(event) =>
+                                                                        updateField('standaloneQuantities', {
+                                                                            ...formData.standaloneQuantities,
+                                                                            [option.id]: event.target.value,
+                                                                        })
+                                                                    }
+                                                                />
+                                                            </label>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <label className={labelClass}>
+                                        Other Sponsorship Request
+                                        <textarea
+                                            className={`${fieldClass} min-h-24`}
+                                            value={formData.otherSponsorshipDescription}
+                                            onChange={(event) => updateField('otherSponsorshipDescription', event.target.value)}
+                                            placeholder="Describe any custom sponsorship requirement"
+                                        />
+                                    </label>
+                                </div>
+                            )}
+
+                            {activeTab === 'advertisement' && (
+                                <div className="mt-6">
+                                    <h3 className="font-bold text-zinc-950">E-Souvenir Advertisement</h3>
+                                    <p className="mt-1 text-sm text-zinc-500">Select one placement, or leave this section empty.</p>
+                                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                        {souvenirAdvertisementOptions.map((option) => (
+                                            <label
+                                                key={option.id}
+                                                className={`rounded-lg border p-4 ${
+                                                    formData.souvenirAdvertisement === option.id
+                                                        ? 'border-emerald-600 bg-emerald-50'
+                                                        : 'border-zinc-200'
+                                                }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="souvenirAdvertisement"
+                                                    className="mr-2"
+                                                    checked={formData.souvenirAdvertisement === option.id}
+                                                    onChange={() => updateField('souvenirAdvertisement', option.id)}
+                                                />
+                                                <span className="font-bold">{option.label}</span>
+                                                <span className="mt-1 block text-sm text-zinc-600">{formatInr(option.amount)}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {formData.souvenirAdvertisement && (
+                                        <button
+                                            type="button"
+                                            onClick={() => updateField('souvenirAdvertisement', '')}
+                                            className="mt-3 text-sm font-bold text-rose-700"
+                                        >
+                                            Clear advertisement selection
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+
+                            {activeTab === 'payment' && (
+                                <div className="mt-6 grid gap-5 md:grid-cols-2">
+                                    <div className="rounded-lg bg-emerald-50 p-4 text-sm leading-6 text-emerald-950 md:col-span-2">
+                                        <strong>PHARMA FIRST</strong><br />
+                                        Current A/C: 31140200001427 | IFSC: BARB0MUVATT<br />
+                                        Branch: Muvattupuzha | MICR: 686012252
+                                    </div>
+                                    <label className={labelClass}>
+                                        Payment Method
+                                        <select
+                                            className={fieldClass}
+                                            value={formData.paymentMethod}
+                                            onChange={(event) => updateField('paymentMethod', event.target.value)}
+                                        >
+                                            <option value="">Choose payment method</option>
+                                            <option value="account_transfer">Account Transfer</option>
+                                            <option value="upi_qr">UPI / QR</option>
+                                        </select>
+                                    </label>
+                                    <label className={labelClass}>
+                                        Total Payable
+                                        <input className={`${fieldClass} bg-zinc-100 font-bold`} value={formatInr(totals.total)} readOnly />
+                                    </label>
+                                    <label className={labelClass}>
+                                        Amount Paid (INR)
+                                        <input
+                                            className={fieldClass}
+                                            type="number"
+                                            min="1"
+                                            value={formData.amountPaid}
+                                            onChange={(event) => updateField('amountPaid', event.target.value)}
+                                        />
+                                    </label>
+                                    <label className={labelClass}>
+                                        Transaction / UTR Reference
+                                        <input
+                                            className={fieldClass}
+                                            value={formData.transactionReference}
+                                            onChange={(event) => updateField('transactionReference', event.target.value)}
+                                        />
+                                    </label>
+                                    <label className={labelClass}>
+                                        Transaction Date
+                                        <input
+                                            className={fieldClass}
+                                            type="date"
+                                            max={new Date().toISOString().slice(0, 10)}
+                                            value={formData.transactionDate}
+                                            onChange={(event) => updateField('transactionDate', event.target.value)}
+                                        />
+                                    </label>
+                                    <label className={labelClass}>
+                                        Transaction Receipt / Screenshot
+                                        <input
+                                            className={fieldClass}
+                                            type="file"
+                                            accept=".jpg,.jpeg,.png,.webp,.pdf"
+                                            onChange={(event) => handlePaymentProof(event.target.files?.[0])}
+                                        />
+                                        <span className="mt-2 block text-xs font-normal text-zinc-500">
+                                            One JPG, PNG, WebP, or PDF file. Maximum 10 MB.
+                                        </span>
+                                        {formData.paymentProofName && (
+                                            <span className="mt-2 block text-xs font-bold text-emerald-700">
+                                                Selected: {formData.paymentProofName}
+                                            </span>
+                                        )}
+                                    </label>
+                                    <label className={`${labelClass} md:col-span-2`}>
+                                        Remarks or Requests
+                                        <textarea
+                                            className={`${fieldClass} min-h-24`}
+                                            value={formData.remarks}
+                                            onChange={(event) => updateField('remarks', event.target.value)}
+                                        />
+                                    </label>
+                                </div>
+                            )}
+
+                            {activeTab === 'review' && (
+                                <div className="mt-6">
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        {[
+                                            ['Organization', formData.organizationName || 'Not entered'],
+                                            ['Authorized Person', `${formData.authorizedPersonName} - ${formData.authorizedPersonDesignation}`],
+                                            ['Email', formData.email || 'Not entered'],
+                                            ['Mobile', formData.authorizedPersonMobile || 'Not entered'],
+                                            [
+                                                'Premium Package',
+                                                premiumSponsorOptions.find((option) => option.id === formData.premiumPackage)?.label || 'None',
+                                            ],
+                                            [
+                                                'Standalone Items',
+                                                formData.standaloneItems
+                                                    .map((id) => standaloneSponsorOptions.find((option) => option.id === id)?.label)
+                                                    .filter(Boolean)
+                                                    .join(', ') || 'None',
+                                            ],
+                                            [
+                                                'Souvenir Advertisement',
+                                                souvenirAdvertisementOptions.find(
+                                                    (option) => option.id === formData.souvenirAdvertisement
+                                                )?.label || 'None',
+                                            ],
+                                            ['Total Payable', formatInr(totals.total)],
+                                            ['Amount Paid', formatInr(formData.amountPaid)],
+                                            ['Transaction Reference', formData.transactionReference || 'Not entered'],
+                                            ['Payment Proof', formData.paymentProofName || 'Not selected'],
+                                            ['Payment Status', 'Verification required'],
+                                        ].map(([label, value]) => (
+                                            <div key={label} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                                <p className="text-xs font-bold uppercase text-zinc-500">{label}</p>
+                                                <p className="mt-1 text-sm font-semibold text-zinc-900">{value}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <label className="mt-6 flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-950">
+                                        <input
+                                            type="checkbox"
+                                            className="mt-1"
+                                            checked={formData.declarationAccepted}
+                                            onChange={(event) => updateField('declarationAccepted', event.target.checked)}
+                                        />
+                                        <span>
+                                            I declare that the details furnished are true and genuine and authorize IPA Kerala
+                                            to take the necessary action on this sponsorship application.
+                                        </span>
+                                    </label>
+                                </div>
+                            )}
+
+                            {activeTab === 'confirmation' && (
+                                <div className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-6">
+                                    <p className="text-sm font-bold uppercase text-emerald-700">Sponsor Application Submitted</p>
+                                    <h3 className="mt-3 text-2xl font-bold text-emerald-950">Thank you for partnering with us.</h3>
+                                    <p className="mt-3 text-sm leading-6 text-emerald-900">
+                                        Application number:{' '}
+                                        <span className="font-bold">{formData.applicationNumber || 'Generated after submit'}</span>
+                                    </p>
+                                    <p className="mt-2 text-sm text-emerald-900">
+                                        Your payment and selected opportunities will be confirmed after verification.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={submitAnotherResponse}
+                                        className="mt-5 rounded-lg bg-emerald-800 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-900"
+                                    >
+                                        Submit another application
+                                    </button>
+                                </div>
+                            )}
+
+                            <div className="mt-6 flex flex-col gap-3 border-t border-zinc-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-h-6 text-sm font-semibold text-emerald-700">{notice}</div>
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={goBack}
+                                        disabled={activeTab === 'organization' || activeTab === 'confirmation'}
+                                        className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 disabled:opacity-40"
+                                    >
+                                        Back
+                                    </button>
+                                    {activeTab !== 'confirmation' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => saveSection(activeTab)}
+                                            disabled={isSaving}
+                                            className="rounded-lg border border-emerald-700 px-4 py-2 text-sm font-bold text-emerald-800 hover:bg-emerald-50 disabled:opacity-50"
+                                        >
+                                            {isSaving ? 'Saving...' : 'Save Section'}
+                                        </button>
+                                    )}
+                                    {activeTab === 'review' ? (
+                                        <button
+                                            type="button"
+                                            onClick={submitSponsorApplication}
+                                            disabled={isSaving}
+                                            className="rounded-lg bg-rose-700 px-4 py-2 text-sm font-bold text-white hover:bg-rose-800 disabled:opacity-50"
+                                        >
+                                            {isSaving ? 'Submitting...' : 'Submit Sponsor Application'}
+                                        </button>
+                                    ) : activeTab !== 'confirmation' && (
+                                        <button
+                                            type="button"
+                                            onClick={goNext}
+                                            disabled={isSaving}
+                                            className="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50"
+                                        >
+                                            Next
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </>
+    );
+}
+
 function Abstracts() {
     const section = siteMap.find((item) => item.title === 'Programs and Events Spotlight');
     const slides = section.pages.slice(1);
@@ -1341,10 +2068,10 @@ function SponsorSection() {
                             ))}
                         </div>
                         <a
-                            href="#partners-and-sponsors"
+                            href="/sponsor-registration"
                             className="button-pop mt-7 inline-flex rounded-lg bg-emerald-800 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-900"
                         >
-                            View Sponsor Opportunities
+                            Become a Sponsor
                         </a>
                     </div>
                 </Reveal>
@@ -2300,6 +3027,7 @@ export default function App() {
     const isAdminLoginPage = window.location.pathname === '/admin/login';
     const isAdminPage = window.location.pathname === '/admin';
     const isRegistrationPage = window.location.pathname === '/registration';
+    const isSponsorRegistrationPage = window.location.pathname === '/sponsor-registration';
 
     if (isAdminLoginPage) {
         return <AdminLoginPage />;
@@ -2315,6 +3043,17 @@ export default function App() {
                 <Header />
                 <main>
                     <RegistrationPage />
+                </main>
+            </div>
+        );
+    }
+
+    if (isSponsorRegistrationPage) {
+        return (
+            <div className="bg-zinc-50 text-zinc-950 antialiased">
+                <Header />
+                <main>
+                    <SponsorRegistrationPage />
                 </main>
             </div>
         );

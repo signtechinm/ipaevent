@@ -11,6 +11,33 @@ const categoryFees = {
     'Delegate IPA Member - Others': 100,
     Others: 100,
 };
+const premiumSponsorFees = {
+    diamond: 300000,
+    platinum: 200000,
+    gold: 100000,
+    silver: 50000,
+    bronze: 25000,
+};
+const standaloneSponsorFees = {
+    'exhibition-space': 25000,
+    'conference-bag': 200000,
+    'writing-kit': 25000,
+    breakfast: 100000,
+    'high-tea': 50000,
+    lunch: 200000,
+    'gala-dinner': 300000,
+    session: 25000,
+    'cultural-event': 10000,
+};
+const quantityBasedSponsorItems = new Set(['session', 'cultural-event']);
+const souvenirAdvertisementFees = {
+    'outer-back-cover': 50000,
+    'inside-front-cover': 50000,
+    'inside-back-cover': 40000,
+    'full-page': 25000,
+    'half-page': 15000,
+    'best-compliments-insert': 5000,
+};
 
 function getSql() {
     if (!process.env.DATABASE_URL) {
@@ -52,6 +79,12 @@ function hashToken(token) {
 
 function booleanValue(value) {
     return value === true || value === 'Yes';
+}
+
+function inputError(message) {
+    const error = new Error(message);
+    error.statusCode = 400;
+    return error;
 }
 
 function calculateFees(data) {
@@ -177,6 +210,204 @@ async function saveRegistration(sql, data, submit = false) {
     }
 
     return mapRegistration(row, competitions);
+}
+
+function calculateSponsorFees(data) {
+    const premiumAmount = premiumSponsorFees[data.premiumPackage] || 0;
+    const standaloneItems = Array.isArray(data.standaloneItems)
+        ? [...new Set(data.standaloneItems)].filter((id) => standaloneSponsorFees[id])
+        : [];
+    const standaloneQuantities =
+        data.standaloneQuantities && typeof data.standaloneQuantities === 'object' ? data.standaloneQuantities : {};
+    const standaloneAmount = standaloneItems.reduce((total, id) => {
+        const quantity = quantityBasedSponsorItems.has(id)
+            ? Math.max(Number.parseInt(standaloneQuantities[id], 10) || 1, 1)
+            : 1;
+        return total + standaloneSponsorFees[id] * quantity;
+    }, 0);
+    const advertisementAmount = souvenirAdvertisementFees[data.souvenirAdvertisement] || 0;
+
+    return {
+        premiumAmount,
+        standaloneAmount,
+        advertisementAmount,
+        total: premiumAmount + standaloneAmount + advertisementAmount,
+        standaloneItems,
+        standaloneQuantities,
+    };
+}
+
+function formatDateOnly(value) {
+    if (!value) {
+        return '';
+    }
+    if (value instanceof Date) {
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Kolkata',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+        }).format(value);
+    }
+    return String(value).slice(0, 10);
+}
+
+function mapSponsorApplication(row) {
+    return {
+        draftToken: row.draft_token,
+        organizationName: row.organization_name || '',
+        correspondenceAddress: row.correspondence_address || '',
+        authorizedPersonName: row.authorized_person_name || '',
+        authorizedPersonDesignation: row.authorized_person_designation || '',
+        authorizedPersonMobile: row.authorized_person_mobile || '',
+        email: row.email || '',
+        premiumPackage: row.premium_package || '',
+        standaloneItems: row.standalone_items || [],
+        standaloneQuantities: row.standalone_quantities || {},
+        otherSponsorshipDescription: row.other_sponsorship_description || '',
+        souvenirAdvertisement: row.souvenir_advertisement || '',
+        paymentMethod: row.payment_method || '',
+        amountPaid: row.amount_paid?.toString() || '',
+        transactionReference: row.transaction_reference || '',
+        transactionDate: formatDateOnly(row.transaction_date),
+        paymentProofName: row.payment_proof_name || '',
+        paymentProofType: row.payment_proof_type || '',
+        paymentProofSize: Number(row.payment_proof_size) || 0,
+        remarks: row.remarks || '',
+        declarationAccepted: Boolean(row.declaration_accepted),
+        applicationNumber: row.application_number || '',
+        submittedAt: row.submitted_at || '',
+    };
+}
+
+function validateSponsorSubmission(data, fees) {
+    const requiredText = [
+        data.organizationName,
+        data.correspondenceAddress,
+        data.authorizedPersonName,
+        data.authorizedPersonDesignation,
+        data.authorizedPersonMobile,
+        data.email,
+        data.paymentMethod,
+        data.transactionReference,
+        data.transactionDate,
+        data.paymentProofName,
+    ];
+    if (requiredText.some((value) => !String(value || '').trim())) {
+        throw inputError('Complete all required sponsor and payment fields.');
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(data.email))) {
+        throw inputError('Enter a valid sponsor email address.');
+    }
+    if (!fees.total && !String(data.otherSponsorshipDescription || '').trim()) {
+        throw inputError('Select at least one sponsorship opportunity.');
+    }
+    if (!(Number(data.amountPaid) > 0)) {
+        throw inputError('Enter a valid amount paid.');
+    }
+    if (!data.declarationAccepted) {
+        throw inputError('Accept the final declaration before submitting.');
+    }
+}
+
+async function saveSponsorApplication(sql, data, submit = false) {
+    const fees = calculateSponsorFees(data);
+    if (submit) {
+        validateSponsorSubmission(data, fees);
+    }
+
+    const draftToken = data.draftToken || crypto.randomUUID();
+    const paymentProofSize = Math.max(Number.parseInt(data.paymentProofSize, 10) || 0, 0);
+    if (paymentProofSize > 10 * 1024 * 1024) {
+        throw inputError('Payment proof must be 10 MB or smaller.');
+    }
+
+    const rows = await sql`
+        INSERT INTO sponsorship_applications (
+            draft_token, organization_name, correspondence_address,
+            authorized_person_name, authorized_person_designation,
+            authorized_person_mobile, email, premium_package,
+            standalone_items, standalone_quantities, other_sponsorship_description,
+            souvenir_advertisement, premium_amount, standalone_amount,
+            advertisement_amount, total_payable_amount, payment_method,
+            amount_paid, transaction_reference, transaction_date,
+            payment_proof_name, payment_proof_type, payment_proof_size,
+            remarks, declaration_accepted, declaration_accepted_at,
+            payment_status, application_status, submitted_at
+        )
+        VALUES (
+            ${draftToken}, ${String(data.organizationName || '').trim() || null},
+            ${String(data.correspondenceAddress || '').trim() || null},
+            ${String(data.authorizedPersonName || '').trim() || null},
+            ${String(data.authorizedPersonDesignation || '').trim() || null},
+            ${String(data.authorizedPersonMobile || '').trim() || null},
+            ${String(data.email || '').trim().toLowerCase() || null},
+            ${data.premiumPackage || null},
+            ${JSON.stringify(fees.standaloneItems)}::jsonb,
+            ${JSON.stringify(fees.standaloneQuantities)}::jsonb,
+            ${String(data.otherSponsorshipDescription || '').trim() || null},
+            ${data.souvenirAdvertisement || null},
+            ${fees.premiumAmount}, ${fees.standaloneAmount},
+            ${fees.advertisementAmount}, ${fees.total},
+            ${data.paymentMethod || null}, ${Number(data.amountPaid) || 0},
+            ${String(data.transactionReference || '').trim() || null},
+            ${data.transactionDate || null},
+            ${String(data.paymentProofName || '').trim() || null},
+            ${String(data.paymentProofType || '').trim() || null},
+            ${paymentProofSize},
+            ${String(data.remarks || '').trim() || null},
+            ${Boolean(data.declarationAccepted)},
+            ${data.declarationAccepted ? new Date().toISOString() : null},
+            ${submit ? 'verification_required' : 'pending'},
+            ${submit ? 'submitted' : 'draft'},
+            ${submit ? new Date().toISOString() : null}
+        )
+        ON CONFLICT (draft_token) DO UPDATE SET
+            organization_name = EXCLUDED.organization_name,
+            correspondence_address = EXCLUDED.correspondence_address,
+            authorized_person_name = EXCLUDED.authorized_person_name,
+            authorized_person_designation = EXCLUDED.authorized_person_designation,
+            authorized_person_mobile = EXCLUDED.authorized_person_mobile,
+            email = EXCLUDED.email,
+            premium_package = EXCLUDED.premium_package,
+            standalone_items = EXCLUDED.standalone_items,
+            standalone_quantities = EXCLUDED.standalone_quantities,
+            other_sponsorship_description = EXCLUDED.other_sponsorship_description,
+            souvenir_advertisement = EXCLUDED.souvenir_advertisement,
+            premium_amount = EXCLUDED.premium_amount,
+            standalone_amount = EXCLUDED.standalone_amount,
+            advertisement_amount = EXCLUDED.advertisement_amount,
+            total_payable_amount = EXCLUDED.total_payable_amount,
+            payment_method = EXCLUDED.payment_method,
+            amount_paid = EXCLUDED.amount_paid,
+            transaction_reference = EXCLUDED.transaction_reference,
+            transaction_date = EXCLUDED.transaction_date,
+            payment_proof_name = EXCLUDED.payment_proof_name,
+            payment_proof_type = EXCLUDED.payment_proof_type,
+            payment_proof_size = EXCLUDED.payment_proof_size,
+            remarks = EXCLUDED.remarks,
+            declaration_accepted = EXCLUDED.declaration_accepted,
+            declaration_accepted_at = EXCLUDED.declaration_accepted_at,
+            payment_status = EXCLUDED.payment_status,
+            application_status = EXCLUDED.application_status,
+            submitted_at = COALESCE(EXCLUDED.submitted_at, sponsorship_applications.submitted_at),
+            updated_at = NOW()
+        RETURNING *
+    `;
+    const row = rows[0];
+
+    if (submit && !row.application_number) {
+        const applicationNumber = `NSC26-SPN-${String(row.id).padStart(6, '0')}`;
+        const updatedRows = await sql`
+            UPDATE sponsorship_applications
+            SET application_number = ${applicationNumber}, updated_at = NOW()
+            WHERE id = ${row.id}
+            RETURNING *
+        `;
+        return mapSponsorApplication(updatedRows[0]);
+    }
+
+    return mapSponsorApplication(row);
 }
 
 async function getSession(request, sql) {
@@ -317,6 +548,28 @@ export default async function handler(request, response) {
             return send(response, 200, { registration });
         }
 
+        if (path === 'sponsors/draft' && request.method === 'GET') {
+            const token = request.query.token;
+            if (!token) {
+                return send(response, 400, { error: 'Draft token is required.' });
+            }
+            const rows = await sql`SELECT * FROM sponsorship_applications WHERE draft_token = ${token} LIMIT 1`;
+            if (!rows.length) {
+                return send(response, 404, { error: 'Sponsor draft not found.' });
+            }
+            return send(response, 200, { sponsor: mapSponsorApplication(rows[0]) });
+        }
+
+        if (path === 'sponsors/draft' && request.method === 'POST') {
+            const sponsor = await saveSponsorApplication(sql, request.body || {});
+            return send(response, 200, { sponsor });
+        }
+
+        if (path === 'sponsors/submit' && request.method === 'POST') {
+            const sponsor = await saveSponsorApplication(sql, request.body || {}, true);
+            return send(response, 200, { sponsor });
+        }
+
         if (path === 'admin/auth/login' && request.method === 'POST') {
             await ensureSeedAdmin(sql);
             const email = String(request.body?.email || '').trim().toLowerCase();
@@ -448,8 +701,13 @@ export default async function handler(request, response) {
         return send(response, 404, { error: 'API route not found.' });
     } catch (error) {
         console.error(error);
-        const status = error?.code === '23505' ? 409 : 500;
-        const message = status === 409 ? 'That email or role name already exists.' : 'Server request failed.';
+        const status = error?.statusCode || (error?.code === '23505' ? 409 : 500);
+        const message =
+            status === 409
+                ? 'That value already exists. Check the transaction reference and try again.'
+                : status === 400
+                    ? error.message
+                    : 'Server request failed.';
         return send(response, status, { error: message });
     }
 }

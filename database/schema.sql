@@ -46,6 +46,50 @@ CREATE INDEX IF NOT EXISTS event_registrations_whatsapp_idx ON event_registratio
 CREATE INDEX IF NOT EXISTS event_registrations_status_idx ON event_registrations (registration_status);
 CREATE INDEX IF NOT EXISTS event_registrations_payment_status_idx ON event_registrations (payment_status);
 
+CREATE TABLE IF NOT EXISTS sponsorship_applications (
+    id BIGSERIAL PRIMARY KEY,
+    draft_token UUID NOT NULL UNIQUE,
+    application_number VARCHAR(30) UNIQUE,
+    organization_name VARCHAR(220),
+    correspondence_address TEXT,
+    authorized_person_name VARCHAR(180),
+    authorized_person_designation VARCHAR(180),
+    authorized_person_mobile VARCHAR(25),
+    email VARCHAR(180),
+    premium_package VARCHAR(40),
+    standalone_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+    standalone_quantities JSONB NOT NULL DEFAULT '{}'::jsonb,
+    other_sponsorship_description TEXT,
+    souvenir_advertisement VARCHAR(60),
+    premium_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    standalone_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    advertisement_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    total_payable_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    payment_method VARCHAR(40),
+    amount_paid NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    transaction_reference VARCHAR(180),
+    transaction_date DATE,
+    payment_proof_name TEXT,
+    payment_proof_type VARCHAR(120),
+    payment_proof_size BIGINT NOT NULL DEFAULT 0,
+    remarks TEXT,
+    declaration_accepted BOOLEAN NOT NULL DEFAULT FALSE,
+    declaration_accepted_at TIMESTAMPTZ,
+    payment_status VARCHAR(40) NOT NULL DEFAULT 'pending',
+    application_status VARCHAR(40) NOT NULL DEFAULT 'draft',
+    submitted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS sponsorship_applications_email_idx ON sponsorship_applications (email);
+CREATE INDEX IF NOT EXISTS sponsorship_applications_organization_idx ON sponsorship_applications (organization_name);
+CREATE INDEX IF NOT EXISTS sponsorship_applications_status_idx ON sponsorship_applications (application_status);
+CREATE INDEX IF NOT EXISTS sponsorship_applications_payment_status_idx ON sponsorship_applications (payment_status);
+CREATE UNIQUE INDEX IF NOT EXISTS sponsorship_applications_transaction_reference_key
+    ON sponsorship_applications (transaction_reference)
+    WHERE transaction_reference IS NOT NULL AND transaction_reference <> '';
+
 CREATE TABLE IF NOT EXISTS admin_roles (
     id TEXT PRIMARY KEY,
     name VARCHAR(120) NOT NULL UNIQUE,

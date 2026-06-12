@@ -6,7 +6,19 @@
             "destination": "/api?path=:path"
         },
         {
-            "source": "/((?!api/).*)",
+            "source": "/registration",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/sponsor-registration",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/admin/login",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/admin",
             "destination": "/index.html"
         }
     ]
