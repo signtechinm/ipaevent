@@ -2,7 +2,11 @@
 
 ## 1. Purpose
 
-This document converts the admin-side scope from `CLIENT_PROPOSAL_EVENT_REGISTRATION_PORTAL.md` into a practical development plan for the 14th National Student Convention event registration portal.
+This document converts the admin-side scope from `CLIENT_PROPOSAL_EVENT_REGISTRATION_PORTAL.md` into a practical development plan for the 14th IPA National Students Congress event registration portal.
+
+**Event Theme:** Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era
+
+**Event Date:** 19–20 September 2026
 
 The admin panel should allow authorized staff to control registrations, pricing, programs, payments, users, reports, and winner announcements from one secure backend system.
 

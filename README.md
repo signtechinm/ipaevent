@@ -2,6 +2,12 @@
 
 React/Vite event portal with Vercel Functions and a shared Neon PostgreSQL database.
 
+**Event:** 14th IPA National Students Congress
+
+**Date:** 19–20 September 2026
+
+**Theme:** Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era
+
 ## Local Setup
 
 ```bash

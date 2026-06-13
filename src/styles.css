@@ -17,6 +17,134 @@ body {
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+.event-theme {
+    --event-navy: #11145f;
+    --event-pink: #df0867;
+    --event-green: #00652f;
+    --event-gold: #f4a21b;
+}
+
+.event-header {
+    border-color: rgb(17 20 95 / 0.14);
+    box-shadow: 0 6px 22px rgb(17 20 95 / 0.06);
+}
+
+.event-soft-section {
+    background:
+        radial-gradient(circle at 92% 12%, rgb(223 8 103 / 0.06), transparent 24rem),
+        linear-gradient(180deg, #ffffff, #fffafd);
+}
+
+.event-team-section {
+    background:
+        radial-gradient(circle at 8% 18%, rgb(0 101 47 / 0.08), transparent 25rem),
+        linear-gradient(180deg, #ffffff, #f7fbf8);
+}
+
+.programs-events-section {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background-image: url('/images/nsc-programs-events-bg.png');
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+}
+
+.programs-events-section::before {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    background:
+        radial-gradient(circle at 82% 22%, rgb(223 8 103 / 0.2), transparent 30rem),
+        linear-gradient(115deg, rgb(9 13 66 / 0.94), rgb(0 69 39 / 0.86) 58%, rgb(9 13 66 / 0.92)),
+        linear-gradient(180deg, rgb(17 20 95 / 0.35), rgb(0 38 23 / 0.65));
+    content: '';
+    pointer-events: none;
+}
+
+.programs-events-section::after {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    background: linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+    background-size: 80px 100%;
+    content: '';
+    mask-image: linear-gradient(180deg, transparent, #000 20%, #000 80%, transparent);
+    pointer-events: none;
+}
+
+.event-footer {
+    background:
+        linear-gradient(135deg, rgb(9 13 66 / 0.98), rgb(17 20 95 / 0.98) 52%, rgb(0 69 39 / 0.98)),
+        #090d42;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
+
+.event-footer::before {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgb(255 255 255 / 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(255 255 255 / 0.025) 1px, transparent 1px);
+    background-size: 38px 38px;
+    content: '';
+    mask-image: linear-gradient(180deg, #000, transparent 85%);
+    pointer-events: none;
+}
+
+.event-footer-glow {
+    position: absolute;
+    width: 24rem;
+    height: 24rem;
+    border-radius: 999px;
+    filter: blur(80px);
+    opacity: 0.2;
+    pointer-events: none;
+}
+
+.event-footer-glow-left {
+    bottom: -12rem;
+    left: -8rem;
+    background: #df0867;
+}
+
+.event-footer-glow-right {
+    top: -13rem;
+    right: -7rem;
+    background: #f4a21b;
+}
+
+.announcement-bar {
+    background:
+        linear-gradient(90deg, rgb(255 255 255 / 0.05), transparent 22%, transparent 78%, rgb(255 255 255 / 0.05)),
+        #00652f;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
+
+.announcement-window {
+    mask-image: linear-gradient(90deg, transparent, #000 4%, #000 96%, transparent);
+}
+
+.announcement-track {
+    animation: announcement-scroll 24s linear infinite;
+    will-change: transform;
+}
+
+.announcement-bar:hover .announcement-track {
+    animation-play-state: paused;
+}
+
+.announcement-pulse {
+    box-shadow: 0 0 0 0 rgb(255 211 106 / 0.55);
+    animation: announcement-pulse 2s ease-out infinite;
+}
+
+.event-theme .interactive-card:hover {
+    border-color: rgb(223 8 103 / 0.34);
+    box-shadow: 0 18px 45px rgb(17 20 95 / 0.12);
+}
+
 .admin-theme {
     --admin-background: #f8fafc;
     --admin-foreground: #09090b;
@@ -162,7 +290,7 @@ body {
     left: 0;
     height: 2px;
     border-radius: 999px;
-    background: #047857;
+    background: linear-gradient(90deg, #df0867, #f4a21b);
     content: '';
     transform: scaleX(0);
     transform-origin: center;
@@ -231,12 +359,96 @@ body {
 }
 
 .team-card-accent {
-    background: linear-gradient(90deg, #047857, #fbbf24, #10b981, #fbbf24, #047857);
+    background: linear-gradient(90deg, #00652f, #f4a21b, #df0867, #f4a21b, #00652f);
     background-size: 220% 100%;
 }
 
 .interactive-card:hover .team-card-accent {
     animation: team-accent-flow 4.5s linear infinite;
+}
+
+.organizing-team-stage {
+    position: relative;
+    perspective: 1400px;
+    perspective-origin: center 45%;
+    padding-bottom: 1.5rem;
+}
+
+.organizing-team-box {
+    position: relative;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    border-radius: 1.15rem;
+    background: transparent;
+    box-shadow:
+        0 30px 60px rgb(17 20 95 / 0.18),
+        0 10px 22px rgb(0 101 47 / 0.14);
+}
+
+.organizing-team-box-from-top {
+    transform-origin: center bottom;
+    animation: organizing-team-box-from-top 1050ms cubic-bezier(0.18, 0.8, 0.24, 1) both;
+}
+
+.organizing-team-box-from-bottom {
+    transform-origin: center top;
+    animation: organizing-team-box-from-bottom 1050ms cubic-bezier(0.18, 0.8, 0.24, 1) both;
+}
+
+.organizing-team-box-face {
+    position: relative;
+    z-index: 2;
+    overflow: hidden;
+    border-radius: 0.8rem;
+    background:
+        radial-gradient(circle at 50% 0%, rgb(244 162 27 / 0.14), transparent 38%),
+        linear-gradient(135deg, #f8fffb, #fff9fc);
+    padding: 1rem;
+    transform: translateZ(18px);
+}
+
+.organizing-team-box-edge {
+    position: absolute;
+    z-index: 1;
+    right: 1.2rem;
+    bottom: -13px;
+    left: 1.2rem;
+    height: 22px;
+    border-radius: 0 0 14px 14px;
+    background: linear-gradient(90deg, #090d42, #00652f 48%, #8f0644);
+    box-shadow: 0 8px 14px rgb(9 13 66 / 0.28);
+    transform: rotateX(-72deg) translateZ(-1px);
+    transform-origin: top;
+}
+
+.organizing-team-box-gloss {
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(115deg, rgb(255 255 255 / 0.3), transparent 28%, transparent 70%, rgb(244 162 27 / 0.14));
+    pointer-events: none;
+    transform: translateZ(22px);
+}
+
+.organizing-team-box-shadow {
+    position: absolute;
+    right: 8%;
+    bottom: 0;
+    left: 8%;
+    height: 30px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgb(17 20 95 / 0.36), rgb(0 101 47 / 0.16) 44%, transparent 72%);
+    filter: blur(10px);
+    transform-origin: center;
+}
+
+.organizing-team-shadow-from-top {
+    animation: organizing-team-shadow-from-top 1050ms ease both;
+}
+
+.organizing-team-shadow-from-bottom {
+    animation: organizing-team-shadow-from-bottom 1050ms ease both;
 }
 
 .update-row {
@@ -255,17 +467,89 @@ body {
     overflow: hidden;
 }
 
+.snapshot-section {
+    background: #11145f;
+}
+
+.snapshot-background {
+    transform: scale(1.02);
+}
+
+.snapshot-overlay {
+    background:
+        linear-gradient(110deg, rgb(9 13 66 / 0.9), rgb(17 20 95 / 0.72) 52%, rgb(0 101 47 / 0.7)),
+        linear-gradient(180deg, rgb(9 13 66 / 0.18), rgb(9 13 66 / 0.58));
+}
+
+.snapshot-logo-panel {
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.12),
+        0 24px 60px rgb(0 0 0 / 0.2);
+}
+
+.snapshot-event-logo,
+.snapshot-host-logo {
+    filter: drop-shadow(0 10px 20px rgb(0 0 0 / 0.2));
+    transition: transform 350ms ease, filter 350ms ease;
+}
+
+.snapshot-logo-panel:hover .snapshot-event-logo {
+    transform: translateY(-3px);
+}
+
+.snapshot-logo-panel:hover .snapshot-host-logo {
+    transform: translateY(-3px) scale(1.03);
+}
+
+.snapshot-fact-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.snapshot-fact-card::before {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: linear-gradient(90deg, #df0867, #f4a21b, #00652f);
+    content: '';
+}
+
 .snapshot-flow-line {
     position: absolute;
     display: block;
-    left: -35%;
-    width: 70%;
-    height: 3px;
+    left: -45%;
+    width: 55%;
+    height: 2px;
     border-radius: 999px;
-    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.82), rgb(255 255 255 / 0.25), transparent);
-    box-shadow: 0 0 18px rgb(255 255 255 / 0.5);
-    transform: rotate(-18deg);
-    animation: diagonal-flow 5.5s linear infinite;
+    background: linear-gradient(90deg, transparent, rgb(223 8 103 / 0.8), rgb(244 162 27 / 0.9), rgb(0 143 76 / 0.75), transparent);
+    box-shadow: 0 0 14px rgb(244 162 27 / 0.22);
+    transform: rotate(-12deg);
+    animation: diagonal-flow 11s linear infinite;
+    will-change: transform, opacity;
+}
+
+.supporting-partners-carousel {
+    overflow: hidden;
+    padding-block: 0.75rem 1.25rem;
+    mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+}
+
+.supporting-partners-track {
+    display: flex;
+    width: max-content;
+    animation: supporting-partners-scroll 24s linear infinite;
+    will-change: transform;
+}
+
+.supporting-partners-carousel:hover .supporting-partners-track {
+    animation-play-state: paused;
+}
+
+.supporting-partners-group {
+    display: flex;
+    flex-shrink: 0;
+    gap: 1rem;
+    padding-right: 1rem;
 }
 
 .animation-delay-700 {
@@ -369,17 +653,17 @@ body {
 @keyframes diagonal-flow {
     0% {
         opacity: 0;
-        transform: translate3d(-20%, 60px, 0) rotate(-18deg);
+        transform: translate3d(-10%, 24px, 0) rotate(-12deg);
     }
 
-    12%,
-    82% {
-        opacity: 1;
+    18%,
+    78% {
+        opacity: 0.72;
     }
 
     100% {
         opacity: 0;
-        transform: translate3d(210%, -80px, 0) rotate(-18deg);
+        transform: translate3d(285%, -32px, 0) rotate(-12deg);
     }
 }
 
@@ -390,6 +674,101 @@ body {
 
     to {
         background-position: 220% 50%;
+    }
+}
+
+@keyframes organizing-team-box-from-top {
+    0% {
+        opacity: 0;
+        transform: translateY(-34px) rotateX(92deg) scale(0.94);
+    }
+
+    48% {
+        opacity: 1;
+        transform: translateY(8px) rotateX(-12deg) scale(0.98);
+    }
+
+    72% {
+        transform: translateY(-3px) rotateX(5deg) scale(1);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) rotateX(0deg) scale(1);
+    }
+}
+
+@keyframes organizing-team-box-from-bottom {
+    0% {
+        opacity: 0;
+        transform: translateY(34px) rotateX(-92deg) scale(0.94);
+    }
+
+    48% {
+        opacity: 1;
+        transform: translateY(-8px) rotateX(12deg) scale(0.98);
+    }
+
+    72% {
+        transform: translateY(3px) rotateX(-5deg) scale(1);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) rotateX(0deg) scale(1);
+    }
+}
+
+@keyframes organizing-team-shadow-from-top {
+    0% {
+        opacity: 0.08;
+        transform: translateY(20px) scaleX(0.38);
+    }
+
+    52% {
+        opacity: 0.7;
+        transform: translateY(2px) scaleX(0.82);
+    }
+
+    100% {
+        opacity: 0.42;
+        transform: translateY(0) scaleX(1);
+    }
+}
+
+@keyframes organizing-team-shadow-from-bottom {
+    0% {
+        opacity: 0.72;
+        transform: translateY(-12px) scaleX(0.45);
+    }
+
+    52% {
+        opacity: 0.26;
+        transform: translateY(8px) scaleX(1.08);
+    }
+
+    100% {
+        opacity: 0.42;
+        transform: translateY(0) scaleX(1);
+    }
+}
+
+@keyframes announcement-scroll {
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes announcement-pulse {
+    70%,
+    100% {
+        box-shadow: 0 0 0 8px rgb(255 211 106 / 0);
+    }
+}
+
+@keyframes supporting-partners-scroll {
+    to {
+        transform: translateX(-50%);
     }
 }
 
@@ -406,5 +785,38 @@ body {
     .reveal {
         opacity: 1;
         transform: none;
+    }
+
+    .announcement-window {
+        mask-image: none;
+    }
+
+    .announcement-track {
+        width: auto;
+        white-space: normal;
+    }
+
+    .announcement-track > :last-child {
+        display: none;
+    }
+
+    .supporting-partners-carousel {
+        overflow-x: auto;
+        mask-image: none;
+    }
+
+    .supporting-partners-track {
+        animation: none;
+    }
+
+    .supporting-partners-group:last-child {
+        display: none;
+    }
+}
+
+@media (max-width: 767px) {
+    .programs-events-section {
+        background-attachment: scroll;
+        background-position: center;
     }
 }

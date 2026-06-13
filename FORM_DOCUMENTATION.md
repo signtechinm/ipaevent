@@ -1,14 +1,18 @@
-# 14th IPA NSC 2026 Early Bird Registration Form Documentation
+# 14th IPA National Students Congress 2026 Early Bird Registration Form Documentation
 
 ## 1. Purpose
 
-This document defines the first registration form to be implemented for the 14th IPA NSC 2026 portal. The reference source is the current Google Form titled **14th IPA NSC 2026 - Early Bird Registration**.
+This document defines the first registration form to be implemented for the 14th IPA National Students Congress 2026 portal. The reference source is the current Google Form titled **14th IPA National Students Congress 2026 - Early Bird Registration**.
+
+**Event Theme:** Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era
+
+**Event Date:** 19–20 September 2026
 
 The form is intended to collect early-bird participant details, classify the participant category, capture contact information, record basic event preferences, collect student competition details, capture pre-conference workshop interest, record oral/poster presentation preference, and capture payment details before final submission.
 
 ## 2. Form Title
 
-**14th IPA NSC 2026 - Early Bird Registration**
+**14th IPA National Students Congress 2026 - Early Bird Registration**
 
 ## 3. Form Behavior
 
@@ -129,7 +133,7 @@ The form is intended to collect early-bird participant details, classify the par
 
 ### Field 9: Student Competitions
 
-- **Label:** Select the student competitions you are participating in 14th NSC
+- **Label:** Select the student competitions you are participating in at the 14th IPA National Students Congress
 - **Instruction:** Maximum 2 events per participant.
 - **Input type:** Checkbox group
 - **Required:** No in the current Google Form markup, but should be conditionally validated when competition participation is selected.
@@ -237,7 +241,7 @@ The form is intended to collect early-bird participant details, classify the par
 
 ### Confirmation Message
 
-- **Screen title:** 14th IPA NSC 2026 - Early Bird Registration
+- **Screen title:** 14th IPA National Students Congress 2026 - Early Bird Registration
 - **Message:** Your response has been recorded.
 - **Available action:** Submit another response.
 

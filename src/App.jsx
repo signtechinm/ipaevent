@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { apiRequest } from './api';
 
+const eventTheme = "Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era";
+const eventDate = '19–20 September 2026';
+
 const siteMap = [
     {
         title: 'Home',
@@ -62,8 +65,8 @@ const pageHighlights = {
     'Poster Presentation': 'Review poster presentation rules, display size, and scientific evaluation details.',
     'Instructions and Model Poster': 'Download author instructions, model poster layout, and formatting guidance.',
     'Accepted Papers': 'Published list area for accepted abstracts, presentation codes, and session allocation.',
-    '14th NSC Abstract Book': 'Download the final abstract book after scientific committee approval.',
-    '14th NSC Souvenir': 'Access the souvenir, sponsor acknowledgements, and event commemorative material.',
+    '14th IPA National Students Congress Abstract Book': 'Download the final abstract book after scientific committee approval.',
+    '14th IPA National Students Congress Souvenir': 'Access the souvenir, sponsor acknowledgements, and event commemorative material.',
     Patrons: 'Showcase patron messages, leadership support, and convention guidance.',
     'LOC - Core Group': 'Introduce the local organizing committee core group and operational leads.',
     'LOC - Sub Committee': 'List sub-committee teams across registration, scientific, hospitality, and events.',
@@ -81,9 +84,15 @@ const updates = [
 ];
 
 const quickFacts = [
-    ['Date', 'To be announced', 'Important dates and deadlines will appear here.'],
+    ['Date', eventDate, 'Two days of programs, competitions, scientific sessions, and cultural events.'],
     ['Venue', 'Kerala', 'Route map, venue image, and travel guidance section.'],
-    ['Host', 'IPA Kerala', 'With IPASF and the 14th NSC organizing team.'],
+    ['Host', 'IPA Kerala', 'With IPASF and the 14th IPA National Students Congress organizing team.'],
+];
+
+const sponsorShowcase = [
+    { tier: 'Title Sponsor', slots: 1, accent: 'from-[#df0867] to-[#f4a21b]' },
+    { tier: 'Gold Sponsors', slots: 2, accent: 'from-[#f4a21b] to-[#ffd36a]' },
+    { tier: 'Supporting Partners', slots: 3, accent: 'from-[#00652f] to-[#0f9f58]' },
 ];
 
 const registrationDraftKey = 'ipa-nsc-2026-registration-draft-token';
@@ -307,29 +316,38 @@ function useRevealOnScroll() {
 }
 
 function Header() {
+    const [isCompact, setIsCompact] = useState(false);
+
+    useEffect(() => {
+        const updateHeader = () => setIsCompact(window.scrollY > 40);
+
+        updateHeader();
+        window.addEventListener('scroll', updateHeader, { passive: true });
+
+        return () => window.removeEventListener('scroll', updateHeader);
+    }, []);
+
     return (
-        <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 backdrop-blur">
-            <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-                <a href="/" className="group flex shrink-0 items-center gap-3">
+        <header className="event-header sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
+            <div className={`mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 transition-all duration-300 sm:px-6 lg:px-8 ${isCompact ? 'py-0' : 'py-1'}`}>
+                <a href="/" className="group flex shrink-0 items-end gap-4">
+                    <img
+                        src="/14th NSC LOGO - DARK.png"
+                        alt="14th IPA National Students Congress logo"
+                        className={`w-auto object-contain transition-all duration-300 ${isCompact ? 'h-14 sm:h-16' : 'h-20 sm:h-24'}`}
+                    />
                     <img
                         src="/logo-300x246.png"
-                        alt="IPA logo"
-                        className="h-12 w-auto object-contain sm:h-14"
+                        alt="Indian Pharmaceutical Association logo"
+                        className={`w-auto object-contain transition-all duration-300 ${isCompact ? 'h-12 sm:h-14' : 'h-16 sm:h-20'}`}
                     />
-                    <span className="flex size-11 items-center justify-center rounded-lg bg-emerald-700 text-sm font-bold text-white transition duration-300 group-hover:rotate-3 group-hover:scale-105">
-                        14
-                    </span>
-                    <span>
-                        <span className="block text-sm font-semibold uppercase text-emerald-800">14th NSC</span>
-                        <span className="block text-xs text-zinc-500">IPA Kerala | IPASF</span>
-                    </span>
                 </a>
 
-                <nav className="hidden items-center gap-1 text-sm font-medium text-zinc-700 xl:flex">
+                <nav className="hidden items-center gap-1 text-sm font-medium text-[#11145f] xl:flex">
                     {siteMap.map((section) => (
                         <div key={section.title} className="group relative">
                             <a
-                                className="nav-link block rounded-lg px-3 py-2 hover:text-emerald-700"
+                                className="nav-link block rounded-lg px-3 py-2 hover:text-[#df0867]"
                                 href={`/#${slugify(section.title)}`}
                             >
                                 {section.title}
@@ -352,7 +370,7 @@ function Header() {
                 </nav>
 
                 <div className="flex items-center gap-2">
-                    <a href="/registration" className="button-pop rounded-lg bg-rose-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-800">
+                    <a href="/registration" className="button-pop rounded-lg bg-[#df0867] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#bd0758]">
                         Register
                     </a>
                     <details className="relative xl:hidden">
@@ -388,33 +406,36 @@ function Header() {
 
 function Hero() {
     return (
-        <section id="home" className="relative overflow-hidden bg-zinc-950 text-white">
+        <section id="home" className="relative overflow-hidden bg-[#0d124f] text-white">
             <img
                 src="/images/nsc-kerala-hero.png"
                 alt="Students and delegates at a Kerala conference venue"
                 className="hero-image absolute inset-0 h-full w-full object-cover"
             />
-            <div className="absolute inset-0 bg-zinc-950/55" />
+            <div className="absolute inset-0 bg-[#090d42]/48" />
             <div className="hero-sheen absolute inset-0" />
             <div className="relative mx-auto grid min-h-[680px] max-w-7xl content-end gap-8 px-4 pb-14 pt-24 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8 lg:pb-20">
                 <div className="hero-copy max-w-3xl">
                     <div className="mb-5 inline-flex items-center gap-2 rounded-lg bg-white/12 px-3 py-2 text-sm font-medium text-white ring-1 ring-white/25">
-                        <span className="pulse-dot size-2 rounded-full bg-amber-300" />
-                        National Student Convention web portal
+                        <span className="pulse-dot size-2 rounded-full bg-[#f4a21b]" />
+                        14th IPA National Students Congress web portal
                     </div>
                     <h1 className="max-w-3xl text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-                        14th National Student Convention
+                        14th IPA National Students Congress
                     </h1>
-                    <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-100 sm:text-lg">
-                        A focused event portal for registrations, scientific sessions, abstract submissions, speaker updates,
-                        competitions, venue guidance, and Kerala showcase content.
+                    <div className="mt-5 max-w-3xl border-l-4 border-[#df0867] bg-[#0d124f]/55 px-4 py-3 backdrop-blur-sm">
+                        <p className="text-xs font-bold uppercase tracking-wider text-[#ffd36a]">Theme</p>
+                        <p className="mt-1 text-base font-semibold leading-7 text-white sm:text-lg">{eventTheme}</p>
+                    </div>
+                    <p className="mt-4 inline-flex rounded-lg bg-white/12 px-4 py-2 text-sm font-bold text-white ring-1 ring-white/25">
+                        {eventDate}
                     </p>
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                        <a href="/registration" className="button-pop rounded-lg bg-amber-400 px-5 py-3 text-center text-sm font-bold text-zinc-950 hover:bg-amber-300">
+                        <a href="/registration" className="button-pop rounded-lg bg-[#df0867] px-5 py-3 text-center text-sm font-bold text-white hover:bg-[#bd0758]">
                             Start Registration
                         </a>
-                        <a href="#fourteenth-nsc-brochures" className="button-pop rounded-lg bg-white/12 px-5 py-3 text-center text-sm font-semibold text-white ring-1 ring-white/25 hover:bg-white/20">
-                            14th NSC Brochures
+                        <a href="#fourteenth-nsc-brochures" className="button-pop rounded-lg bg-white/12 px-5 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-black/10 backdrop-blur-md backdrop-saturate-150 hover:bg-white/20 hover:backdrop-blur-lg">
+                            Congress Brochures
                         </a>
                     </div>
                 </div>
@@ -422,7 +443,7 @@ function Hero() {
                 <aside id="news-and-updates" className="hero-panel self-end rounded-lg bg-white p-5 text-zinc-950 shadow-2xl">
                     <div className="flex items-center justify-between gap-4 border-b border-zinc-200 pb-4">
                         <h2 className="text-base font-bold">Latest Updates</h2>
-                        <span className="live-badge rounded-lg bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">Live</span>
+                        <span className="live-badge rounded-lg bg-[#e7f5ec] px-3 py-1 text-xs font-semibold text-[#00652f]">Live</span>
                     </div>
                     <div className="mt-4 space-y-4">
                         {updates.map(([title, copy]) => (
@@ -440,40 +461,53 @@ function Hero() {
 
 function QuickFacts() {
     return (
-        <section id="important-dates" className="relative isolate overflow-hidden py-14">
+        <section id="important-dates" className="snapshot-section relative isolate overflow-hidden py-14 text-white">
             <img
                 src="/images/nsc-kerala-hero.png"
                 alt=""
-                className="absolute inset-0 -z-30 h-full w-full scale-105 object-cover blur-[2px]"
+                className="snapshot-background absolute inset-0 -z-30 h-full w-full object-cover"
                 aria-hidden="true"
             />
-            <div className="absolute inset-0 -z-20 bg-gradient-to-r from-amber-400/90 via-yellow-300/76 to-emerald-900/58" />
-            <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white/20 via-transparent to-zinc-950/18" />
+            <div className="snapshot-overlay absolute inset-0 -z-20" aria-hidden="true" />
             <div className="snapshot-flow-lines absolute inset-0 -z-10" aria-hidden="true">
-                <span className="snapshot-flow-line top-[8%]" />
-                <span className="snapshot-flow-line top-[24%] animation-delay-700" />
-                <span className="snapshot-flow-line top-[42%] animation-delay-1200" />
-                <span className="snapshot-flow-line top-[62%] animation-delay-1800" />
-                <span className="snapshot-flow-line top-[80%] animation-delay-2400" />
+                <span className="snapshot-flow-line top-[14%]" />
+                <span className="snapshot-flow-line top-[48%] animation-delay-1200" />
+                <span className="snapshot-flow-line top-[78%] animation-delay-2400" />
             </div>
             <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div className="mb-8 max-w-3xl">
-                    <p className="text-sm font-bold uppercase text-emerald-950">Event Snapshot</p>
-                    <h2 className="mt-3 text-3xl font-bold leading-tight text-zinc-950 sm:text-4xl">
-                        Date, venue, and host details
-                    </h2>
-                    <p className="mt-3 text-base font-medium leading-7 text-zinc-800">
-                        Key information will be updated here as the 14th NSC schedule and venue plan are finalized.
-                    </p>
+                <div className="mb-8 grid items-center gap-8 lg:grid-cols-[1fr_440px]">
+                    <div className="max-w-3xl">
+                        <p className="text-sm font-bold uppercase tracking-[0.16em] text-[#ffd36a]">Event Snapshot</p>
+                        <h2 className="mt-3 text-3xl font-bold leading-tight text-white sm:text-4xl">
+                            Date, venue, and host details
+                        </h2>
+                        <p className="mt-3 text-base font-medium leading-7 text-white/75">
+                            The congress will be held on {eventDate}. Detailed schedules and venue guidance will be published here.
+                        </p>
+                    </div>
+                    <div className="snapshot-logo-panel grid grid-cols-[1.15fr_0.85fr] items-center gap-5 rounded-2xl border border-white/15 bg-white/8 p-5 backdrop-blur-md">
+                        <img
+                            src="/14th NSC LOGO - LIGHT.png"
+                            alt="14th IPA National Students Congress logo"
+                            className="snapshot-event-logo h-28 w-full object-contain sm:h-32"
+                        />
+                        <div className="flex h-full items-center border-l border-white/15 pl-5">
+                            <img
+                                src="/HOST LOGO - LIGHT.png"
+                                alt="Host: IPA Kerala State Branch"
+                                className="snapshot-host-logo h-32 w-full object-contain sm:h-40"
+                            />
+                        </div>
+                    </div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-3">
                     {quickFacts.map(([label, value, copy]) => (
                         <div
                             key={label}
-                            className="interactive-card rounded-lg border border-white/70 bg-white/94 p-5 shadow-2xl backdrop-blur-md"
+                            className="snapshot-fact-card interactive-card rounded-xl border border-white/15 bg-white/95 p-5 shadow-2xl backdrop-blur-md"
                         >
-                            <p className="text-sm font-bold uppercase text-emerald-700">{label}</p>
-                            <p className="mt-2 text-2xl font-bold text-zinc-950">{value}</p>
+                            <p className="text-sm font-bold uppercase tracking-wider text-[#df0867]">{label}</p>
+                            <p className="mt-2 text-2xl font-bold text-[#11145f]">{value}</p>
                             <p className="mt-2 text-sm leading-6 text-zinc-600">{copy}</p>
                         </div>
                     ))}
@@ -483,34 +517,112 @@ function QuickFacts() {
     );
 }
 
+function SponsorShowcase() {
+    return (
+        <section id="partners-and-sponsors" className="scroll-mt-24 bg-white py-16">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-3xl text-center">
+                    <p className="text-sm font-bold uppercase tracking-[0.16em] text-[#df0867]">Partners &amp; Sponsors</p>
+                    <h2 className="mt-3 text-3xl font-bold leading-tight text-[#11145f] sm:text-4xl">
+                        Proudly supported by our event partners
+                    </h2>
+                    <p className="mt-4 text-base leading-7 text-zinc-600">
+                        We gratefully acknowledge the organizations supporting the 14th IPA National Students Congress.
+                        Confirmed sponsor logos will be featured here.
+                    </p>
+                </div>
+
+                <div className="mt-10 space-y-8">
+                    {sponsorShowcase.map(({ tier, slots, accent }) => (
+                        <div key={tier}>
+                            <div className="mb-4 flex items-center gap-4">
+                                <span className={`h-1 w-12 rounded-full bg-gradient-to-r ${accent}`} />
+                                <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-[#11145f]">{tier}</h3>
+                                <span className="h-px flex-1 bg-zinc-200" />
+                            </div>
+                            {tier === 'Supporting Partners' ? (
+                                <div className="supporting-partners-carousel">
+                                    <div className="supporting-partners-track">
+                                        {[0, 1].map((set) => (
+                                            <div key={set} className="supporting-partners-group" aria-hidden={set === 1}>
+                                                {Array.from({ length: slots }, (_, index) => (
+                                                    <div
+                                                        key={`${set}-${index}`}
+                                                        className="group flex min-h-36 w-[260px] shrink-0 items-center justify-center rounded-2xl bg-zinc-50 p-6 shadow-sm ring-1 ring-zinc-200 transition duration-300 hover:bg-white hover:shadow-xl sm:w-[300px]"
+                                                    >
+                                                        <div className="text-center">
+                                                            <div className={`mx-auto mb-3 h-1.5 w-16 rounded-full bg-gradient-to-r ${accent}`} />
+                                                            <p className="text-lg font-bold text-zinc-400 transition group-hover:text-[#11145f]">
+                                                                Sponsor Logo
+                                                            </p>
+                                                            <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                                                                Coming soon
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className={`grid gap-4 ${slots === 1 ? 'mx-auto max-w-md' : 'md:grid-cols-2'}`}>
+                                    {Array.from({ length: slots }, (_, index) => (
+                                        <div
+                                            key={`${tier}-${index}`}
+                                            className="group flex min-h-36 items-center justify-center rounded-2xl bg-zinc-50 p-6 shadow-sm ring-1 ring-zinc-200 transition duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-xl"
+                                        >
+                                            <div className="text-center">
+                                                <div className={`mx-auto mb-3 h-1.5 w-16 rounded-full bg-gradient-to-r ${accent}`} />
+                                                <p className="text-lg font-bold text-zinc-400 transition group-hover:text-[#11145f]">
+                                                    Sponsor Logo
+                                                </p>
+                                                <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+                                                    Coming soon
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+            </div>
+        </section>
+    );
+}
+
 function HomeWelcome() {
     return (
-        <section id="home-welcome" className="bg-white py-16">
-            <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8">
+        <section id="home-welcome" className="event-soft-section py-16">
+            <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:px-8">
                 <div>
-                    <p className="text-sm font-bold uppercase text-emerald-700">Welcome Message</p>
-                    <h2 className="mt-3 text-3xl font-bold text-zinc-950 sm:text-4xl">Welcome to the 14th National Students Congress (NSC)</h2>
+                    <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#df0867]">Welcome Message</p>
+                    <h2 className="mt-3 text-3xl font-bold leading-tight text-[#11145f] sm:text-4xl">
+                        Welcome to the 14th IPA National Students Congress
+                    </h2>
                     <div className="mt-4 space-y-4 text-base leading-7 text-zinc-600">
                         <p>
-                            Welcome to the official web portal of the 14th National Students Congress (NSC). This premier annual event is proudly hosted by the Indian Pharmaceutical Association (IPA) Kerala State Branch, alongside the IPA Students&apos; Forum (IPASF). This year, we gather under the theme of innovation and academic excellence. We welcome pharmacy students, respected educators, and industry experts from across the country to connect, learn, and grow together.
+                            Welcome to the official web portal of the 14th IPA National Students Congress. This premier annual event is proudly hosted by the Indian Pharmaceutical Association (IPA) Kerala State Branch, alongside the IPA Students&apos; Forum (IPASF). We welcome pharmacy students, respected educators, and industry experts from across the country to connect, learn, and grow together.
                         </p>
                         <p>
-                            This year&apos;s congress features a dynamic scientific program, competitive student events, expert speakers, and valuable placement drives. The 14th NSC offers a unique space to showcase your research, test your skills, and build lifelong networks. We invite you to explore our sessions, submit your abstracts, and join us in making this event an outstanding success.
+                            This year&apos;s congress features a dynamic scientific program, competitive student events, expert speakers, and valuable placement drives. The 14th IPA National Students Congress offers a unique space to showcase your research, test your skills, and build lifelong networks. We invite you to explore our sessions, submit your abstracts, and join us in making this event an outstanding success.
                         </p>
                     </div>
-                    <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold text-zinc-700">
-                        <span className="rounded-full bg-zinc-100 px-4 py-2">IPA Kerala</span>
-                        <span className="rounded-full bg-zinc-100 px-4 py-2">14th NSC 2026</span>
+                    <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
+                        <span className="rounded-full bg-[#e7f5ec] px-4 py-2 text-[#00652f]">IPA Kerala</span>
+                        <span className="rounded-full bg-[#fff0f6] px-4 py-2 text-[#b70758]">14th IPA National Students Congress 2026</span>
+                        <span className="rounded-full bg-[#fff7df] px-4 py-2 text-[#8a5700]">{eventDate}</span>
                     </div>
                 </div>
-                <div className="grid items-center gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                    <div className="aspect-[1586/992] overflow-hidden rounded-lg bg-zinc-100 shadow-2xl ring-1 ring-zinc-200">
-                        <img
-                            src="/images/nsc-welcome-delegates.png"
-                            alt="Delegates and students at the National Student Convention venue"
-                            className="h-full w-full object-contain"
-                        />
-                    </div>
+                <div className="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-[#11145f]/10">
+                    <img
+                        src="/images/nsc-welcome-delegates.png"
+                        alt="Delegates and students at the 14th IPA National Students Congress"
+                        className="h-full w-full object-contain"
+                    />
                 </div>
             </div>
         </section>
@@ -644,23 +756,21 @@ function RegistrationPage() {
             <section className="relative overflow-hidden bg-zinc-950 text-white">
                 <img
                     src="/images/nsc-kerala-hero.png"
-                    alt="Delegates at the 14th IPA NSC registration venue"
+                    alt="Delegates at the 14th IPA National Students Congress registration venue"
                     className="absolute inset-0 h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-zinc-950/65" />
                 <div className="relative mx-auto flex min-h-[360px] max-w-7xl flex-col justify-end px-4 pb-10 pt-24 sm:px-6 lg:px-8">
                     <p className="text-sm font-bold uppercase text-amber-300">Registration</p>
                     <h1 className="mt-3 max-w-4xl text-4xl font-bold leading-tight sm:text-5xl">
-                        14th IPA NSC 2026 early bird registration
+                        14th IPA National Students Congress 2026 early bird registration
                     </h1>
                     <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-100">
                         Complete each section tab by tab. Save your general details, competitions, workshops,
                         presentation choice, payment details, and final confirmation in one guided flow.
                     </p>
                     <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
-                        <span className="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/20">Section-wise save</span>
-                        <span className="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/20">PostgreSQL ready</span>
-                        <span className="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/20">Early bird flow</span>
+                        <span className="rounded-lg bg-white/12 px-3 py-2 ring-1 ring-white/20">{eventDate}</span>
                     </div>
                 </div>
             </section>
@@ -1085,7 +1195,7 @@ function RegistrationPage() {
                         {activeTab === 'confirmation' && (
                             <div className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-6">
                                 <p className="text-sm font-bold uppercase text-emerald-700">
-                                    14th IPA NSC 2026 - {isGroupRegistration ? 'Group Registration' : 'Early Bird Registration'}
+                                    14th IPA National Students Congress 2026 - {isGroupRegistration ? 'Group Registration' : 'Early Bird Registration'}
                                 </p>
                                 <h3 className="mt-3 text-2xl font-bold text-emerald-950">Your response has been recorded.</h3>
                                 <p className="mt-3 text-sm leading-6 text-emerald-900">
@@ -1362,11 +1472,14 @@ function SponsorRegistrationPage() {
                 <div className="relative mx-auto flex min-h-[380px] max-w-7xl flex-col justify-end px-4 pb-10 pt-24 sm:px-6 lg:px-8">
                     <p className="text-sm font-bold uppercase text-amber-300">Become a Sponsor</p>
                     <h1 className="mt-3 max-w-4xl text-4xl font-bold leading-tight sm:text-5xl">
-                        Partner with the 14th IPA National Students&apos; Congress 2026
+                        Partner with the 14th IPA National Students Congress 2026
                     </h1>
                     <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-100">
                         Choose premium packages, standalone opportunities, and e-Souvenir advertising, then submit
                         your organization and payment details in one guided application.
+                    </p>
+                    <p className="mt-5 inline-flex rounded-lg bg-white/12 px-4 py-2 text-sm font-bold ring-1 ring-white/20">
+                        {eventDate}
                     </p>
                 </div>
             </section>
@@ -1833,8 +1946,8 @@ function Abstracts() {
     }, [slides.length]);
 
     return (
-        <section id="programs-and-events-spotlight" className="scroll-mt-24 bg-emerald-950 py-10 text-white sm:py-12">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section id="programs-and-events-spotlight" className="programs-events-section scroll-mt-24 py-10 text-white sm:py-12">
+            <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="max-w-3xl">
                     <div>
                     <p className="text-sm font-bold uppercase text-amber-300">Programs and Events</p>
@@ -1998,47 +2111,128 @@ function Programs() {
 
 function OrganizingTeam() {
     const section = siteMap.find((item) => item.title === 'Organizing Team');
+    const teams = section.pages.slice(1);
+    const teamPairs = Array.from({ length: Math.ceil(teams.length / 2) }, (_, index) =>
+        teams.slice(index * 2, index * 2 + 2)
+    );
+    const [activePair, setActivePair] = useState(0);
+
+    useEffect(() => {
+        const interval = window.setInterval(() => {
+            setActivePair((current) => (current + 1) % teamPairs.length);
+        }, 5000);
+
+        return () => window.clearInterval(interval);
+    }, [teamPairs.length]);
+
+    function showPreviousPair() {
+        setActivePair((current) => (current - 1 + teamPairs.length) % teamPairs.length);
+    }
+
+    function showNextPair() {
+        setActivePair((current) => (current + 1) % teamPairs.length);
+    }
 
     return (
-        <section id="organizing-team" className="scroll-mt-24 bg-gradient-to-b from-white to-emerald-50/70 py-16">
+        <section id="organizing-team" className="event-team-section scroll-mt-24 py-16">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="max-w-3xl">
-                    <p className="text-sm font-bold uppercase text-emerald-700">Organizing Team</p>
-                    <h2 className="mt-3 text-3xl font-bold leading-tight text-zinc-950 sm:text-4xl">
+                    <p className="text-sm font-bold uppercase text-[#df0867]">Organizing Team</p>
+                    <h2 className="mt-3 text-3xl font-bold leading-tight text-[#11145f] sm:text-4xl">
                         Committee, advisors, IPA groups, partners, and sponsors.
                     </h2>
                     <p className="mt-4 text-base leading-7 text-zinc-600">
-                        Key leadership groups and support teams helping coordinate the 14th National Student Convention.
+                        Key leadership groups and support teams helping coordinate the 14th IPA National Students Congress.
                     </p>
                 </div>
-                <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {section.pages.slice(1).map((item, index) => (
-                        <Reveal key={item} delay={index * 70}>
-                            <div
-                                id={slugify(item)}
-                                className="interactive-card group relative min-h-44 scroll-mt-28 overflow-hidden rounded-lg border border-emerald-100 bg-white p-5 shadow-sm"
-                            >
-                                <div className="team-card-accent absolute inset-x-0 top-0 h-1" />
-                                <div className="flex items-start justify-between gap-4">
-                                    <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-sm font-black text-emerald-800 ring-1 ring-emerald-100">
-                                        {String(index + 1).padStart(2, '0')}
-                                    </div>
-                                    <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold uppercase text-zinc-500">
-                                        Team
-                                    </span>
-                                </div>
-                                <h3 className="mt-5 text-lg font-bold leading-snug text-zinc-950">{item}</h3>
-                                <p className="mt-3 text-sm leading-6 text-zinc-600">{pageHighlights[item]}</p>
-                                <div className="mt-5 h-px bg-zinc-100" />
-                                <a
-                                    href={`#${slugify(item)}`}
-                                    className="mt-4 inline-flex text-sm font-bold text-emerald-700 hover:text-emerald-900"
-                                >
-                                    View details
-                                </a>
+                <div className="mt-8">
+                    <div className="organizing-team-stage">
+                        <div
+                            key={`shadow-${activePair}`}
+                            className={`organizing-team-box-shadow ${
+                                activePair % 2 === 0 ? 'organizing-team-shadow-from-top' : 'organizing-team-shadow-from-bottom'
+                            }`}
+                            aria-hidden="true"
+                        />
+                        <div
+                            key={activePair}
+                            className={`organizing-team-box ${
+                                activePair % 2 === 0 ? 'organizing-team-box-from-top' : 'organizing-team-box-from-bottom'
+                            }`}
+                        >
+                            <div className="organizing-team-box-face grid items-stretch gap-4 sm:grid-cols-2">
+                                {teamPairs[activePair].map((item, pairIndex) => {
+                                    const index = activePair * 2 + pairIndex;
+
+                                    return (
+                                        <div
+                                            key={item}
+                                            id={slugify(item)}
+                                            className="group relative flex h-full min-h-64 scroll-mt-28 flex-col overflow-hidden rounded-xl bg-white/95 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] ring-1 ring-[#11145f]/10"
+                                        >
+                                            <div className="team-card-accent absolute inset-x-0 top-0 h-1" />
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-sm font-black text-emerald-800 ring-1 ring-emerald-100">
+                                                    {String(index + 1).padStart(2, '0')}
+                                                </div>
+                                                <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold uppercase text-zinc-500">
+                                                    Team
+                                                </span>
+                                            </div>
+                                            <h3 className="mt-5 text-lg font-bold leading-snug text-zinc-950">{item}</h3>
+                                            <p className="mt-3 text-sm leading-6 text-zinc-600">{pageHighlights[item]}</p>
+                                            <div className="mt-auto pt-5">
+                                                <div className="h-px bg-zinc-100" />
+                                            <a
+                                                href={`#${slugify(item)}`}
+                                                className="mt-4 inline-flex text-sm font-bold text-emerald-700 hover:text-emerald-900"
+                                            >
+                                                View details
+                                            </a>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                        </Reveal>
-                    ))}
+                            <div className="organizing-team-box-edge" aria-hidden="true" />
+                            <div className="organizing-team-box-gloss" aria-hidden="true" />
+                        </div>
+                    </div>
+
+                    <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-2" aria-label="Organizing team slides">
+                            {teamPairs.map((_, index) => (
+                                <button
+                                    key={index}
+                                    type="button"
+                                    onClick={() => setActivePair(index)}
+                                    className={`h-2.5 rounded-full transition-all ${
+                                        activePair === index ? 'w-8 bg-[#df0867]' : 'w-2.5 bg-[#11145f]/20 hover:bg-[#11145f]/40'
+                                    }`}
+                                    aria-label={`Show organizing team cards ${index * 2 + 1} and ${index * 2 + 2}`}
+                                    aria-current={activePair === index ? 'true' : undefined}
+                                />
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={showPreviousPair}
+                                className="rounded-lg border border-[#11145f]/15 bg-white px-4 py-2 text-sm font-bold text-[#11145f] shadow-sm hover:bg-[#11145f] hover:text-white"
+                                aria-label="Show previous organizing teams"
+                            >
+                                Previous
+                            </button>
+                            <button
+                                type="button"
+                                onClick={showNextPair}
+                                className="rounded-lg bg-[#11145f] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#20257d]"
+                                aria-label="Show next organizing teams"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -2047,16 +2241,16 @@ function OrganizingTeam() {
 
 function SponsorSection() {
     return (
-        <section id="become-a-sponsor" className="scroll-mt-24 bg-white py-16">
+        <section id="become-a-sponsor" className="event-soft-section scroll-mt-24 py-16">
             <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
                 <Reveal>
                     <div className="max-w-2xl">
-                        <p className="text-sm font-bold uppercase text-emerald-700">Become a Sponsor</p>
-                        <h2 className="mt-3 text-3xl font-bold leading-tight text-zinc-950 sm:text-4xl">
+                        <p className="text-sm font-bold uppercase text-[#df0867]">Become a Sponsor</p>
+                        <h2 className="mt-3 text-3xl font-bold leading-tight text-[#11145f] sm:text-4xl">
                             Put your brand in front of India&apos;s next generation of pharmacy leaders.
                         </h2>
                         <p className="mt-5 text-base leading-8 text-zinc-600">
-                            Partner with the 14th National Student Convention to connect with pharmacy students,
+                            Partner with the 14th IPA National Students Congress to connect with pharmacy students,
                             educators, researchers, and industry professionals through exhibition visibility,
                             delegate engagement, session support, and event branding opportunities.
                         </p>
@@ -2069,7 +2263,7 @@ function SponsorSection() {
                         </div>
                         <a
                             href="/sponsor-registration"
-                            className="button-pop mt-7 inline-flex rounded-lg bg-emerald-800 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-900"
+                            className="button-pop mt-7 inline-flex rounded-lg bg-[#df0867] px-5 py-3 text-sm font-bold text-white hover:bg-[#bd0758]"
                         >
                             Become a Sponsor
                         </a>
@@ -2092,22 +2286,104 @@ function SponsorSection() {
 
 function Contact() {
     return (
-        <section className="bg-zinc-950 py-12 text-white">
-            <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-                <div>
-                    <h2 className="text-2xl font-bold">Important Contacts</h2>
-                    <p className="mt-2 text-sm text-zinc-300">Email IDs and mobile numbers can be added here for the LOC and support desks.</p>
+        <footer className="event-footer relative overflow-hidden text-white">
+            <div className="event-footer-glow event-footer-glow-left" aria-hidden="true" />
+            <div className="event-footer-glow event-footer-glow-right" aria-hidden="true" />
+
+            <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-14 sm:px-6 lg:px-8">
+                <div className="grid gap-10 lg:grid-cols-[1.25fr_0.7fr_0.8fr]">
+                    <div>
+                        <div className="flex max-w-2xl items-center gap-6 rounded-2xl bg-white/8 p-6 backdrop-blur-md ring-1 ring-white/12">
+                            <img
+                                src="/14th NSC LOGO - LIGHT.png"
+                                alt="14th IPA National Students Congress"
+                                className="h-28 min-w-0 flex-1 object-contain sm:h-32"
+                            />
+                            <span className="h-28 w-px shrink-0 bg-white/15" />
+                            <img
+                                src="/HOST LOGO - LIGHT.png"
+                                alt="Host: IPA Kerala State Branch"
+                                className="h-28 w-36 object-contain sm:h-32 sm:w-44"
+                            />
+                        </div>
+                        <p className="mt-6 max-w-xl text-sm leading-7 text-white/65">
+                            Bringing pharmacy students, educators, researchers, and industry leaders together in Kerala
+                            for learning, innovation, and meaningful professional connections.
+                        </p>
+                        <div className="mt-5 inline-flex items-center gap-3 rounded-full bg-[#df0867]/20 px-4 py-2 text-sm font-bold text-white ring-1 ring-[#df0867]/40">
+                            <span className="size-2 rounded-full bg-[#ffd36a]" />
+                            {eventDate}
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">Quick Links</p>
+                        <nav className="mt-5 grid gap-3 text-sm" aria-label="Footer navigation">
+                            {[
+                                ['Home', '#home'],
+                                ['Event Snapshot', '#important-dates'],
+                                ['Partners & Sponsors', '#partners-and-sponsors'],
+                                ['Organizing Team', '#organizing-team'],
+                                ['Registration', '/registration'],
+                                ['Become a Sponsor', '/sponsor-registration'],
+                            ].map(([label, href]) => (
+                                <a
+                                    key={label}
+                                    href={href}
+                                    className="group flex items-center gap-3 font-semibold text-white/70 transition hover:translate-x-1 hover:text-white"
+                                >
+                                    <span className="h-px w-4 bg-[#df0867] transition-all group-hover:w-7" />
+                                    {label}
+                                </a>
+                            ))}
+                        </nav>
+                    </div>
+
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">Important Contacts</p>
+                        <p className="mt-4 text-sm leading-6 text-white/60">
+                            LOC and support desk contact details will be updated here.
+                        </p>
+                        <div className="mt-5 grid gap-3">
+                            <a
+                                href="mailto:info@example.com"
+                                className="rounded-xl bg-white/8 px-4 py-3 text-sm font-semibold text-white/80 ring-1 ring-white/12 transition hover:bg-white/14 hover:text-white"
+                            >
+                                <span className="block text-xs font-bold uppercase tracking-wider text-[#ffd36a]">Email</span>
+                                <span className="mt-1 block">info@example.com</span>
+                            </a>
+                            <a
+                                href="tel:+910000000000"
+                                className="rounded-xl bg-white/8 px-4 py-3 text-sm font-semibold text-white/80 ring-1 ring-white/12 transition hover:bg-white/14 hover:text-white"
+                            >
+                                <span className="block text-xs font-bold uppercase tracking-wider text-[#ffd36a]">Phone</span>
+                                <span className="mt-1 block">+91 00000 00000</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <div className="grid gap-3 text-sm sm:grid-cols-2">
-                    <a href="mailto:info@example.com" className="rounded-lg bg-white/10 px-4 py-3 font-semibold ring-1 ring-white/15">
-                        info@example.com
-                    </a>
-                    <a href="tel:+910000000000" className="rounded-lg bg-white/10 px-4 py-3 font-semibold ring-1 ring-white/15">
-                        +91 00000 00000
-                    </a>
+
+                <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between">
+                    <p>&copy; 2026 14th IPA National Students Congress. All rights reserved.</p>
+                    <p className="inline-flex items-center gap-2">
+                        Designed &amp; Developed by
+                        <a
+                            href="https://signtechinm.com/"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex rounded-lg bg-[#fffdf7] px-2.5 py-1.5 shadow-lg ring-1 ring-white/20 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-xl"
+                            aria-label="Visit Signtech Info and Marketing"
+                        >
+                            <img
+                                src="/signtech.png"
+                                alt="Signtech Info and Marketing"
+                                className="h-6 w-auto object-contain sm:h-7"
+                            />
+                        </a>
+                    </p>
                 </div>
             </div>
-        </section>
+        </footer>
     );
 }
 
@@ -2142,9 +2418,9 @@ function AdminLoginPage() {
             </div>
             <div className="grid min-h-screen w-full items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
                 <div>
-                    <img src="/logo-300x246.png" alt="IPA logo" className="admin-logo h-20 w-auto rounded-lg bg-white p-2" />
+                    <img src="/14th NSC LOGO - DARK.png" alt="14th IPA National Students Congress logo" className="admin-logo h-24 w-auto rounded-lg bg-white p-2" />
                     <p className="mt-8 text-sm font-bold uppercase text-amber-300">Admin Panel</p>
-                    <h1 className="mt-3 text-4xl font-bold leading-tight sm:text-5xl">Secure event operations for 14th IPA NSC 2026.</h1>
+                    <h1 className="mt-3 text-4xl font-bold leading-tight sm:text-5xl">Secure event operations for the 14th IPA National Students Congress 2026.</h1>
                     <p className="mt-5 max-w-xl text-base leading-7 text-zinc-300">
                         Manage registrations, payments, programs, users, roles, permissions, reports, and winner publishing from one protected backend.
                     </p>
@@ -2540,9 +2816,9 @@ function AdminPage() {
             <div className="border-b border-zinc-200 bg-white">
                 <div className="flex w-full items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
                     <a href="/" className="flex items-center gap-3">
-                        <img src="/logo-only.png" alt="IPA logo" className="admin-logo size-10 rounded-lg bg-white object-contain p-1" />
+                        <img src="/14th NSC LOGO - DARK.png" alt="14th IPA National Students Congress logo" className="admin-logo size-12 rounded-lg bg-white object-contain p-1" />
                         <div>
-                            <p className="text-sm font-bold text-emerald-800">14th NSC Admin</p>
+                            <p className="text-sm font-bold text-emerald-800">14th IPA National Students Congress Admin</p>
                             <p className="text-xs text-zinc-500">{currentRole?.name || 'Admin User'}</p>
                         </div>
                     </a>
@@ -3060,20 +3336,35 @@ export default function App() {
     }
 
     return (
-        <div className="bg-zinc-50 text-zinc-950 antialiased">
+        <div className="event-theme bg-zinc-50 text-zinc-950 antialiased">
             <Header />
             <main>
                 <Hero />
-                <section className="border-y border-emerald-900 bg-emerald-950 text-white">
-                    <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 text-sm sm:px-6 lg:flex-row lg:items-center lg:px-8">
-                        <span className="font-bold text-amber-300">Important:</span>
-                        <p className="text-emerald-50">
-                            Final dates, registration deadlines, accepted paper list, and poster codes will be displayed on this portal.
-                        </p>
+                <section className="announcement-bar border-y border-[#075b35] text-white" aria-label="Important event announcement">
+                    <div className="mx-auto flex max-w-7xl items-center px-4 sm:px-6 lg:px-8">
+                        <div className="relative z-10 flex shrink-0 items-center gap-2 border-r border-white/20 bg-[#00572a] py-3 pr-4 sm:pr-6">
+                            <span className="announcement-pulse size-2 rounded-full bg-[#ffd36a]" />
+                            <span className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd36a]">Important</span>
+                        </div>
+                        <div className="announcement-window min-w-0 flex-1 overflow-hidden py-3">
+                            <div className="announcement-track flex w-max items-center">
+                                {[0, 1].map((copy) => (
+                                    <div key={copy} className="flex shrink-0 items-center gap-5 px-6 text-sm font-medium text-white/95">
+                                        <span>
+                                            Event dates: <strong className="text-white">{eventDate}</strong>
+                                        </span>
+                                        <span className="size-1.5 rounded-full bg-[#df0867]" />
+                                        <span>Registration deadlines, accepted paper lists, and poster codes will be displayed on this portal.</span>
+                                        <span className="size-1.5 rounded-full bg-[#ffd36a]" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </section>
                 <HomeWelcome />
                 <QuickFacts />
+                <SponsorShowcase />
                 <Abstracts />
                 <OrganizingTeam />
                 <SponsorSection />

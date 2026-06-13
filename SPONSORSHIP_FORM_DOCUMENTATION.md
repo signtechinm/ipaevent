@@ -1,26 +1,26 @@
-# 14th IPA National Students' Congress 2026 Sponsorship Form Documentation
+# 14th IPA National Students Congress 2026 Sponsorship Form Documentation
 
 ## 1. Purpose
 
-This document defines the sponsorship enquiry and onboarding form for the **14th IPA National Students' Congress 2026**, scheduled for **19-20 September 2026** in **Kochi, Kerala**.
+This document defines the sponsorship enquiry and onboarding form for the **14th IPA National Students Congress 2026**, scheduled for **19–20 September 2026** in **Kochi, Kerala**.
 
 The supplied form sources contain the complete multi-page flow: introductory content, organization details, premium sponsorship, standalone sponsorship, e-souvenir advertisement tariffs, payment instructions, transaction details, receipt upload, remarks, and final declaration.
 
 ## 2. Form Title
 
-**Sponsorship for IPA National Students Congress - 2026 Kochi**
+**Sponsorship for the 14th IPA National Students Congress - 2026 Kochi**
 
 ## 3. Event Information
 
 - **Event:** 14th National Pharmacy Students' Congress 2026
-- **Dates:** 19-20 September 2026
+- **Dates:** 19–20 September 2026
 - **Location:** Kochi, Kerala
 - **Organized by:** Local Organizing Committee
 - **Audience:** Pharmacy students, academicians, researchers, industry leaders, healthcare professionals, and prospective sponsors
 
 ## 4. Congress Theme
 
-**Pioneering India's Pharmaceutical Future: Bridging Innovation & Entrepreneurship, Industry, Practice in the Digital Era**
+**Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era**
 
 ## 5. Introductory Content
 
@@ -28,17 +28,17 @@ The supplied form sources contain the complete multi-page flow: introductory con
 
 Dear Sir/Madam,
 
-It gives us immense pleasure to welcome you to the prestigious 14th National Pharmacy Students' Congress, to be held on 19-20 September 2026 in the beautiful city of Kochi, Kerala.
+It gives us immense pleasure to welcome you to the prestigious 14th National Pharmacy Students' Congress, to be held on 19–20 September 2026 in the beautiful city of Kochi, Kerala.
 
 This national gathering of pharmacy students, academicians, researchers, industry leaders, and healthcare professionals aims to inspire the next generation of pharmacists while strengthening the spirit of professionalism, innovation, leadership, and collaboration in the pharmaceutical sector.
 
 The theme of the Congress is:
 
-**"Pioneering India's Pharmaceutical Future: Bridging Innovation & Entrepreneurship, Industry, Practice in the Digital Era"**
+**"Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era"**
 
 Over the two days, the Congress will feature keynote lectures, scientific sessions, exhibitions, student presentations, leadership activities, networking opportunities, interactive discussions, and cultural events designed to empower pharmacy students to meet the evolving challenges of healthcare and pharmaceutical sciences.
 
-We earnestly request that your esteemed organization associate with the IPA National Students' Congress 2026 and extend generous sponsorship support for the various events and activities of the Congress. Your valued presence and support will undoubtedly contribute to making this event meaningful, memorable, and impactful.
+We earnestly request that your esteemed organization associate with the 14th IPA National Students Congress 2026 and extend generous sponsorship support for the various events and activities of the Congress. Your valued presence and support will undoubtedly contribute to making this event meaningful, memorable, and impactful.
 
 We warmly welcome you to Kochi and wish you a rewarding professional and business experience during the Congress.
 
@@ -198,7 +198,7 @@ With warm regards,
 ### Field 8: E-Souvenir Advertisement
 
 - **Section label:** C. Souvenir Advertisement - Tariffs
-- **Label:** Page selection for advertising in the e-Souvenir published at the 14th IPA NSC 2026
+- **Label:** Page selection for advertising in the e-Souvenir published at the 14th IPA National Students Congress 2026
 - **Instruction:** Select one option. Multiple entries are not allowed.
 - **Input type in source:** Checkbox group
 - **Recommended input type:** Radio group or advertisement-card selector
@@ -587,7 +587,7 @@ Administrators should be able to:
 
 ## 14. Source Reference
 
-- **Source form title:** Sponsorship for IPA National Students Congress - 2026 Kochi
+- **Source form title:** Sponsorship for the 14th IPA National Students Congress - 2026 Kochi
 - **Source type:** Google Form HTML supplied for documentation
 - **Captured scope:** Complete form flow through final submission
 - **Captured required fields:** Email, organization name, correspondence address, authorized person's name/designation, mobile number, premium sponsorship category, and standalone sponsorship selection
