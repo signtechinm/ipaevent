@@ -10,17 +10,9 @@ const siteMap = [
         pages: ['Home', 'News and Updates', 'Important Dates'],
     },
     {
-        title: 'Registration',
-        pages: [
-            'Registration',
-            'Registration Mode and Process',
-            'Registration Link and Payment',
-            'Group Registration',
-            'Individual Registration',
-            'Workshop Registration',
-            'Register for Placement Drive',
-            'Registered Participants',
-        ],
+        title: 'Scientific Service',
+        link: '/scientific-service',
+        pages: [],
     },
     {
         title: 'Programs and Events Spotlight',
@@ -31,6 +23,11 @@ const siteMap = [
             'Student Skill Competitions',
             'Cultural Extravaganza',
         ],
+    },
+    {
+        title: 'Accommodation & Travel',
+        link: '/accommodation-travel',
+        pages: [],
     },
     {
         title: 'Organizing Team',
@@ -53,6 +50,12 @@ const pageHighlights = {
     'Speaker Profile and Topics': 'View invited speakers, session themes, and topic announcements.',
     'Student Skill Competitions': 'Browse student competition categories, rules, eligibility, and fee notes.',
     'Cultural Extravaganza': 'See cultural program highlights, participation details, and evening schedule notes.',
+    'List of Budget Hotels': 'Browse suggested budget hotel options for delegates, students, faculty, and accompanying teams.',
+    'Tariff Plans': 'Review room categories, approximate tariff ranges, occupancy notes, and booking terms.',
+    'Contact Person': 'Find the hospitality desk contact person for accommodation, travel, and local support.',
+    'How to Reach': 'Check airport, railway, bus, and local route guidance for reaching the congress venue.',
+    'Pick & Drop Points': 'View designated pickup and drop points, shuttle notes, and reporting instructions.',
+    'Tour Attractions': 'Explore nearby cultural, nature, shopping, and city attractions for delegates visiting Kerala.',
     'Registration Mode and Process': 'Understand the step-by-step flow for individual, group, workshop, and payment completion.',
     'Registration Link and Payment': 'Start registration and review payable fees, payment mode, and transaction capture.',
     'Group Registration': 'Coordinate bulk participant registration for colleges, chapters, and institutional teams.',
@@ -94,6 +97,171 @@ const sponsorShowcase = [
     { tier: 'Gold Sponsors', slots: 2, accent: 'from-[#f4a21b] to-[#ffd36a]' },
     { tier: 'Supporting Partners', slots: 3, accent: 'from-[#00652f] to-[#0f9f58]' },
 ];
+
+const accommodationTravelDefaults = {
+    pageTitle: 'Accommodation & Travel',
+    heading: 'Stay options, pickup points, and nearby places to visit.',
+    intro: '',
+    assistanceTitle: 'Hospitality & Travel Desk',
+    assistanceCopy: 'For accommodation blocks, tariff confirmation, pickup coordination, and local route support, contact the hospitality desk after registration.',
+    tariffNotes: 'Sample tariffs are indicative and subject to hotel confirmation, seasonal availability, taxes, and occupancy rules.',
+    contactPerson: 'Hospitality Coordinator - +91 98765 43210 - hospitality@nsc2026.in',
+    routeNotes: 'Sample route guidance: delegates may arrive by rail, bus, or air. Final venue-specific shuttle schedules will be published closer to the event.',
+    accommodationSpaces: [
+        {
+            name: 'Hotel Green Park Residency',
+            type: 'Budget hotel',
+            distance: '1.2 km from venue',
+            tariff: 'Rs. 1,800 - 2,400 / night',
+            contact: '+91 90000 11111',
+            notes: 'Single, double, and triple sharing rooms available. Breakfast optional.',
+        },
+        {
+            name: 'Metro Lodge Executive',
+            type: 'Economy lodge',
+            distance: '2.4 km from venue',
+            tariff: 'Rs. 1,200 - 1,900 / night',
+            contact: '+91 90000 22222',
+            notes: 'Suitable for student groups. Limited AC rooms available.',
+        },
+        {
+            name: 'Grand City Inn',
+            type: 'Business hotel',
+            distance: '3.1 km from venue',
+            tariff: 'Rs. 2,600 - 3,800 / night',
+            contact: '+91 90000 33333',
+            notes: 'Recommended for faculty and invited guests. Restaurant available.',
+        },
+        {
+            name: 'Students Hostel Annex',
+            type: 'Shared hostel stay',
+            distance: '800 m from venue',
+            tariff: 'Rs. 600 - 900 / person',
+            contact: '+91 90000 44444',
+            notes: 'Dormitory-style rooms for registered student delegates, subject to availability.',
+        },
+        {
+            name: 'Royal Tourist Home',
+            type: 'Budget hotel',
+            distance: '2.9 km from venue',
+            tariff: 'Rs. 1,500 - 2,200 / night',
+            contact: '+91 90000 55555',
+            notes: 'Basic AC and non-AC rooms. Early check-in subject to room availability.',
+        },
+        {
+            name: 'City Comfort Residency',
+            type: 'Standard hotel',
+            distance: '4.0 km from venue',
+            tariff: 'Rs. 2,200 - 3,200 / night',
+            contact: '+91 90000 66666',
+            notes: 'Twin sharing rooms and group booking support available.',
+        },
+        {
+            name: 'Lake View Dormitory',
+            type: 'Dormitory',
+            distance: '3.6 km from venue',
+            tariff: 'Rs. 500 - 750 / person',
+            contact: '+91 90000 77777',
+            notes: 'Shared facilities for student groups. Advance booking recommended.',
+        },
+        {
+            name: 'Campus Guest House',
+            type: 'Guest house',
+            distance: '1.6 km from venue',
+            tariff: 'Rs. 1,000 - 1,600 / night',
+            contact: '+91 90000 88888',
+            notes: 'Limited rooms for invited delegates and coordinators.',
+        },
+    ],
+    pickupPoints: [
+        {
+            name: 'Main Railway Station',
+            type: 'Railway station',
+            distance: '4.5 km from venue',
+            eta: '15-20 min by cab',
+            instruction: 'Sample pickup point: main entrance near prepaid taxi counter.',
+        },
+        {
+            name: 'KSRTC Bus Stand',
+            type: 'Bus stand',
+            distance: '3.8 km from venue',
+            eta: '12-18 min by cab',
+            instruction: 'Sample pickup point: enquiry counter side gate.',
+        },
+        {
+            name: 'Private Bus Terminal',
+            type: 'Bus terminal',
+            distance: '5.2 km from venue',
+            eta: '18-25 min by cab',
+            instruction: 'Sample pickup point: terminal parking bay 2.',
+        },
+        {
+            name: 'Nearest Airport',
+            type: 'Airport',
+            distance: '32 km from venue',
+            eta: '55-70 min by cab',
+            instruction: 'Sample pickup point: domestic arrivals gate.',
+        },
+    ],
+    touristAttractions: [
+        {
+            name: 'Heritage Palace Museum',
+            category: 'Culture',
+            distance: '6 km from venue',
+            image: '/images/sample-tour-attraction.png',
+            description: 'A short heritage visit with murals, local history galleries, and traditional architecture.',
+        },
+        {
+            name: 'Marine Drive Promenade',
+            category: 'Leisure',
+            distance: '8 km from venue',
+            image: '/images/sample-tour-attraction.png',
+            description: 'Evening walkway with waterfront views, cafes, and shopping streets nearby.',
+        },
+        {
+            name: 'Hill View Point',
+            category: 'Nature',
+            distance: '18 km from venue',
+            image: '/images/sample-tour-attraction.png',
+            description: 'A scenic short-trip option for groups with early morning or post-event free time.',
+        },
+        {
+            name: 'Local Handicraft Market',
+            category: 'Shopping',
+            distance: '5 km from venue',
+            image: '/images/sample-tour-attraction.png',
+            description: 'Sample place for souvenirs, Kerala textiles, spices, and small gifts.',
+        },
+    ],
+};
+
+function normalizeAccommodationCms(data = {}) {
+    return {
+        ...accommodationTravelDefaults,
+        ...data,
+        accommodationSpaces: Array.isArray(data.accommodationSpaces) && data.accommodationSpaces.length ? data.accommodationSpaces : accommodationTravelDefaults.accommodationSpaces,
+        pickupPoints: Array.isArray(data.pickupPoints) && data.pickupPoints.length ? data.pickupPoints : accommodationTravelDefaults.pickupPoints,
+        touristAttractions: (Array.isArray(data.touristAttractions) && data.touristAttractions.length ? data.touristAttractions : accommodationTravelDefaults.touristAttractions).map((place = {}, index) => ({
+            ...accommodationTravelDefaults.touristAttractions[index % accommodationTravelDefaults.touristAttractions.length],
+            ...place,
+        })),
+    };
+}
+
+function formatCmsRows(items, fields) {
+    return items.map((item) => fields.map((field) => item[field] || '').join(' | ')).join('\n');
+}
+
+function parseCmsRows(value, fields) {
+    return value
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+            const parts = line.split('|').map((part) => part.trim());
+            return fields.reduce((item, field, index) => ({ ...item, [field]: parts[index] || '' }), {});
+        });
+}
 
 const registrationDraftKey = 'ipa-nsc-2026-registration-draft-token';
 
@@ -271,6 +439,10 @@ const permissionGroups = [
         permissions: ['report.view', 'report.export'],
     },
     {
+        title: 'Content',
+        permissions: ['content.view', 'content.update'],
+    },
+    {
         title: 'Administration',
         permissions: ['user.view', 'user.create', 'user.update', 'role.manage', 'audit.view'],
     },
@@ -348,23 +520,25 @@ function Header() {
                         <div key={section.title} className="group relative">
                             <a
                                 className="nav-link block rounded-lg px-3 py-2 hover:text-[#df0867]"
-                                href={`/#${slugify(section.title)}`}
+                                href={section.link ?? `/#${slugify(section.title)}`}
                             >
                                 {section.title}
                             </a>
-                            <div className="pointer-events-none absolute left-0 top-full w-72 pt-3 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
-                                <div className="rounded-lg border border-zinc-200 bg-white p-3 shadow-2xl">
-                                    {section.pages.map((page) => (
-                                        <a
-                                            key={page}
-                                            className="block rounded-md px-3 py-2 text-sm text-zinc-700 hover:bg-emerald-50 hover:text-emerald-800"
-                                            href={`/#${slugify(page)}`}
-                                        >
-                                            {page}
-                                        </a>
-                                    ))}
+                            {section.pages.length > 0 && (
+                                <div className="pointer-events-none absolute left-0 top-full w-72 pt-3 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+                                    <div className="rounded-lg border border-zinc-200 bg-white p-3 shadow-2xl">
+                                        {section.pages.map((page) => (
+                                            <a
+                                                key={page}
+                                                className="block rounded-md px-3 py-2 text-sm text-zinc-700 hover:bg-emerald-50 hover:text-emerald-800"
+                                                href={`/#${slugify(page)}`}
+                                            >
+                                                {page}
+                                            </a>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     ))}
                 </nav>
@@ -380,20 +554,22 @@ function Header() {
                         <div className="absolute right-0 top-full mt-3 max-h-[78vh] w-[min(88vw,420px)] overflow-auto rounded-lg border border-zinc-200 bg-white p-3 shadow-2xl">
                             {siteMap.map((section) => (
                                 <div key={section.title} className="border-b border-zinc-100 py-3 last:border-0">
-                                    <a href={`/#${slugify(section.title)}`} className="block px-2 text-sm font-bold text-emerald-800">
+                                    <a href={section.link ?? `/#${slugify(section.title)}`} className="block px-2 text-sm font-bold text-emerald-800">
                                         {section.title}
                                     </a>
-                                    <div className="mt-2 grid gap-1">
-                                        {section.pages.map((page) => (
-                                            <a
-                                                key={page}
-                                                href={`/#${slugify(page)}`}
-                                                className="rounded-md px-2 py-1.5 text-sm text-zinc-700 hover:bg-zinc-100"
-                                            >
-                                                {page}
-                                            </a>
-                                        ))}
-                                    </div>
+                                    {section.pages.length > 0 && (
+                                        <div className="mt-2 grid gap-1">
+                                            {section.pages.map((page) => (
+                                                <a
+                                                    key={page}
+                                                    href={`/#${slugify(page)}`}
+                                                    className="rounded-md px-2 py-1.5 text-sm text-zinc-700 hover:bg-zinc-100"
+                                                >
+                                                    {page}
+                                                </a>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -591,6 +767,168 @@ function SponsorShowcase() {
 
             </div>
         </section>
+    );
+}
+
+function AccommodationTravelPage() {
+    const [content, setContent] = useState(accommodationTravelDefaults);
+    const [showAllHotels, setShowAllHotels] = useState(false);
+
+    useEffect(() => {
+        apiRequest('accommodation-travel')
+            .then(({ content: cmsContent }) => setContent(normalizeAccommodationCms(cmsContent)))
+            .catch(() => setContent(accommodationTravelDefaults));
+    }, []);
+
+    const cmsContent = normalizeAccommodationCms(content);
+    const visibleAccommodationSpaces = showAllHotels
+        ? cmsContent.accommodationSpaces
+        : cmsContent.accommodationSpaces.slice(0, 4);
+
+    return (
+        <>
+            <section className="relative overflow-hidden bg-[#0d124f] text-white">
+                <img
+                    src="/images/nsc-kerala-hero.png"
+                    alt="Kerala travel and delegate accommodation"
+                    className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-[#090d42]/68" />
+                <div className="relative mx-auto flex min-h-[360px] max-w-7xl flex-col justify-end px-4 pb-10 pt-24 sm:px-6 lg:px-8">
+                    <p className="text-sm font-bold uppercase tracking-[0.16em] text-[#ffd36a]">Delegate Planning</p>
+                    <h1 className="mt-3 max-w-4xl text-4xl font-bold leading-tight sm:text-5xl">{cmsContent.pageTitle}</h1>
+                    {cmsContent.intro && <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-100">{cmsContent.intro}</p>}
+                </div>
+            </section>
+
+            <div className="sticky top-14 z-20 border-b border-white/10 bg-[#080c38] shadow-md sm:top-16">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <nav className="flex overflow-x-auto" aria-label="Accommodation and travel sections" style={{ scrollbarWidth: 'none' }}>
+                        {[
+                            { label: 'Hotels & Stays', href: '#list-of-budget-hotels' },
+                            { label: 'How to Reach', href: '#how-to-reach' },
+                            { label: 'Nearby Places', href: '#tour-attractions' },
+                            { label: 'Contact Person', href: '#contact-person' },
+                        ].map(({ label, href }, index, items) => (
+                            <a
+                                key={href}
+                                href={href}
+                                className={`shrink-0 px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-white/65 transition hover:bg-white/5 hover:text-white${index < items.length - 1 ? ' border-r border-white/10' : ''}`}
+                            >
+                                {label}
+                            </a>
+                        ))}
+                    </nav>
+                </div>
+            </div>
+
+            <section id="accommodation-and-travel" className="scroll-mt-24 bg-white py-16">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div id="list-of-budget-hotels" className="scroll-mt-28">
+                    <div className="mb-4 flex items-end justify-between gap-4">
+                        <div>
+                            <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#df0867]">Accommodation Spaces</p>
+                            <h3 className="mt-2 text-2xl font-bold text-zinc-950">Hotel and stay list</h3>
+                        </div>
+                    </div>
+                    <div className="overflow-x-auto rounded-lg border border-zinc-200">
+                        <table className="w-full min-w-[860px] text-left text-sm">
+                            <thead className="bg-zinc-100 text-xs uppercase tracking-wide text-zinc-500">
+                                <tr>
+                                    <th className="px-4 py-3">Accommodation</th>
+                                    <th className="px-4 py-3">Type</th>
+                                    <th className="px-4 py-3">Distance</th>
+                                    <th className="px-4 py-3">Tariff Plan</th>
+                                    <th className="px-4 py-3">Contact</th>
+                                    <th className="px-4 py-3">Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-zinc-200 bg-white">
+                                {visibleAccommodationSpaces.map((stay) => (
+                                    <tr key={stay.name}>
+                                        <td className="px-4 py-4 font-bold text-zinc-950">{stay.name}</td>
+                                        <td className="px-4 py-4 text-zinc-700">{stay.type}</td>
+                                        <td className="px-4 py-4 text-zinc-700">{stay.distance}</td>
+                                        <td className="px-4 py-4 font-semibold text-emerald-800">{stay.tariff}</td>
+                                        <td className="px-4 py-4 text-zinc-700">{stay.contact}</td>
+                                        <td className="px-4 py-4 text-zinc-600">{stay.notes}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    {cmsContent.accommodationSpaces.length > 4 && (
+                        <button
+                            type="button"
+                            onClick={() => setShowAllHotels((current) => !current)}
+                            className="mt-4 rounded-lg bg-[#11145f] px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#20257d]"
+                        >
+                            {showAllHotels ? 'Show fewer hotels' : 'View all hotels and stays'}
+                        </button>
+                    )}
+                    <p id="tariff-plans" className="mt-3 scroll-mt-28 text-sm leading-6 text-zinc-600">{cmsContent.tariffNotes}</p>
+                </div>
+
+                <div id="pick-and-drop-points" className="mt-12 scroll-mt-28">
+                    <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#df0867]">Pick &amp; Drop Points</p>
+                    <h3 className="mt-2 text-2xl font-bold text-zinc-950">Nearest arrival and pickup points</h3>
+                    <p id="how-to-reach" className="mt-3 scroll-mt-28 text-sm leading-6 text-zinc-600">{cmsContent.routeNotes}</p>
+                    <div className="mt-5 grid gap-4 md:grid-cols-2">
+                        {cmsContent.pickupPoints.map((point, index) => (
+                            <Reveal key={point.name} delay={index * 80}>
+                                <article className="interactive-card rounded-lg border border-zinc-200 bg-zinc-50 p-5">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">{point.type}</p>
+                                            <h4 className="mt-2 text-lg font-bold text-zinc-950">{point.name}</h4>
+                                        </div>
+                                        <span className="rounded-lg bg-white px-3 py-1 text-xs font-bold text-zinc-700 ring-1 ring-zinc-200">{point.distance}</span>
+                                    </div>
+                                    <div className="mt-4 grid gap-2 text-sm text-zinc-700">
+                                        <p><span className="font-bold text-zinc-950">Estimated travel:</span> {point.eta}</p>
+                                        <p><span className="font-bold text-zinc-950">Pickup note:</span> {point.instruction}</p>
+                                    </div>
+                                </article>
+                            </Reveal>
+                        ))}
+                    </div>
+                </div>
+
+                <div id="tour-attractions" className="mt-12 scroll-mt-28">
+                    <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#df0867]">Tour Attractions</p>
+                    <h3 className="mt-2 text-2xl font-bold text-zinc-950">Nearby places to visit</h3>
+                    <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        {cmsContent.touristAttractions.map((place, index) => (
+                            <Reveal key={place.name} delay={index * 80}>
+                                <article className="interactive-card flex h-full flex-col overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
+                                    {place.image && (
+                                        <img
+                                            src={place.image}
+                                            alt={place.name}
+                                            className="h-40 w-full object-cover"
+                                        />
+                                    )}
+                                    <div className="flex flex-1 flex-col p-5">
+                                        <span className="w-fit rounded-lg bg-white px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-emerald-800 ring-1 ring-emerald-100">
+                                            {place.category}
+                                        </span>
+                                        <h4 className="mt-4 text-lg font-bold text-zinc-950">{place.name}</h4>
+                                        <p className="mt-2 text-sm font-semibold text-[#11145f]">{place.distance}</p>
+                                        <p className="mt-3 text-sm leading-6 text-zinc-600">{place.description}</p>
+                                    </div>
+                                </article>
+                            </Reveal>
+                        ))}
+                    </div>
+                </div>
+
+                <div id="contact-person" className="mt-12 scroll-mt-28 rounded-lg border border-emerald-100 bg-emerald-50 p-5">
+                    <p className="text-sm font-bold uppercase tracking-[0.14em] text-emerald-700">Contact Person</p>
+                    <p className="mt-2 text-lg font-bold text-zinc-950">{cmsContent.contactPerson}</p>
+                </div>
+            </div>
+            </section>
+        </>
     );
 }
 
@@ -2322,6 +2660,7 @@ function Contact() {
                             {[
                                 ['Home', '#home'],
                                 ['Event Snapshot', '#important-dates'],
+                                ['Accommodation & Travel', '/accommodation-travel'],
                                 ['Partners & Sponsors', '#partners-and-sponsors'],
                                 ['Organizing Team', '#organizing-team'],
                                 ['Registration', '/registration'],
@@ -2557,6 +2896,14 @@ function AdminSidebarIcon({ name }) {
                 <path d="M15 17v-8" />
             </>
         ),
+        accommodation: (
+            <>
+                <path d="M4 11.5 12 5l8 6.5" />
+                <path d="M6 10.5V20h12v-9.5" />
+                <path d="M9 20v-5h6v5" />
+                <path d="M9 9.5h6" />
+            </>
+        ),
         users: (
             <>
                 <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
@@ -2611,6 +2958,94 @@ function AdminPage() {
         password: '',
     });
     const [notice, setNotice] = useState('');
+    const [accommodationCms, setAccommodationCms] = useState(accommodationTravelDefaults);
+    const [accommodationCmsLoading, setAccommodationCmsLoading] = useState(false);
+    const [accommodationCmsSaving, setAccommodationCmsSaving] = useState(false);
+    const [accommodationCmsNotice, setAccommodationCmsNotice] = useState('');
+    const abstractBookKey = 'ipa-nsc-2026-abstract-book';
+    const [abstractBookDataUrl, setAbstractBookDataUrl] = useState(() => localStorage.getItem(abstractBookKey) || '');
+    const [abstractBookFileName, setAbstractBookFileName] = useState(() => localStorage.getItem(abstractBookKey + '-name') || '');
+    const [abstractBookUploading, setAbstractBookUploading] = useState(false);
+    const [abstractBookError, setAbstractBookError] = useState('');
+
+    function handleAbstractBookUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.type !== 'application/pdf') { setAbstractBookError('Only PDF files are accepted.'); return; }
+        if (file.size > 10 * 1024 * 1024) { setAbstractBookError('File exceeds 10 MB. Please use a smaller PDF.'); return; }
+        setAbstractBookError('');
+        setAbstractBookUploading(true);
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            localStorage.setItem(abstractBookKey, ev.target.result);
+            localStorage.setItem(abstractBookKey + '-name', file.name);
+            setAbstractBookDataUrl(ev.target.result);
+            setAbstractBookFileName(file.name);
+            setAbstractBookUploading(false);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeAbstractBook() {
+        localStorage.removeItem(abstractBookKey);
+        localStorage.removeItem(abstractBookKey + '-name');
+        setAbstractBookDataUrl('');
+        setAbstractBookFileName('');
+    }
+
+    const [adminAbstracts, setAdminAbstracts] = useState([]);
+    const [adminAbstractsLoading, setAdminAbstractsLoading] = useState(false);
+    const [adminAbstractsError, setAdminAbstractsError] = useState('');
+    const [abstractReviewing, setAbstractReviewing] = useState(null);
+    const [abstractRemarksDraft, setAbstractRemarksDraft] = useState('');
+
+    async function loadAdminAbstracts() {
+        setAdminAbstractsLoading(true);
+        setAdminAbstractsError('');
+        try {
+            const res = await fetch('/api/admin/abstracts');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load.');
+            setAdminAbstracts(data.abstracts || []);
+        } catch (err) {
+            setAdminAbstractsError(err.message);
+        } finally {
+            setAdminAbstractsLoading(false);
+        }
+    }
+
+    async function reviewAbstract(id, status) {
+        try {
+            const res = await fetch(`/api/admin/abstracts/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status, adminRemarks: abstractRemarksDraft }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to update.');
+            setAdminAbstracts((prev) => prev.map((a) => (a.id === id ? data.submission : a)));
+            setAbstractReviewing(null);
+            setAbstractRemarksDraft('');
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function downloadAbstract(id, fileName) {
+        try {
+            const res = await fetch(`/api/admin/abstracts/${id}/download`);
+            if (!res.ok) throw new Error('Download failed.');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            alert(err.message);
+        }
+    }
 
     useEffect(() => {
         Promise.all([
@@ -2627,6 +3062,19 @@ function AdminPage() {
             })
             .finally(() => setIsLoading(false));
     }, []);
+
+    useEffect(() => {
+        if (activeModule !== 'accommodation' || !session) {
+            return;
+        }
+
+        setAccommodationCmsLoading(true);
+        setAccommodationCmsNotice('');
+        apiRequest('admin/accommodation-travel')
+            .then(({ content }) => setAccommodationCms(normalizeAccommodationCms(content)))
+            .catch((error) => setAccommodationCmsNotice(error.message))
+            .finally(() => setAccommodationCmsLoading(false));
+    }, [activeModule, session]);
 
     if (isLoading || !session) {
         return <main className="min-h-screen bg-zinc-950 p-8 text-sm font-semibold text-white">Loading admin...</main>;
@@ -2652,8 +3100,10 @@ function AdminPage() {
         ['pricing', 'Pricing'],
         ['winners', 'Winners'],
         ['reports', 'Reports'],
+        ['accommodation', 'Accommodation CMS'],
         ['users', 'Users & Roles'],
         ['audit', 'Audit Logs'],
+        ['scientific', 'Scientific Content'],
     ];
 
     const moduleTitles = {
@@ -2665,8 +3115,10 @@ function AdminPage() {
         pricing: 'Pricing Master',
         winners: 'Winner Announcements',
         reports: 'Reports',
+        accommodation: 'Accommodation & Travel CMS',
         users: 'Users & Roles',
         audit: 'Audit Logs',
+        scientific: 'Scientific Content',
     };
     const dashboardStats = [
         ['Total Registrations', '1,248', '+18% this week', 'emerald'],
@@ -2788,6 +3240,65 @@ function AdminPage() {
             setNotice(`Temporary password set: ${temporaryPassword}`);
         } catch (error) {
             setNotice(error.message);
+        }
+    }
+
+    function updateAccommodationField(name, value) {
+        setAccommodationCms((current) => normalizeAccommodationCms({ ...current, [name]: value }));
+        setAccommodationCmsNotice('');
+    }
+
+    function updateAccommodationSection(index, name, value) {
+        setAccommodationCms((current) => {
+            const nextSections = normalizeAccommodationCms(current).sections.map((section, sectionIndex) =>
+                sectionIndex === index ? { ...section, [name]: value } : section
+            );
+
+            return normalizeAccommodationCms({ ...current, sections: nextSections });
+        });
+        setAccommodationCmsNotice('');
+    }
+
+    function uploadTouristAttractionPhoto(index, file) {
+        if (!file) {
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            setAccommodationCmsNotice('Please upload an image file.');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            setAccommodationCms((current) => {
+                const cms = normalizeAccommodationCms(current);
+                const nextAttractions = cms.touristAttractions.map((place, placeIndex) =>
+                    placeIndex === index ? { ...place, image: event.target.result } : place
+                );
+
+                return normalizeAccommodationCms({ ...cms, touristAttractions: nextAttractions });
+            });
+            setAccommodationCmsNotice('Photo added. Save the page to publish it.');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function saveAccommodationCms() {
+        setAccommodationCmsSaving(true);
+        setAccommodationCmsNotice('Saving...');
+
+        try {
+            const { content } = await apiRequest('admin/accommodation-travel', {
+                method: 'PUT',
+                body: JSON.stringify({ content: normalizeAccommodationCms(accommodationCms) }),
+            });
+            setAccommodationCms(normalizeAccommodationCms(content));
+            setAccommodationCmsNotice('Accommodation & Travel content saved.');
+        } catch (error) {
+            setAccommodationCmsNotice(error.message);
+        } finally {
+            setAccommodationCmsSaving(false);
         }
     }
 
@@ -3283,7 +3794,309 @@ function AdminPage() {
                         </div>
                     )}
 
-                    {!['dashboard', 'users'].includes(activeModule) && (
+                    {activeModule === 'accommodation' && (
+                        <div className="admin-card mt-6 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+                            <div className="flex flex-col gap-3 border-b border-zinc-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
+                                <div>
+                                    <p className="text-sm font-bold uppercase text-emerald-700">CMS</p>
+                                    <h2 className="mt-2 text-xl font-bold text-zinc-950">Accommodation &amp; Travel Page</h2>
+                                    <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
+                                        Update the public Accommodation &amp; Travel page content. The sample text can be replaced once hotel, tariff, route, pickup, and attraction details are finalized.
+                                    </p>
+                                </div>
+                                <a
+                                    href="/accommodation-travel"
+                                    className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-700 hover:bg-zinc-100"
+                                >
+                                    View Page
+                                </a>
+                            </div>
+
+                            {accommodationCmsLoading ? (
+                                <p className="mt-6 text-sm font-semibold text-zinc-500">Loading content...</p>
+                            ) : (
+                                <div className="mt-6 space-y-6">
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        {[
+                                            ['pageTitle', 'Page Title'],
+                                            ['heading', 'Main Heading'],
+                                            ['assistanceTitle', 'Assistance Box Title'],
+                                            ['contactPerson', 'Contact Person'],
+                                        ].map(([name, label]) => (
+                                            <label key={name} className="block text-sm font-semibold text-zinc-800">
+                                                {label}
+                                                <input
+                                                    className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                    value={accommodationCms[name]}
+                                                    onChange={(event) => updateAccommodationField(name, event.target.value)}
+                                                />
+                                            </label>
+                                        ))}
+                                        <label className="block text-sm font-semibold text-zinc-800 md:col-span-2">
+                                            Tariff Notes
+                                            <textarea
+                                                className="admin-input mt-2 min-h-20 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                value={accommodationCms.tariffNotes}
+                                                onChange={(event) => updateAccommodationField('tariffNotes', event.target.value)}
+                                            />
+                                        </label>
+                                        <label className="block text-sm font-semibold text-zinc-800 md:col-span-2">
+                                            Route Notes
+                                            <textarea
+                                                className="admin-input mt-2 min-h-20 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                value={accommodationCms.routeNotes}
+                                                onChange={(event) => updateAccommodationField('routeNotes', event.target.value)}
+                                            />
+                                        </label>
+                                        <label className="block text-sm font-semibold text-zinc-800 md:col-span-2">
+                                            Intro Copy
+                                            <textarea
+                                                className="admin-input mt-2 min-h-24 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                value={accommodationCms.intro}
+                                                onChange={(event) => updateAccommodationField('intro', event.target.value)}
+                                            />
+                                        </label>
+                                        <label className="block text-sm font-semibold text-zinc-800 md:col-span-2">
+                                            Assistance Box Copy
+                                            <textarea
+                                                className="admin-input mt-2 min-h-20 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                value={accommodationCms.assistanceCopy}
+                                                onChange={(event) => updateAccommodationField('assistanceCopy', event.target.value)}
+                                            />
+                                        </label>
+                                    </div>
+
+                                    <div className="grid gap-4">
+                                        <label className="block text-sm font-semibold text-zinc-800">
+                                            Accommodation Spaces
+                                            <span className="mt-1 block text-xs font-normal text-zinc-500">One row per stay: Name | Type | Distance | Tariff | Contact | Notes</span>
+                                            <textarea
+                                                className="admin-input mt-2 min-h-48 w-full rounded-lg border border-zinc-300 px-3 py-2.5 font-mono text-xs outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                value={formatCmsRows(normalizeAccommodationCms(accommodationCms).accommodationSpaces, ['name', 'type', 'distance', 'tariff', 'contact', 'notes'])}
+                                                onChange={(event) => updateAccommodationField('accommodationSpaces', parseCmsRows(event.target.value, ['name', 'type', 'distance', 'tariff', 'contact', 'notes']))}
+                                            />
+                                        </label>
+
+                                        <label className="block text-sm font-semibold text-zinc-800">
+                                            Pickup Points
+                                            <span className="mt-1 block text-xs font-normal text-zinc-500">One row per point: Name | Type | Distance | Estimated travel | Pickup instruction</span>
+                                            <textarea
+                                                className="admin-input mt-2 min-h-40 w-full rounded-lg border border-zinc-300 px-3 py-2.5 font-mono text-xs outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                value={formatCmsRows(normalizeAccommodationCms(accommodationCms).pickupPoints, ['name', 'type', 'distance', 'eta', 'instruction'])}
+                                                onChange={(event) => updateAccommodationField('pickupPoints', parseCmsRows(event.target.value, ['name', 'type', 'distance', 'eta', 'instruction']))}
+                                            />
+                                        </label>
+
+                                        <label className="block text-sm font-semibold text-zinc-800">
+                                            Tourist Attractions
+                                            <span className="mt-1 block text-xs font-normal text-zinc-500">One row per attraction: Name | Category | Distance | Photo URL | Description</span>
+                                            <textarea
+                                                className="admin-input mt-2 min-h-40 w-full rounded-lg border border-zinc-300 px-3 py-2.5 font-mono text-xs outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                value={formatCmsRows(normalizeAccommodationCms(accommodationCms).touristAttractions, ['name', 'category', 'distance', 'image', 'description'])}
+                                                onChange={(event) => updateAccommodationField('touristAttractions', parseCmsRows(event.target.value, ['name', 'category', 'distance', 'image', 'description']))}
+                                            />
+                                        </label>
+
+                                        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                            <p className="text-sm font-bold text-zinc-950">Upload Attraction Photos</p>
+                                            <div className="mt-4 grid gap-4 md:grid-cols-2">
+                                                {normalizeAccommodationCms(accommodationCms).touristAttractions.map((place, index) => (
+                                                    <div key={`${place.name}-${index}`} className="rounded-lg border border-zinc-200 bg-white p-3">
+                                                        {place.image && (
+                                                            <img
+                                                                src={place.image}
+                                                                alt={place.name}
+                                                                className="h-28 w-full rounded-lg object-cover"
+                                                            />
+                                                        )}
+                                                        <div className="mt-3 flex items-center justify-between gap-3">
+                                                            <p className="min-w-0 truncate text-sm font-bold text-zinc-800">{place.name || `Attraction ${index + 1}`}</p>
+                                                            <label className="shrink-0 cursor-pointer rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-100">
+                                                                Upload Photo
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    className="sr-only"
+                                                                    onChange={(event) => uploadTouristAttractionPhoto(index, event.target.files?.[0])}
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-3 border-t border-zinc-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                                        <p className="min-h-6 text-sm font-semibold text-emerald-700">{accommodationCmsNotice}</p>
+                                        <button
+                                            type="button"
+                                            onClick={saveAccommodationCms}
+                                            disabled={accommodationCmsSaving}
+                                            className="admin-button rounded-lg bg-emerald-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50"
+                                        >
+                                            {accommodationCmsSaving ? 'Saving...' : 'Save Accommodation Page'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeModule === 'scientific' && (
+                        <div className="mt-6 space-y-8">
+                            {/* ── Abstract Submissions ─────────────────────────────── */}
+                            <div className="rounded-xl border border-zinc-200 bg-white p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-base font-bold text-zinc-900">Abstract Submissions</h3>
+                                        <p className="mt-1 text-sm text-zinc-500">Review and accept or reject submitted abstracts. Accepted participants can then submit their poster video link.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={loadAdminAbstracts}
+                                        disabled={adminAbstractsLoading}
+                                        className="rounded-lg bg-[#0d124f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1a2070] disabled:opacity-50"
+                                    >
+                                        {adminAbstractsLoading ? 'Loading…' : adminAbstracts.length ? 'Refresh' : 'Load Submissions'}
+                                    </button>
+                                </div>
+
+                                {adminAbstractsError && <p className="mt-3 text-sm font-medium text-red-600">{adminAbstractsError}</p>}
+
+                                {adminAbstracts.length > 0 && (
+                                    <div className="mt-5 overflow-x-auto">
+                                        <table className="w-full min-w-[700px] text-left text-sm">
+                                            <thead>
+                                                <tr className="border-b border-zinc-200">
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Reg. No.</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Participant</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">File</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Status</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Video Link</th>
+                                                    <th className="pb-3 text-xs font-bold uppercase text-zinc-500">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-zinc-100">
+                                                {adminAbstracts.map((abs) => (
+                                                    <tr key={abs.id}>
+                                                        <td className="py-3 pr-4 font-mono text-xs font-medium text-zinc-700">{abs.registrationNumber}</td>
+                                                        <td className="py-3 pr-4">
+                                                            <p className="text-xs font-semibold text-zinc-800">{abs.participantName || '—'}</p>
+                                                            <p className="text-xs text-zinc-500">{abs.institutionName || ''}</p>
+                                                        </td>
+                                                        <td className="py-3 pr-4">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => downloadAbstract(abs.id, abs.fileName)}
+                                                                className="text-xs font-medium text-[#0d124f] underline hover:text-[#df0867]"
+                                                            >
+                                                                {abs.fileName}
+                                                            </button>
+                                                        </td>
+                                                        <td className="py-3 pr-4">
+                                                            <span className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase ${abs.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : abs.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                                {abs.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 pr-4 max-w-[140px]">
+                                                            {abs.posterVideoLink ? (
+                                                                <a href={abs.posterVideoLink} target="_blank" rel="noopener noreferrer" className="block truncate text-xs text-[#0d124f] underline">{abs.posterVideoLink}</a>
+                                                            ) : <span className="text-xs text-zinc-400">—</span>}
+                                                        </td>
+                                                        <td className="py-3">
+                                                            {abstractReviewing === abs.id ? (
+                                                                <div className="space-y-2">
+                                                                    <textarea
+                                                                        rows={2}
+                                                                        value={abstractRemarksDraft}
+                                                                        onChange={(e) => setAbstractRemarksDraft(e.target.value)}
+                                                                        placeholder="Remarks (optional)"
+                                                                        className="w-48 rounded border border-zinc-300 px-2 py-1 text-xs focus:outline-none"
+                                                                    />
+                                                                    <div className="flex gap-1">
+                                                                        <button type="button" onClick={() => reviewAbstract(abs.id, 'accepted')} className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Accept</button>
+                                                                        <button type="button" onClick={() => reviewAbstract(abs.id, 'rejected')} className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-700">Reject</button>
+                                                                        <button type="button" onClick={() => { setAbstractReviewing(null); setAbstractRemarksDraft(''); }} className="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100">Cancel</button>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => { setAbstractReviewing(abs.id); setAbstractRemarksDraft(abs.adminRemarks || ''); }}
+                                                                    className="rounded border border-zinc-300 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100"
+                                                                >
+                                                                    Review
+                                                                </button>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+
+                                {!adminAbstractsLoading && adminAbstracts.length === 0 && (
+                                    <p className="mt-4 text-sm text-zinc-400">No submissions yet. Click "Load Submissions" to fetch data.</p>
+                                )}
+                            </div>
+
+                            {/* ── Abstract Book PDF ──────────────────────────────── */}
+                            <div className="rounded-xl border border-zinc-200 bg-white p-6">
+                                <h3 className="text-base font-bold text-zinc-900">Abstract Book PDF</h3>
+                                <p className="mt-1 text-sm text-zinc-500">Upload the final abstract book PDF. It will be displayed as an embedded viewer on the Scientific Service public page.</p>
+
+                                {abstractBookDataUrl ? (
+                                    <div className="mt-5 space-y-4">
+                                        <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="size-5 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                                                </svg>
+                                                <span className="truncate text-sm font-medium text-emerald-800">{abstractBookFileName}</span>
+                                            </div>
+                                            <span className="ml-2 shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">Active</span>
+                                        </div>
+                                        <iframe
+                                            src={abstractBookDataUrl}
+                                            title="Abstract Book Preview"
+                                            className="h-[500px] w-full rounded-lg border border-zinc-200"
+                                        />
+                                        <div className="flex gap-3">
+                                            <label className="cursor-pointer rounded-lg border border-zinc-300 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100">
+                                                Replace PDF
+                                                <input type="file" accept="application/pdf" className="sr-only" onChange={handleAbstractBookUpload} />
+                                            </label>
+                                            <button type="button" onClick={removeAbstractBook} className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100">
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="mt-5">
+                                        <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 px-6 py-12 text-center transition hover:border-emerald-500 hover:bg-emerald-50/30">
+                                            {abstractBookUploading ? (
+                                                <span className="text-sm font-medium text-zinc-500">Reading file…</span>
+                                            ) : (
+                                                <>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-10 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                                                    </svg>
+                                                    <span className="text-sm font-medium text-zinc-600">Click to upload Abstract Book PDF</span>
+                                                    <span className="text-xs text-zinc-400">PDF only · Max 10 MB</span>
+                                                </>
+                                            )}
+                                            <input type="file" accept="application/pdf" className="sr-only" onChange={handleAbstractBookUpload} disabled={abstractBookUploading} />
+                                        </label>
+                                        {abstractBookError && <p className="mt-2 text-xs font-medium text-red-600">{abstractBookError}</p>}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {!['dashboard', 'users', 'scientific', 'accommodation'].includes(activeModule) && (
                         <div className="mt-6 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
                             <p className="text-sm font-bold uppercase text-emerald-700">Planned Module</p>
                             <h2 className="mt-2 text-xl font-bold text-zinc-950">{moduleTitles[activeModule]}</h2>
@@ -3298,12 +4111,633 @@ function AdminPage() {
     );
 }
 
+const coreAreas = [
+    'Pharmaceutical Technology',
+    'Medicinal Chemistry',
+    'Pharmacognosy, Indigenous Drugs, Herbal Formulations and Phytochemistry',
+    'Pharmacology and Toxicology',
+    'Clinical Research & Pharmacovigilance',
+    'Pharmaceutical Analysis and Quality Assurance',
+    'Biotechnology and Biotherapeutics',
+    'Hospital, Community and Clinical Pharmacy',
+    'Artificial Intelligence / Bioinformatics / Data Analytics',
+];
+
+const rejectionCriteria = [
+    'Review articles',
+    'Papers without methodology and results',
+    'Papers describing simple laboratory experiments',
+    'Papers describing Patho-physiology of a disease',
+    'Papers describing treatment in a single patient',
+];
+
+const presentationGuidelines = [
+    {
+        title: 'Poster Dimensions',
+        detail: 'A0 size (841 mm × 1189 mm), portrait orientation. Print on glossy or matte paper.',
+    },
+    {
+        title: 'Content Structure',
+        detail: 'Title, Authors & Affiliations, Introduction, Objectives, Materials & Methods, Results, Discussion, Conclusion, References.',
+    },
+    {
+        title: 'Font & Readability',
+        detail: 'Title ≥ 72 pt, Section headings ≥ 36 pt, Body text ≥ 24 pt. Use high-contrast colour schemes.',
+    },
+    {
+        title: 'Figures & Tables',
+        detail: 'Minimum 300 DPI resolution. All figures and tables must be numbered and labelled.',
+    },
+    {
+        title: 'Oral Presentation',
+        detail: '8 minutes presentation + 2 minutes Q&A. PowerPoint / PDF slides only. Submit slides 30 minutes before the session.',
+    },
+    {
+        title: 'Originality',
+        detail: 'All work must be original and unpublished. Plagiarism check will be conducted by the scientific committee.',
+    },
+];
+
+function ScientificServicePage() {
+    const [openPanel, setOpenPanel] = useState(null);
+
+    // ── Abstract submission state ──────────────────────────────
+    const [absRegNum, setAbsRegNum] = useState('');
+    const [absChecking, setAbsChecking] = useState(false);
+    const [absRegInfo, setAbsRegInfo] = useState(null);
+    const [absFile, setAbsFile] = useState(null);
+    const [absFileErr, setAbsFileErr] = useState('');
+    const [absSubmitting, setAbsSubmitting] = useState(false);
+    const [absSubmitError, setAbsSubmitError] = useState('');
+
+    // ── Video link state (shares absRegNum / absRegInfo) ──────
+    const [vidLink, setVidLink] = useState('');
+    const [vidLinkErr, setVidLinkErr] = useState('');
+    const [vidSubmitting, setVidSubmitting] = useState(false);
+    const [vidSubmitError, setVidSubmitError] = useState('');
+
+    async function checkAbstractReg() {
+        const num = absRegNum.trim().toUpperCase();
+        if (!num) return;
+        setAbsChecking(true);
+        setAbsRegInfo(null);
+        setAbsFile(null);
+        setAbsFileErr('');
+        setAbsSubmitError('');
+        try {
+            const res = await fetch(`/api/abstracts/check?registrationNumber=${encodeURIComponent(num)}`);
+            const data = await res.json();
+            setAbsRegInfo(data);
+        } catch {
+            setAbsRegInfo({ checkError: 'Failed to verify. Please try again.' });
+        } finally {
+            setAbsChecking(false);
+        }
+    }
+
+    async function submitAbstract() {
+        if (!absFile) return;
+        setAbsSubmitting(true);
+        setAbsSubmitError('');
+        try {
+            const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(absFile);
+            });
+            const res = await fetch('/api/abstracts/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    registrationNumber: absRegNum.trim().toUpperCase(),
+                    fileName: absFile.name,
+                    fileSize: absFile.size,
+                    fileType: absFile.type,
+                    fileData: base64,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Submission failed.');
+            setAbsRegInfo((prev) => ({ ...prev, alreadySubmitted: true, abstractStatus: 'pending', fileName: absFile.name }));
+            setAbsFile(null);
+        } catch (err) {
+            setAbsSubmitError(err.message);
+        } finally {
+            setAbsSubmitting(false);
+        }
+    }
+
+    async function submitVideoLink() {
+        const link = vidLink.trim();
+        if (!link) { setVidLinkErr('Please paste your video link.'); return; }
+        setVidSubmitting(true);
+        setVidSubmitError('');
+        setVidLinkErr('');
+        try {
+            const res = await fetch('/api/abstracts/video-link', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ registrationNumber: absRegNum.trim().toUpperCase(), videoLink: link }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Submission failed.');
+            setAbsRegInfo((prev) => ({ ...prev, posterVideoLink: link }));
+            setVidLink('');
+        } catch (err) {
+            setVidSubmitError(err.message);
+        } finally {
+            setVidSubmitting(false);
+        }
+    }
+
+    function togglePanel(id) {
+        setOpenPanel((prev) => (prev === id ? null : id));
+    }
+
+    return (
+        <div className="bg-zinc-50 text-zinc-950 antialiased">
+            {/* Hero banner */}
+            <section className="sci-service-hero py-16 text-white sm:py-20">
+                {/* Background image — zoom in on load */}
+                <img
+                    src="/images/nsc-kerala-hero.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="sci-service-hero-image absolute inset-0 h-full w-full object-cover"
+                />
+
+                {/* Colour + gradient overlay */}
+                <div className="sci-service-hero-overlay absolute inset-0" />
+
+                {/* Subtle grid */}
+                <div className="sci-service-hero-grid absolute inset-0" />
+
+                {/* Sheen drift */}
+                <div className="hero-sheen absolute inset-0" />
+
+                {/* Floating molecular particles */}
+                <span className="sci-hero-particle" style={{ top: '12%',  left: '6%',  width: 72,  height: 72,  '--dur': '9s',  '--delay': '0s',   '--lift': '-14px', '--op-lo': 0.14, '--op-hi': 0.38 }} />
+                <span className="sci-hero-particle" style={{ top: '8%',   right: '10%', width: 110, height: 110, '--dur': '11s', '--delay': '1.4s', '--lift': '-20px', '--op-lo': 0.10, '--op-hi': 0.28 }} />
+                <span className="sci-hero-particle" style={{ top: '42%',  left: '2%',   width: 52,  height: 52,  '--dur': '7s',  '--delay': '2.8s', '--lift': '-10px', '--op-lo': 0.18, '--op-hi': 0.45 }} />
+                <span className="sci-hero-particle" style={{ top: '55%',  right: '5%',  width: 88,  height: 88,  '--dur': '10s', '--delay': '0.6s', '--lift': '-18px', '--op-lo': 0.12, '--op-hi': 0.34 }} />
+                <span className="sci-hero-particle" style={{ bottom: '14%', left: '18%', width: 60,  height: 60,  '--dur': '8.5s','--delay': '3.2s', '--lift': '-12px', '--op-lo': 0.15, '--op-hi': 0.40 }} />
+                <span className="sci-hero-particle" style={{ bottom: '8%', right: '22%', width: 44,  height: 44,  '--dur': '6.5s','--delay': '1.9s', '--lift': '-9px',  '--op-lo': 0.20, '--op-hi': 0.50 }} />
+                <span className="sci-hero-particle" style={{ top: '28%',  left: '42%',  width: 34,  height: 34,  '--dur': '7.5s','--delay': '4.0s', '--lift': '-8px',  '--op-lo': 0.16, '--op-hi': 0.36 }} />
+                <span className="sci-hero-particle" style={{ top: '68%',  left: '60%',  width: 58,  height: 58,  '--dur': '9.5s','--delay': '0.2s', '--lift': '-15px', '--op-lo': 0.12, '--op-hi': 0.30 }} />
+
+                {/* Diagonal flow lines */}
+                <div className="snapshot-flow-lines pointer-events-none absolute inset-0" aria-hidden="true">
+                    {[
+                        { top: '22%', delay: '0s',   duration: '13s' },
+                        { top: '46%', delay: '4.5s', duration: '10s' },
+                        { top: '70%', delay: '8s',   duration: '14s' },
+                    ].map((line, i) => (
+                        <span
+                            key={i}
+                            className="snapshot-flow-line"
+                            style={{ top: line.top, animationDelay: line.delay, animationDuration: line.duration }}
+                        />
+                    ))}
+                </div>
+
+                {/* Content */}
+                <div className="sci-hero-copy relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-white/20">
+                        <span className="pulse-dot size-1.5 rounded-full bg-amber-300" />
+                        14th IPA National Students Congress 2026
+                    </div>
+                    <h1 className="mt-4 text-3xl font-extrabold leading-tight sm:text-4xl lg:text-5xl">
+                        Scientific Service
+                    </h1>
+                    <div className="mt-5 max-w-2xl border-l-4 border-[#df0867] bg-[#0d124f]/50 px-4 py-3 backdrop-blur-sm">
+                        <p className="text-base leading-7 text-blue-100">
+                            Submit your research for oral or poster presentation. Review the core areas, author guidelines, and best scientific practices before preparing your abstract.
+                        </p>
+                    </div>
+
+                </div>
+            </section>
+
+            {/* Sticky section nav */}
+            <div className="sticky top-14 sm:top-16 z-20 border-b border-white/10 bg-[#080c38] shadow-md">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <nav className="flex overflow-x-auto" aria-label="Page sections" style={{ scrollbarWidth: 'none' }}>
+                        {[
+                            { label: 'Core Areas',              href: '#core-areas' },
+                            { label: 'Guidelines',              href: '#guidelines' },
+                            { label: 'Submit Abstract',         href: '#submit' },
+                            { label: 'Presentation Guidelines', href: '#presentation-guidelines' },
+                            { label: 'Selected Abstracts',      href: '#results' },
+                            { label: 'Abstract Book',           href: '#abstract-book' },
+                        ].map(({ label, href }, i, arr) => (
+                            <a
+                                key={href}
+                                href={href}
+                                className={`shrink-0 px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-white/65 transition hover:bg-white/5 hover:text-white${i < arr.length - 1 ? ' border-r border-white/10' : ''}`}
+                            >
+                                {label}
+                            </a>
+                        ))}
+                    </nav>
+                </div>
+            </div>
+
+            {/* Core Areas */}
+            <section id="core-areas" className="py-14 sm:py-16">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-2xl">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#df0867]">Scope of Submissions</p>
+                        <h2 className="mt-2 text-2xl font-bold text-zinc-900 sm:text-3xl">Core Areas</h2>
+                        <p className="mt-3 text-sm leading-6 text-zinc-500">Papers are invited across the following pharmaceutical and health science disciplines.</p>
+                    </div>
+
+                    <div className="mt-8 grid grid-rows-[auto] gap-3 sm:grid-cols-2 lg:grid-cols-3" style={{ gridAutoRows: '1fr' }}>
+                        {coreAreas.map((area, i) => (
+                            <div key={area} className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+                                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-[#0d124f] text-xs font-bold text-white">
+                                    {i + 1}
+                                </span>
+                                <span className="text-sm font-medium leading-5 text-zinc-800">{area}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Guidelines / Rejection criteria */}
+            <section id="guidelines" className="bg-white py-14 sm:py-16">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="grid gap-10 lg:grid-cols-2">
+                        {/* Rejection note */}
+                        <div className="rounded-2xl border border-red-100 bg-red-50 p-6 sm:p-8">
+                            <div className="flex items-center gap-3">
+                                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-lg font-bold text-red-600">!</span>
+                                <h3 className="text-base font-bold text-red-800 sm:text-lg">Categories That Will Be Rejected</h3>
+                            </div>
+                            <p className="mt-3 text-sm text-red-700">The following categories of papers will be rejected by the scientific committee:</p>
+                            <ul className="mt-4 space-y-2">
+                                {rejectionCriteria.map((item) => (
+                                    <li key={item} className="flex items-start gap-2 text-sm text-red-800">
+                                        <span className="mt-1 size-1.5 shrink-0 rounded-full bg-red-500" />
+                                        {item}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        {/* Acceptance communication */}
+                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 sm:p-8">
+                            <div className="flex items-center gap-3">
+                                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-lg text-emerald-700">✉</span>
+                                <h3 className="text-base font-bold text-emerald-900 sm:text-lg">Acceptance Communication</h3>
+                            </div>
+                            <div className="mt-4 space-y-4 text-sm leading-6 text-emerald-800">
+                                <p>
+                                    <strong>Poster acceptance letters</strong> will be sent by mail to the corresponding author after review.
+                                </p>
+                                <p>
+                                    <strong>Selected Oral acceptance list</strong> will be displayed on the IPC and SSC website. Notification will also be sent by mail as per the published schedule.
+                                </p>
+                                <p className="rounded-lg border border-emerald-200 bg-white/60 px-4 py-3 font-medium text-emerald-900">
+                                    Keep a watch on this portal and your registered email for updates.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Abstract & Video Link Submission */}
+            <section id="submit" className="bg-white py-10 sm:py-12">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center gap-3 border-b border-zinc-200 pb-5">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#df0867] text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                            </svg>
+                        </span>
+                        <h2 className="text-xl font-bold text-zinc-900">Submit Abstract / Poster Video Link</h2>
+                    </div>
+
+                    <div className="mt-6 max-w-xl space-y-5">
+                        {/* Registration number input */}
+                        <div>
+                            <label className="block text-sm font-semibold text-zinc-800">Enter your Registration Number</label>
+                            <p className="mt-1 text-xs text-zinc-500">Your registration number was issued after completing event registration (e.g. NSC26-000001).</p>
+                            <div className="mt-3 flex gap-2">
+                                <input
+                                    type="text"
+                                    value={absRegNum}
+                                    onChange={(e) => { setAbsRegNum(e.target.value.toUpperCase()); setAbsRegInfo(null); setAbsFile(null); setAbsFileErr(''); setVidLink(''); setVidLinkErr(''); }}
+                                    placeholder="NSC26-000001"
+                                    className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono uppercase placeholder-zinc-400 focus:border-[#df0867] focus:outline-none"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={checkAbstractReg}
+                                    disabled={absChecking || !absRegNum.trim()}
+                                    className="rounded-lg bg-[#0d124f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1a2070] disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {absChecking ? 'Checking…' : 'Check →'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Not found */}
+                        {absRegInfo && absRegInfo.checkError && (
+                            <p className="text-sm font-medium text-red-600">{absRegInfo.checkError}</p>
+                        )}
+                        {absRegInfo && !absRegInfo.checkError && !absRegInfo.valid && (
+                            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                                <p className="text-sm font-semibold text-red-700">Registration number not found.</p>
+                                <p className="mt-1 text-xs text-red-600">Only registered participants can submit an abstract.</p>
+                            </div>
+                        )}
+
+                        {/* Valid + no abstract yet → upload form */}
+                        {absRegInfo && absRegInfo.valid && !absRegInfo.alreadySubmitted && (
+                            <>
+                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+                                    <p className="text-sm font-semibold text-emerald-800">{absRegInfo.participantName}</p>
+                                    <p className="text-xs text-emerald-700">{absRegInfo.institutionName}</p>
+                                    <p className="mt-1 text-xs text-emerald-600">Registration verified. Upload your abstract below.</p>
+                                </div>
+
+                                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="mt-0.5 size-4 shrink-0 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                                    </svg>
+                                    <p className="text-xs leading-5 text-amber-800"><strong>Important:</strong> Only one abstract per registration number. Once submitted, it <strong>cannot be replaced or merged</strong>. Ensure your file is final before uploading.</p>
+                                </div>
+
+                                <div>
+                                    <p className="text-xs text-zinc-500">Accepted formats: PDF, DOC, DOCX · Max 5 MB</p>
+                                    <label className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 text-center transition hover:border-[#df0867] hover:bg-red-50/30">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="size-9 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m6.75 12-3-3m0 0-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                                        </svg>
+                                        <span className="text-sm font-medium text-zinc-600">{absFile ? absFile.name : 'Click to choose file or drag and drop'}</span>
+                                        <span className="text-xs text-zinc-400">PDF / DOC / DOCX · Max 5 MB</span>
+                                        <input
+                                            type="file"
+                                            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                            className="sr-only"
+                                            onChange={(e) => {
+                                                const f = e.target.files[0];
+                                                if (!f) return;
+                                                if (f.size > 5 * 1024 * 1024) { setAbsFileErr('File exceeds 5 MB. Please choose a smaller file.'); setAbsFile(null); e.target.value = ''; return; }
+                                                setAbsFileErr('');
+                                                setAbsFile(f);
+                                            }}
+                                        />
+                                    </label>
+                                    {absFileErr && <p className="mt-2 text-xs font-medium text-red-600">{absFileErr}</p>}
+                                    {absFile && (
+                                        <div className="mt-2 flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-4 py-3">
+                                            <span className="truncate text-xs font-medium text-zinc-700">{absFile.name}</span>
+                                            <span className="ml-3 shrink-0 text-xs text-zinc-400">{(absFile.size / 1024 / 1024).toFixed(2)} MB</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {absSubmitError && <p className="text-sm font-medium text-red-600">{absSubmitError}</p>}
+                                <button
+                                    type="button"
+                                    onClick={submitAbstract}
+                                    disabled={!absFile || absSubmitting}
+                                    className="rounded-lg bg-[#df0867] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#bd0758] disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    {absSubmitting ? 'Submitting…' : 'Submit Abstract'}
+                                </button>
+                            </>
+                        )}
+
+                        {/* Abstract already submitted */}
+                        {absRegInfo && absRegInfo.valid && absRegInfo.alreadySubmitted && (
+                            <div className="space-y-4">
+                                {/* Participant + status banner */}
+                                <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-4">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p className="text-sm font-semibold text-zinc-800">{absRegInfo.participantName}</p>
+                                            <p className="text-xs text-zinc-500">{absRegInfo.institutionName}</p>
+                                            <p className="mt-1 text-xs text-zinc-500">Abstract: <span className="font-medium text-zinc-700">{absRegInfo.fileName}</span></p>
+                                        </div>
+                                        <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${absRegInfo.abstractStatus === 'accepted' ? 'bg-emerald-100 text-emerald-700' : absRegInfo.abstractStatus === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                                            {absRegInfo.abstractStatus === 'accepted' ? 'Accepted' : absRegInfo.abstractStatus === 'rejected' ? 'Rejected' : 'Pending Review'}
+                                        </span>
+                                    </div>
+                                    <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="mt-0.5 size-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                                        </svg>
+                                        <p className="text-xs text-amber-800">No replacement or merging of abstracts is permitted. You will be notified of the review outcome by mail.</p>
+                                    </div>
+                                </div>
+
+                                {/* Accepted + video link already submitted */}
+                                {absRegInfo.abstractStatus === 'accepted' && absRegInfo.posterVideoLink && (
+                                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+                                        <p className="text-xs font-semibold text-emerald-700">Poster Presentation Video Link — Submitted</p>
+                                        <a href={absRegInfo.posterVideoLink} target="_blank" rel="noopener noreferrer" className="mt-1 block truncate text-xs font-medium text-[#0d124f] underline">{absRegInfo.posterVideoLink}</a>
+                                    </div>
+                                )}
+
+                                {/* Accepted + no video link yet → show link input */}
+                                {absRegInfo.abstractStatus === 'accepted' && !absRegInfo.posterVideoLink && (
+                                    <div className="space-y-4 rounded-lg border border-emerald-200 bg-emerald-50/40 px-4 py-4">
+                                        <div>
+                                            <p className="text-sm font-semibold text-emerald-800">Submit Poster Presentation Video Link</p>
+                                            <p className="mt-1 text-xs text-emerald-700">Your abstract has been accepted. Paste the link to your poster presentation video (Google Drive, YouTube, etc.).</p>
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="url"
+                                                value={vidLink}
+                                                onChange={(e) => { setVidLink(e.target.value); setVidLinkErr(''); }}
+                                                placeholder="https://drive.google.com/..."
+                                                className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm placeholder-zinc-400 focus:border-[#df0867] focus:outline-none"
+                                            />
+                                            {vidLinkErr && <p className="mt-1 text-xs font-medium text-red-600">{vidLinkErr}</p>}
+                                        </div>
+                                        {vidSubmitError && <p className="text-sm font-medium text-red-600">{vidSubmitError}</p>}
+                                        <button
+                                            type="button"
+                                            onClick={submitVideoLink}
+                                            disabled={!vidLink.trim() || vidSubmitting}
+                                            className="rounded-lg bg-[#df0867] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#bd0758] disabled:cursor-not-allowed disabled:opacity-40"
+                                        >
+                                            {vidSubmitting ? 'Submitting…' : 'Submit Video Link'}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </section>
+
+            {/* Presentation Guidelines */}
+            <section id="presentation-guidelines" className="py-14 sm:py-16">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-2xl">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#df0867]">Author Instructions</p>
+                        <h2 className="mt-2 text-2xl font-bold text-zinc-900 sm:text-3xl">Presentation Guidelines &amp; Best Scientific Practices</h2>
+                        <p className="mt-3 text-sm leading-6 text-zinc-500">Follow these standards to ensure your work meets the congress requirements.</p>
+                    </div>
+
+                    <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {presentationGuidelines.map((g) => (
+                            <div key={g.title} className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+                                <p className="text-sm font-bold text-[#0d124f]">{g.title}</p>
+                                <p className="mt-2 text-sm leading-6 text-zinc-600">{g.detail}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Abstract Results */}
+            <section id="results" className="py-10 sm:py-12">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-2xl">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#df0867]">Results</p>
+                        <h2 className="mt-2 text-2xl font-bold text-zinc-900 sm:text-3xl">Selected Abstracts</h2>
+                        <p className="mt-3 text-sm leading-6 text-zinc-500">Accepted abstracts for oral and poster presentations will be listed here after scientific committee review.</p>
+                    </div>
+
+                    <div className="mt-8 divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+                        {/* Oral */}
+                        <div>
+                            <button
+                                type="button"
+                                onClick={() => togglePanel('oral')}
+                                className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left transition hover:bg-zinc-50"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#0d124f] text-white">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 0 1-7 7m0 0a7 7 0 0 1-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 0 1-3-3V5a3 3 0 0 1 6 0v6a3 3 0 0 1-3 3Z" />
+                                        </svg>
+                                    </span>
+                                    <span className="text-sm font-bold uppercase tracking-wide text-zinc-900">Abstracts Selected for Final Oral Presentation</span>
+                                </div>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className={`size-5 shrink-0 text-zinc-400 transition-transform duration-200 ${openPanel === 'oral' ? 'rotate-180' : ''}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m19 9-7 7-7-7" />
+                                </svg>
+                            </button>
+                            {openPanel === 'oral' && (
+                                <div className="border-t border-zinc-100 bg-zinc-50 px-6 py-8 text-center">
+                                    <p className="text-sm font-medium text-zinc-500">The list of abstracts selected for oral presentation will be published here after the review process is complete.</p>
+                                    <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                                        <span className="size-1.5 rounded-full bg-amber-400" />
+                                        Coming Soon
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Poster results */}
+                        <div>
+                            <button
+                                type="button"
+                                onClick={() => togglePanel('poster')}
+                                className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left transition hover:bg-zinc-50"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#00652f] text-white">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+                                        </svg>
+                                    </span>
+                                    <span className="text-sm font-bold uppercase tracking-wide text-zinc-900">Abstracts Selected for Final Poster Presentation</span>
+                                </div>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className={`size-5 shrink-0 text-zinc-400 transition-transform duration-200 ${openPanel === 'poster' ? 'rotate-180' : ''}`}
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m19 9-7 7-7-7" />
+                                </svg>
+                            </button>
+                            {openPanel === 'poster' && (
+                                <div className="border-t border-zinc-100 bg-zinc-50 px-6 py-8 text-center">
+                                    <p className="text-sm font-medium text-zinc-500">The list of abstracts selected for poster presentation will be published here after the review process is complete.</p>
+                                    <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                                        <span className="size-1.5 rounded-full bg-amber-400" />
+                                        Coming Soon
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Abstract Book viewer */}
+            {(() => {
+                const pdfUrl = localStorage.getItem('ipa-nsc-2026-abstract-book');
+                const pdfName = localStorage.getItem('ipa-nsc-2026-abstract-book-name');
+                return (
+                    <section id="abstract-book" className="py-10 sm:py-12">
+                        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-center gap-3 border-b border-zinc-200 pb-5">
+                                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#00652f] text-white">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                                    </svg>
+                                </span>
+                                <h2 className="text-xl font-bold text-zinc-900">Abstract Book</h2>
+                            </div>
+
+                            {pdfUrl ? (
+                                <div className="mt-6">
+                                    <div className="mb-3 flex items-center gap-2 text-sm text-zinc-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="size-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                                        </svg>
+                                        <span className="font-medium text-zinc-700">{pdfName}</span>
+                                    </div>
+                                    <iframe
+                                        src={pdfUrl}
+                                        title="Abstract Book"
+                                        className="h-[700px] w-full rounded-xl border border-zinc-200 shadow-sm"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="mt-6 flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 py-16 text-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="size-10 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                                    </svg>
+                                    <p className="text-sm font-medium text-zinc-400">Abstract book will be available here once published.</p>
+                                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                                        <span className="size-1.5 rounded-full bg-amber-400" />
+                                        Coming Soon
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                );
+            })()}
+            <Contact />
+        </div>
+    );
+}
+
 export default function App() {
     useRevealOnScroll();
     const isAdminLoginPage = window.location.pathname === '/admin/login';
     const isAdminPage = window.location.pathname === '/admin';
     const isRegistrationPage = window.location.pathname === '/registration';
     const isSponsorRegistrationPage = window.location.pathname === '/sponsor-registration';
+    const isScientificServicePage = window.location.pathname === '/scientific-service';
+    const isAccommodationTravelPage = window.location.pathname === '/accommodation-travel';
 
     if (isAdminLoginPage) {
         return <AdminLoginPage />;
@@ -3330,6 +4764,29 @@ export default function App() {
                 <Header />
                 <main>
                     <SponsorRegistrationPage />
+                </main>
+            </div>
+        );
+    }
+
+    if (isScientificServicePage) {
+        return (
+            <div className="bg-zinc-50 text-zinc-950 antialiased">
+                <Header />
+                <main>
+                    <ScientificServicePage />
+                </main>
+            </div>
+        );
+    }
+
+    if (isAccommodationTravelPage) {
+        return (
+            <div className="event-theme bg-zinc-50 text-zinc-950 antialiased">
+                <Header />
+                <main>
+                    <AccommodationTravelPage />
+                    <Contact />
                 </main>
             </div>
         );

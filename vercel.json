@@ -20,6 +20,10 @@
         {
             "source": "/admin",
             "destination": "/index.html"
+        },
+        {
+            "source": "/scientific-service",
+            "destination": "/index.html"
         }
     ]
 }

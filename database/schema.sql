@@ -136,13 +136,42 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
 
 CREATE INDEX IF NOT EXISTS admin_sessions_token_idx ON admin_sessions (token_hash);
 
+CREATE TABLE IF NOT EXISTS abstract_submissions (
+    id BIGSERIAL PRIMARY KEY,
+    registration_number VARCHAR(30) NOT NULL UNIQUE,
+    participant_name TEXT,
+    institution_name TEXT,
+    file_name TEXT NOT NULL,
+    file_size BIGINT NOT NULL DEFAULT 0,
+    file_type VARCHAR(120),
+    file_data TEXT NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'pending',
+    admin_remarks TEXT,
+    reviewed_at TIMESTAMPTZ,
+    poster_video_link TEXT,
+    video_link_submitted_at TIMESTAMPTZ,
+    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS abstract_submissions_status_idx ON abstract_submissions (status);
+CREATE INDEX IF NOT EXISTS abstract_submissions_registration_idx ON abstract_submissions (registration_number);
+
+CREATE TABLE IF NOT EXISTS accommodation_travel_content (
+    id TEXT PRIMARY KEY DEFAULT 'main',
+    content JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_by BIGINT REFERENCES admin_users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 INSERT INTO admin_roles (id, name, description, permissions)
 VALUES
     (
         'role-super-admin',
         'Super Admin',
         'Full access to every admin module.',
-        '["registration.view","registration.update","registration.export","payment.verify","program.view","program.create","program.update","program.delete","winner.view","winner.create","winner.publish","report.view","report.export","user.view","user.create","user.update","role.manage","audit.view"]'::jsonb
+        '["registration.view","registration.update","registration.export","payment.verify","program.view","program.create","program.update","program.delete","winner.view","winner.create","winner.publish","report.view","report.export","user.view","user.create","user.update","role.manage","audit.view","content.view","content.update"]'::jsonb
     ),
     (
         'role-registration-staff',

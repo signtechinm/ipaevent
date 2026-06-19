@@ -39,6 +39,143 @@ const souvenirAdvertisementFees = {
     'best-compliments-insert': 5000,
 };
 
+const defaultAccommodationTravelContent = {
+    pageTitle: 'Accommodation & Travel',
+    heading: 'Stay options, pickup points, and nearby places to visit.',
+    intro: '',
+    assistanceTitle: 'Hospitality & Travel Desk',
+    assistanceCopy: 'For accommodation blocks, tariff confirmation, pickup coordination, and local route support, contact the hospitality desk after registration.',
+    tariffNotes: 'Sample tariffs are indicative and subject to hotel confirmation, seasonal availability, taxes, and occupancy rules.',
+    contactPerson: 'Hospitality Coordinator - +91 98765 43210 - hospitality@nsc2026.in',
+    routeNotes: 'Sample route guidance: delegates may arrive by rail, bus, or air. Final venue-specific shuttle schedules will be published closer to the event.',
+    accommodationSpaces: [
+        {
+            name: 'Hotel Green Park Residency',
+            type: 'Budget hotel',
+            distance: '1.2 km from venue',
+            tariff: 'Rs. 1,800 - 2,400 / night',
+            contact: '+91 90000 11111',
+            notes: 'Single, double, and triple sharing rooms available. Breakfast optional.',
+        },
+        {
+            name: 'Metro Lodge Executive',
+            type: 'Economy lodge',
+            distance: '2.4 km from venue',
+            tariff: 'Rs. 1,200 - 1,900 / night',
+            contact: '+91 90000 22222',
+            notes: 'Suitable for student groups. Limited AC rooms available.',
+        },
+        {
+            name: 'Grand City Inn',
+            type: 'Business hotel',
+            distance: '3.1 km from venue',
+            tariff: 'Rs. 2,600 - 3,800 / night',
+            contact: '+91 90000 33333',
+            notes: 'Recommended for faculty and invited guests. Restaurant available.',
+        },
+        {
+            name: 'Students Hostel Annex',
+            type: 'Shared hostel stay',
+            distance: '800 m from venue',
+            tariff: 'Rs. 600 - 900 / person',
+            contact: '+91 90000 44444',
+            notes: 'Dormitory-style rooms for registered student delegates, subject to availability.',
+        },
+        {
+            name: 'Royal Tourist Home',
+            type: 'Budget hotel',
+            distance: '2.9 km from venue',
+            tariff: 'Rs. 1,500 - 2,200 / night',
+            contact: '+91 90000 55555',
+            notes: 'Basic AC and non-AC rooms. Early check-in subject to room availability.',
+        },
+        {
+            name: 'City Comfort Residency',
+            type: 'Standard hotel',
+            distance: '4.0 km from venue',
+            tariff: 'Rs. 2,200 - 3,200 / night',
+            contact: '+91 90000 66666',
+            notes: 'Twin sharing rooms and group booking support available.',
+        },
+        {
+            name: 'Lake View Dormitory',
+            type: 'Dormitory',
+            distance: '3.6 km from venue',
+            tariff: 'Rs. 500 - 750 / person',
+            contact: '+91 90000 77777',
+            notes: 'Shared facilities for student groups. Advance booking recommended.',
+        },
+        {
+            name: 'Campus Guest House',
+            type: 'Guest house',
+            distance: '1.6 km from venue',
+            tariff: 'Rs. 1,000 - 1,600 / night',
+            contact: '+91 90000 88888',
+            notes: 'Limited rooms for invited delegates and coordinators.',
+        },
+    ],
+    pickupPoints: [
+        {
+            name: 'Main Railway Station',
+            type: 'Railway station',
+            distance: '4.5 km from venue',
+            eta: '15-20 min by cab',
+            instruction: 'Sample pickup point: main entrance near prepaid taxi counter.',
+        },
+        {
+            name: 'KSRTC Bus Stand',
+            type: 'Bus stand',
+            distance: '3.8 km from venue',
+            eta: '12-18 min by cab',
+            instruction: 'Sample pickup point: enquiry counter side gate.',
+        },
+        {
+            name: 'Private Bus Terminal',
+            type: 'Bus terminal',
+            distance: '5.2 km from venue',
+            eta: '18-25 min by cab',
+            instruction: 'Sample pickup point: terminal parking bay 2.',
+        },
+        {
+            name: 'Nearest Airport',
+            type: 'Airport',
+            distance: '32 km from venue',
+            eta: '55-70 min by cab',
+            instruction: 'Sample pickup point: domestic arrivals gate.',
+        },
+    ],
+    touristAttractions: [
+        {
+            name: 'Heritage Palace Museum',
+            category: 'Culture',
+            distance: '6 km from venue',
+            image: '/images/sample-tour-attraction.png',
+            description: 'A short heritage visit with murals, local history galleries, and traditional architecture.',
+        },
+        {
+            name: 'Marine Drive Promenade',
+            category: 'Leisure',
+            distance: '8 km from venue',
+            image: '/images/sample-tour-attraction.png',
+            description: 'Evening walkway with waterfront views, cafes, and shopping streets nearby.',
+        },
+        {
+            name: 'Hill View Point',
+            category: 'Nature',
+            distance: '18 km from venue',
+            image: '/images/sample-tour-attraction.png',
+            description: 'A scenic short-trip option for groups with early morning or post-event free time.',
+        },
+        {
+            name: 'Local Handicraft Market',
+            category: 'Shopping',
+            distance: '5 km from venue',
+            image: '/images/sample-tour-attraction.png',
+            description: 'Sample place for souvenirs, Kerala textiles, spices, and small gifts.',
+        },
+    ],
+};
+
 function getSql() {
     if (!process.env.DATABASE_URL) {
         throw new Error('DATABASE_URL is not configured.');
@@ -85,6 +222,38 @@ function inputError(message) {
     const error = new Error(message);
     error.statusCode = 400;
     return error;
+}
+
+async function ensureAccommodationTravelContent(sql) {
+    await sql`
+        CREATE TABLE IF NOT EXISTS accommodation_travel_content (
+            id TEXT PRIMARY KEY DEFAULT 'main',
+            content JSONB NOT NULL DEFAULT '{}'::jsonb,
+            updated_by BIGINT REFERENCES admin_users(id),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `;
+
+    const rows = await sql`
+        INSERT INTO accommodation_travel_content (id, content)
+        VALUES ('main', ${JSON.stringify(defaultAccommodationTravelContent)}::jsonb)
+        ON CONFLICT (id) DO NOTHING
+        RETURNING content, updated_at
+    `;
+
+    if (rows.length) {
+        return rows[0];
+    }
+
+    const existing = await sql`
+        SELECT content, updated_at
+        FROM accommodation_travel_content
+        WHERE id = 'main'
+        LIMIT 1
+    `;
+
+    return existing[0] || { content: defaultAccommodationTravelContent, updated_at: null };
 }
 
 function calculateFees(data) {
@@ -507,6 +676,32 @@ async function ensureSeedAdmin(sql) {
     `;
 }
 
+export const config = {
+    api: {
+        bodyParser: {
+            sizeLimit: '10mb',
+        },
+    },
+};
+
+function mapAbstractSubmission(row) {
+    return {
+        id: row.id,
+        registrationNumber: row.registration_number,
+        participantName: row.participant_name || '',
+        institutionName: row.institution_name || '',
+        fileName: row.file_name,
+        fileSize: Number(row.file_size),
+        fileType: row.file_type || '',
+        status: row.status,
+        adminRemarks: row.admin_remarks || '',
+        reviewedAt: row.reviewed_at || null,
+        posterVideoLink: row.poster_video_link || '',
+        videoLinkSubmittedAt: row.video_link_submitted_at || null,
+        submittedAt: row.submitted_at,
+    };
+}
+
 export default async function handler(request, response) {
     response.setHeader('Cache-Control', 'no-store');
     const path = getPath(request);
@@ -568,6 +763,11 @@ export default async function handler(request, response) {
         if (path === 'sponsors/submit' && request.method === 'POST') {
             const sponsor = await saveSponsorApplication(sql, request.body || {}, true);
             return send(response, 200, { sponsor });
+        }
+
+        if (path === 'accommodation-travel' && request.method === 'GET') {
+            const row = await ensureAccommodationTravelContent(sql);
+            return send(response, 200, { content: row.content, updatedAt: row.updated_at });
         }
 
         if (path === 'admin/auth/login' && request.method === 'POST') {
@@ -696,6 +896,193 @@ export default async function handler(request, response) {
                 return send(response, 400, { error: 'Unsupported user update.' });
             }
             return send(response, 200, { user: publicUser(rows[0]) });
+        }
+
+        if (path === 'admin/accommodation-travel' && request.method === 'GET') {
+            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.view')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const row = await ensureAccommodationTravelContent(sql);
+            return send(response, 200, { content: row.content, updatedAt: row.updated_at });
+        }
+
+        if (path === 'admin/accommodation-travel' && request.method === 'PUT') {
+            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            await ensureAccommodationTravelContent(sql);
+            const content = request.body?.content || defaultAccommodationTravelContent;
+            const rows = await sql`
+                INSERT INTO accommodation_travel_content (id, content, updated_by, updated_at)
+                VALUES ('main', ${JSON.stringify(content)}::jsonb, ${session.id}, NOW())
+                ON CONFLICT (id) DO UPDATE SET
+                    content = EXCLUDED.content,
+                    updated_by = EXCLUDED.updated_by,
+                    updated_at = NOW()
+                RETURNING content, updated_at
+            `;
+            return send(response, 200, { content: rows[0].content, updatedAt: rows[0].updated_at });
+        }
+
+        // ── Abstract check (public) ──────────────────────────────────
+        if (path === 'abstracts/check' && request.method === 'GET') {
+            const regNum = String(request.query.registrationNumber || '').trim().toUpperCase();
+            if (!regNum) {
+                return send(response, 400, { error: 'Registration number is required.' });
+            }
+            const regRows = await sql`
+                SELECT id, participant_name, institution_name
+                FROM event_registrations
+                WHERE registration_number = ${regNum}
+                LIMIT 1
+            `;
+            if (!regRows.length) {
+                return send(response, 200, { valid: false });
+            }
+            const reg = regRows[0];
+            const absRows = await sql`
+                SELECT status, file_name, poster_video_link, video_link_submitted_at
+                FROM abstract_submissions
+                WHERE registration_number = ${regNum}
+                LIMIT 1
+            `;
+            return send(response, 200, {
+                valid: true,
+                participantName: reg.participant_name || '',
+                institutionName: reg.institution_name || '',
+                alreadySubmitted: absRows.length > 0,
+                abstractStatus: absRows.length > 0 ? absRows[0].status : null,
+                fileName: absRows.length > 0 ? absRows[0].file_name : null,
+                posterVideoLink: absRows.length > 0 ? (absRows[0].poster_video_link || null) : null,
+            });
+        }
+
+        // ── Abstract submit (public) ─────────────────────────────────
+        if (path === 'abstracts/submit' && request.method === 'POST') {
+            const regNum = String(request.body?.registrationNumber || '').trim().toUpperCase();
+            if (!regNum) throw inputError('Registration number is required.');
+            const fileName = String(request.body?.fileName || '').trim();
+            const fileData = String(request.body?.fileData || '').trim();
+            if (!fileName || !fileData) throw inputError('File is required.');
+            const fileSize = Number(request.body?.fileSize) || 0;
+            if (fileSize > 5 * 1024 * 1024) throw inputError('File exceeds the 5 MB limit.');
+
+            const regRows = await sql`
+                SELECT id, participant_name, institution_name
+                FROM event_registrations
+                WHERE registration_number = ${regNum}
+                LIMIT 1
+            `;
+            if (!regRows.length) throw inputError('Registration number not found.');
+
+            const existing = await sql`
+                SELECT id FROM abstract_submissions WHERE registration_number = ${regNum} LIMIT 1
+            `;
+            if (existing.length) throw inputError('An abstract has already been submitted for this registration number. Only one submission is allowed and it cannot be replaced.');
+
+            const rows = await sql`
+                INSERT INTO abstract_submissions
+                    (registration_number, participant_name, institution_name, file_name, file_size, file_type, file_data, status)
+                VALUES (
+                    ${regNum},
+                    ${regRows[0].participant_name || null},
+                    ${regRows[0].institution_name || null},
+                    ${fileName},
+                    ${fileSize},
+                    ${String(request.body?.fileType || '').trim() || null},
+                    ${fileData},
+                    'pending'
+                )
+                RETURNING *
+            `;
+            return send(response, 201, { submission: mapAbstractSubmission(rows[0]) });
+        }
+
+        // ── Poster video link submit (public) ────────────────────────
+        if (path === 'abstracts/video-link' && request.method === 'POST') {
+            const regNum = String(request.body?.registrationNumber || '').trim().toUpperCase();
+            if (!regNum) throw inputError('Registration number is required.');
+            const videoLink = String(request.body?.videoLink || '').trim();
+            if (!videoLink) throw inputError('Video link is required.');
+
+            const rows = await sql`
+                SELECT id, status, poster_video_link
+                FROM abstract_submissions
+                WHERE registration_number = ${regNum}
+                LIMIT 1
+            `;
+            if (!rows.length) throw inputError('No abstract submission found for this registration number.');
+            if (rows[0].status !== 'accepted') throw inputError('Video link can only be submitted once your abstract has been accepted.');
+            if (rows[0].poster_video_link) throw inputError('A video link has already been submitted for this registration number.');
+
+            const updated = await sql`
+                UPDATE abstract_submissions
+                SET poster_video_link = ${videoLink},
+                    video_link_submitted_at = NOW(),
+                    updated_at = NOW()
+                WHERE registration_number = ${regNum}
+                RETURNING *
+            `;
+            return send(response, 200, { submission: mapAbstractSubmission(updated[0]) });
+        }
+
+        // ── Admin: list abstracts ────────────────────────────────────
+        if (path === 'admin/abstracts' && request.method === 'GET') {
+            if (!requirePermission(session, 'registration.view')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const rows = await sql`
+                SELECT id, registration_number, participant_name, institution_name,
+                       file_name, file_size, file_type, status, admin_remarks,
+                       reviewed_at, poster_video_link, video_link_submitted_at, submitted_at
+                FROM abstract_submissions
+                ORDER BY submitted_at DESC
+            `;
+            return send(response, 200, { abstracts: rows.map(mapAbstractSubmission) });
+        }
+
+        // ── Admin: download abstract file ────────────────────────────
+        const absDownloadMatch = path.match(/^admin\/abstracts\/(\d+)\/download$/);
+        if (absDownloadMatch && request.method === 'GET') {
+            if (!requirePermission(session, 'registration.view')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const rows = await sql`
+                SELECT file_name, file_type, file_data
+                FROM abstract_submissions
+                WHERE id = ${absDownloadMatch[1]}
+                LIMIT 1
+            `;
+            if (!rows.length) return send(response, 404, { error: 'Submission not found.' });
+            const { file_name, file_type, file_data } = rows[0];
+            const buffer = Buffer.from(file_data, 'base64');
+            response.setHeader('Content-Type', file_type || 'application/octet-stream');
+            response.setHeader('Content-Disposition', `attachment; filename="${file_name}"`);
+            response.setHeader('Content-Length', buffer.length);
+            return response.status(200).end(buffer);
+        }
+
+        // ── Admin: review abstract ───────────────────────────────────
+        const absReviewMatch = path.match(/^admin\/abstracts\/(\d+)$/);
+        if (absReviewMatch && request.method === 'PATCH') {
+            if (!requirePermission(session, 'registration.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const { status, adminRemarks } = request.body || {};
+            if (!['accepted', 'rejected', 'pending'].includes(status)) {
+                throw inputError('Invalid status. Must be accepted, rejected, or pending.');
+            }
+            const rows = await sql`
+                UPDATE abstract_submissions
+                SET status = ${status},
+                    admin_remarks = ${adminRemarks ? String(adminRemarks).trim() : null},
+                    reviewed_at = NOW(),
+                    updated_at = NOW()
+                WHERE id = ${absReviewMatch[1]}
+                RETURNING *
+            `;
+            if (!rows.length) return send(response, 404, { error: 'Submission not found.' });
+            return send(response, 200, { submission: mapAbstractSubmission(rows[0]) });
         }
 
         return send(response, 404, { error: 'API route not found.' });
