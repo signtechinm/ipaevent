@@ -55,6 +55,35 @@ CREATE INDEX IF NOT EXISTS event_registrations_status_idx ON event_registrations
 CREATE INDEX IF NOT EXISTS event_registrations_payment_status_idx ON event_registrations (payment_status);
 CREATE INDEX IF NOT EXISTS event_registrations_approval_status_idx ON event_registrations (approval_status);
 
+CREATE TABLE IF NOT EXISTS event_programs (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(180) NOT NULL,
+    program_type VARCHAR(30) NOT NULL CHECK (program_type IN ('competition', 'workshop')),
+    description TEXT,
+    price NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    capacity INTEGER,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (program_type, name)
+);
+
+INSERT INTO event_programs (name, program_type, price, sort_order)
+SELECT * FROM (VALUES
+    ('Patient Counselling Competitions', 'competition', 100, 10),
+    ('Extempore Preparations in Pharmaceutics', 'competition', 100, 20),
+    ('Ideation Contest', 'competition', 100, 30),
+    ('Pharma Quiz (Group)', 'competition', 100, 40),
+    ('Elocution', 'competition', 100, 50),
+    ('Clinical Skill Sets', 'competition', 100, 60),
+    ('AI', 'workshop', 0, 10),
+    ('Vaccination', 'workshop', 0, 20),
+    ('3D Printing', 'workshop', 0, 30)
+) AS seed(name, program_type, price, sort_order)
+WHERE NOT EXISTS (SELECT 1 FROM event_programs)
+ON CONFLICT (program_type, name) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS sponsorship_applications (
     id BIGSERIAL PRIMARY KEY,
     draft_token UUID NOT NULL UNIQUE,

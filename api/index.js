@@ -38,6 +38,17 @@ const souvenirAdvertisementFees = {
     'half-page': 15000,
     'best-compliments-insert': 5000,
 };
+const defaultPrograms = [
+    ['Patient Counselling Competitions', 'competition', 100, 10],
+    ['Extempore Preparations in Pharmaceutics', 'competition', 100, 20],
+    ['Ideation Contest', 'competition', 100, 30],
+    ['Pharma Quiz (Group)', 'competition', 100, 40],
+    ['Elocution', 'competition', 100, 50],
+    ['Clinical Skill Sets', 'competition', 100, 60],
+    ['AI', 'workshop', 0, 10],
+    ['Vaccination', 'workshop', 0, 20],
+    ['3D Printing', 'workshop', 0, 30],
+];
 
 const defaultAccommodationTravelContent = {
     pageTitle: 'Accommodation & Travel',
@@ -256,16 +267,61 @@ async function ensureAccommodationTravelContent(sql) {
     return existing[0] || { content: defaultAccommodationTravelContent, updated_at: null };
 }
 
-function calculateFees(data) {
+function calculateFees(data, programs = []) {
     const registrationFee = categoryFees[data.category] || 0;
-    const competitionFee = Math.min(Array.isArray(data.studentCompetitions) ? data.studentCompetitions.length : 0, 2) * 100;
-    const workshopFee = 0;
+    const programPrices = new Map(programs.map((program) => [`${program.program_type}:${program.name}`, Number(program.price) || 0]));
+    const competitions = (Array.isArray(data.studentCompetitions) ? data.studentCompetitions : []).slice(0, 2);
+    const competitionFee = competitions.reduce((total, name) => total + (programPrices.get(`competition:${name}`) || 0), 0);
+    const workshopFee = programPrices.get(`workshop:${data.preConferenceWorkshop}`) || 0;
 
     return {
         registrationFee,
         competitionFee,
         workshopFee,
         total: registrationFee + competitionFee + workshopFee,
+    };
+}
+
+async function ensureProgramCatalog(sql) {
+    await sql`
+        CREATE TABLE IF NOT EXISTS event_programs (
+            id BIGSERIAL PRIMARY KEY,
+            name VARCHAR(180) NOT NULL,
+            program_type VARCHAR(30) NOT NULL CHECK (program_type IN ('competition', 'workshop')),
+            description TEXT,
+            price NUMERIC(10, 2) NOT NULL DEFAULT 0,
+            capacity INTEGER,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (program_type, name)
+        )
+    `;
+    const programCount = await sql`SELECT COUNT(*)::int AS count FROM event_programs`;
+    if (!programCount[0].count) {
+        for (const [name, type, price, sortOrder] of defaultPrograms) {
+            await sql`
+                INSERT INTO event_programs (name, program_type, price, sort_order)
+                VALUES (${name}, ${type}, ${price}, ${sortOrder})
+                ON CONFLICT (program_type, name) DO NOTHING
+            `;
+        }
+    }
+}
+
+function mapProgram(row) {
+    return {
+        id: row.id,
+        name: row.name,
+        type: row.program_type,
+        description: row.description || '',
+        price: Number(row.price) || 0,
+        capacity: row.capacity === null ? '' : Number(row.capacity),
+        sortOrder: Number(row.sort_order) || 0,
+        isActive: Boolean(row.is_active),
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
     };
 }
 
@@ -372,7 +428,9 @@ function mapAdminRegistration(row) {
 
 async function saveRegistration(sql, data, submit = false) {
     await ensureRegistrationEnhancements(sql);
-    const fees = calculateFees(data);
+    await ensureProgramCatalog(sql);
+    const programs = await sql`SELECT * FROM event_programs`;
+    const fees = calculateFees(data, programs);
     const draftToken = data.draftToken || crypto.randomUUID();
     const expectedParticipants = data.expectedParticipants ? Number.parseInt(data.expectedParticipants, 10) : null;
     const groupMembers = data.registrationMode === 'group' ? normalizeGroupMembers(data.groupMembers) : [];
@@ -456,7 +514,7 @@ async function saveRegistration(sql, data, submit = false) {
     for (const competition of competitions) {
         await sql`
             INSERT INTO registration_competitions (registration_id, competition_name, fee_amount)
-            VALUES (${row.id}, ${competition}, 100)
+            VALUES (${row.id}, ${competition}, ${programs.find((program) => program.program_type === 'competition' && program.name === competition)?.price || 0})
         `;
     }
 
@@ -824,6 +882,16 @@ export default async function handler(request, response) {
             return send(response, 200, { ok: true, databaseTime: rows[0].database_time });
         }
 
+        if (request.method === 'GET' && path === 'programs') {
+            await ensureProgramCatalog(sql);
+            const rows = await sql`
+                SELECT * FROM event_programs
+                WHERE is_active = TRUE
+                ORDER BY program_type, sort_order, name
+            `;
+            return send(response, 200, { programs: rows.map(mapProgram) });
+        }
+
         if (path === 'registrations/draft' && request.method === 'GET') {
             await ensureRegistrationEnhancements(sql);
             const token = request.query.token;
@@ -957,6 +1025,67 @@ export default async function handler(request, response) {
                 ORDER BY COALESCE(r.submitted_at, r.updated_at) DESC, r.id DESC
             `;
             return send(response, 200, { registrations: rows.map(mapAdminRegistration) });
+        }
+
+        if (path === 'admin/programs' && request.method === 'GET') {
+            if (!requirePermission(session, 'program.view')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            await ensureProgramCatalog(sql);
+            const rows = await sql`SELECT * FROM event_programs ORDER BY program_type, sort_order, name`;
+            return send(response, 200, { programs: rows.map(mapProgram) });
+        }
+
+        if (path === 'admin/programs' && request.method === 'POST') {
+            if (!requirePermission(session, 'program.create')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const name = String(request.body?.name || '').trim();
+            const type = String(request.body?.type || '').trim();
+            if (!name || !['competition', 'workshop'].includes(type)) {
+                return send(response, 400, { error: 'Program name and type are required.' });
+            }
+            await ensureProgramCatalog(sql);
+            const rows = await sql`
+                INSERT INTO event_programs (name, program_type, description, price, capacity, sort_order, is_active)
+                VALUES (
+                    ${name}, ${type}, ${String(request.body?.description || '').trim() || null},
+                    ${Math.max(Number(request.body?.price) || 0, 0)},
+                    ${request.body?.capacity ? Math.max(Number.parseInt(request.body.capacity, 10), 1) : null},
+                    ${Number.parseInt(request.body?.sortOrder, 10) || 0},
+                    ${request.body?.isActive !== false}
+                )
+                RETURNING *
+            `;
+            return send(response, 201, { program: mapProgram(rows[0]) });
+        }
+
+        const adminProgramMatch = path.match(/^admin\/programs\/(\d+)$/);
+        if (adminProgramMatch && request.method === 'PATCH') {
+            if (!requirePermission(session, 'program.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const name = String(request.body?.name || '').trim();
+            const type = String(request.body?.type || '').trim();
+            if (!name || !['competition', 'workshop'].includes(type)) {
+                return send(response, 400, { error: 'Program name and type are required.' });
+            }
+            await ensureProgramCatalog(sql);
+            const rows = await sql`
+                UPDATE event_programs SET
+                    name = ${name},
+                    program_type = ${type},
+                    description = ${String(request.body?.description || '').trim() || null},
+                    price = ${Math.max(Number(request.body?.price) || 0, 0)},
+                    capacity = ${request.body?.capacity ? Math.max(Number.parseInt(request.body.capacity, 10), 1) : null},
+                    sort_order = ${Number.parseInt(request.body?.sortOrder, 10) || 0},
+                    is_active = ${request.body?.isActive !== false},
+                    updated_at = NOW()
+                WHERE id = ${Number(adminProgramMatch[1])}
+                RETURNING *
+            `;
+            if (!rows.length) return send(response, 404, { error: 'Program not found.' });
+            return send(response, 200, { program: mapProgram(rows[0]) });
         }
 
         const registrationPaymentMatch = path.match(/^admin\/registrations\/(\d+)\/payment$/);

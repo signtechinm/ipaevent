@@ -86,15 +86,22 @@ const updates = [
     ['Competition registration planned', 'Student competitions and placement activities get dedicated links.'],
 ];
 
-const quickFacts = [
-    ['Date', eventDate, 'Two days of programs, competitions, scientific sessions, and cultural events.'],
-    ['Venue', 'Kerala', 'Route map, venue image, and travel guidance section.'],
-    ['Host', 'IPA Kerala', 'With IPASF and the 14th IPA National Students Congress organizing team.'],
+const preCongressWorkshops = [
+    {
+        title: '3D Printing & Scientific Writing',
+        date: '17-18 September 2026',
+        venue: 'Lisie College of Pharmacy, Ernakulam',
+    },
+    {
+        title: 'FIP Vaccination, NDDS & CADD',
+        date: '17-18 September 2026',
+        venue: 'Amrita School of Pharmacy, Ernakulam',
+    },
 ];
 
 const sponsorShowcase = [
     { tier: 'Title Sponsor', slots: 1, accent: 'from-[#df0867] to-[#f4a21b]' },
-    { tier: 'Gold Sponsors', slots: 2, accent: 'from-[#f4a21b] to-[#ffd36a]' },
+    { tier: 'Premium Sponsors', slots: 2, accent: 'from-[#f4a21b] to-[#ffd36a]' },
     { tier: 'Supporting Partners', slots: 3, accent: 'from-[#00652f] to-[#0f9f58]' },
 ];
 
@@ -702,10 +709,10 @@ function QuickFacts() {
                     <div className="max-w-3xl">
                         <p className="text-sm font-bold uppercase tracking-[0.16em] text-[#ffd36a]">Event Snapshot</p>
                         <h2 className="mt-3 text-3xl font-bold leading-tight text-white sm:text-4xl">
-                            Date, venue, and host details
+                            Congress and pre-congress workshop schedule
                         </h2>
                         <p className="mt-3 text-base font-medium leading-7 text-white/75">
-                            The congress will be held on {eventDate}. Detailed schedules and venue guidance will be published here.
+                            Pre-congress workshops begin on 17 September, followed by the National Students Congress on {eventDate}.
                         </p>
                     </div>
                     <div className="snapshot-logo-panel grid grid-cols-[1.15fr_0.85fr] items-center gap-5 rounded-2xl border border-white/15 bg-white/8 p-5 backdrop-blur-md">
@@ -723,17 +730,77 @@ function QuickFacts() {
                         </div>
                     </div>
                 </div>
-                <div className="grid gap-4 md:grid-cols-3">
-                    {quickFacts.map(([label, value, copy]) => (
-                        <div
-                            key={label}
-                            className="snapshot-fact-card interactive-card rounded-xl border border-white/15 bg-white/95 p-5 shadow-2xl backdrop-blur-md"
-                        >
-                            <p className="text-sm font-bold uppercase tracking-wider text-[#df0867]">{label}</p>
-                            <p className="mt-2 text-2xl font-bold text-[#11145f]">{value}</p>
-                            <p className="mt-2 text-sm leading-6 text-zinc-600">{copy}</p>
+                <div>
+                    <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">17-18 September 2026</p>
+                            <h3 className="mt-1 text-2xl font-bold text-white">Pre-Congress Workshops</h3>
                         </div>
-                    ))}
+                        <p className="text-sm text-white/70">Two workshop venues in Ernakulam</p>
+                    </div>
+                    <div className="grid gap-4 lg:grid-cols-2">
+                        {preCongressWorkshops.map((workshop, index) => (
+                            <article key={workshop.title} className="snapshot-workshop-card relative overflow-hidden rounded-xl border border-white/15 bg-white/95 p-5 text-zinc-950 shadow-2xl sm:p-6">
+                                <div className="flex items-start gap-4">
+                                    <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-[#11145f] text-sm font-black text-white shadow-lg">
+                                        {String(index + 1).padStart(2, '0')}
+                                    </span>
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#df0867]">Pre-Congress Workshop</p>
+                                        <h4 className="mt-2 text-xl font-bold leading-snug text-[#11145f]">{workshop.title}</h4>
+                                    </div>
+                                </div>
+                                <dl className="mt-5 grid gap-3 border-t border-dashed border-zinc-200 pt-4 sm:grid-cols-2">
+                                    <div>
+                                        <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">Date</dt>
+                                        <dd className="mt-1 text-sm font-semibold text-zinc-900">{workshop.date}</dd>
+                                    </div>
+                                    <div>
+                                        <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">Venue</dt>
+                                        <dd className="mt-1 text-sm font-semibold leading-5 text-zinc-900">{workshop.venue}</dd>
+                                    </div>
+                                </dl>
+                            </article>
+                        ))}
+                    </div>
+
+                    <div className="mb-4 mt-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">19-20 September 2026</p>
+                            <h3 className="mt-1 text-2xl font-bold text-white">Main Congress Event</h3>
+                        </div>
+                        <p className="text-sm text-white/70">14th IPA National Students Congress</p>
+                    </div>
+                    <article className="snapshot-workshop-card snapshot-main-event relative overflow-hidden rounded-xl border border-white/20 bg-white p-5 text-zinc-950 shadow-2xl sm:p-6">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="flex items-start gap-4">
+                                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-[#df0867] text-sm font-black text-white shadow-lg">03</span>
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#df0867]">Main Event</p>
+                                    <h3 className="mt-2 text-2xl font-bold leading-snug text-[#11145f]">14th IPA National Students Congress</h3>
+                                    <p className="mt-2 text-sm text-zinc-600">Programs, competitions, scientific sessions, and cultural events.</p>
+                                </div>
+                            </div>
+                            <dl className="grid shrink-0 gap-4 border-t border-dashed border-zinc-200 pt-4 sm:grid-cols-2 lg:min-w-[520px] lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                                <div>
+                                    <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">Date</dt>
+                                    <dd className="mt-1 text-sm font-semibold text-zinc-900">{eventDate}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">Venue</dt>
+                                    <dd className="mt-1 text-sm font-semibold text-zinc-900">Kerala</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">Host</dt>
+                                    <dd className="mt-1 text-sm font-semibold text-zinc-900">IPA Kerala Branch</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">In Association With</dt>
+                                    <dd className="mt-1 text-sm font-semibold text-zinc-900">IPA Education Division &amp; IPA SF NEC</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </article>
                 </div>
             </div>
         </section>
@@ -1020,6 +1087,13 @@ function RegistrationPage() {
     const [savedSections, setSavedSections] = useState({});
     const [notice, setNotice] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [programCatalog, setProgramCatalog] = useState([]);
+
+    useEffect(() => {
+        apiRequest('programs')
+            .then(({ programs }) => setProgramCatalog(programs || []))
+            .catch(() => setProgramCatalog([]));
+    }, []);
 
     useEffect(() => {
         const draftToken = window.localStorage.getItem(registrationDraftKey);
@@ -1037,10 +1111,20 @@ function RegistrationPage() {
             });
     }, []);
 
+    const competitionPrograms = programCatalog.length
+        ? programCatalog.filter((program) => program.type === 'competition')
+        : competitionOptions.map((name) => ({ name, price: 100, description: '' }));
+    const workshopPrograms = programCatalog.length
+        ? programCatalog.filter((program) => program.type === 'workshop')
+        : workshopOptions.map((name) => ({ name, price: workshopFees[name] || 0, description: '' }));
+
     const totals = useMemo(() => {
         const registrationFee = categoryFees[formData.category] || 0;
-        const competitionFee = formData.studentCompetitions.length * 100;
-        const workshopFee = workshopFees[formData.preConferenceWorkshop] || 0;
+        const competitionFee = formData.studentCompetitions.reduce(
+            (total, name) => total + (competitionPrograms.find((program) => program.name === name)?.price || 0),
+            0
+        );
+        const workshopFee = workshopPrograms.find((program) => program.name === formData.preConferenceWorkshop)?.price || 0;
 
         return {
             registrationFee,
@@ -1048,7 +1132,7 @@ function RegistrationPage() {
             workshopFee,
             total: registrationFee + competitionFee + workshopFee,
         };
-    }, [formData.category, formData.preConferenceWorkshop, formData.studentCompetitions.length]);
+    }, [formData.category, formData.preConferenceWorkshop, formData.studentCompetitions, programCatalog]);
 
     function updateField(name, value) {
         setFormData((current) => ({ ...current, [name]: value }));
@@ -1467,15 +1551,15 @@ function RegistrationPage() {
                                 </div>
                                 <div>
                                     <p className={labelClass}>Student Competitions</p>
-                                    <p className="mt-1 text-sm text-zinc-500">Select maximum 2 events. Rs. 100 will be added per event.</p>
+                                    <p className="mt-1 text-sm text-zinc-500">Select a maximum of 2 events. Pricing is configured by the event administrator.</p>
                                     <div className="mt-3 grid gap-3 md:grid-cols-2">
-                                        {competitionOptions.map((option) => {
-                                            const checked = formData.studentCompetitions.includes(option);
+                                        {competitionPrograms.map((program) => {
+                                            const checked = formData.studentCompetitions.includes(program.name);
                                             const disabled = !checked && formData.studentCompetitions.length >= 2;
 
                                             return (
                                                 <label
-                                                    key={option}
+                                                    key={program.name}
                                                     className={`rounded-lg border p-3 text-sm font-semibold ${
                                                         checked
                                                             ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
@@ -1489,9 +1573,11 @@ function RegistrationPage() {
                                                         className="mr-2"
                                                         checked={checked}
                                                         disabled={disabled}
-                                                        onChange={() => toggleCompetition(option)}
+                                                        onChange={() => toggleCompetition(program.name)}
                                                     />
-                                                    {option}
+                                                    <span>{program.name}</span>
+                                                    <span className="ml-2 text-xs font-bold text-emerald-700">{program.price ? `Rs. ${program.price.toLocaleString('en-IN')}` : 'Free'}</span>
+                                                    {program.description && <span className="mt-1 block pl-6 text-xs font-normal text-zinc-500">{program.description}</span>}
                                                 </label>
                                             );
                                         })}
@@ -1517,11 +1603,11 @@ function RegistrationPage() {
                                 <div>
                                     <p className={labelClass}>Pre-Conference Workshop Area</p>
                                     <div className="mt-3 grid gap-3 md:grid-cols-3">
-                                        {workshopOptions.map((option) => (
+                                        {workshopPrograms.map((program) => (
                                             <label
-                                                key={option}
+                                                key={program.name}
                                                 className={`rounded-lg border p-4 text-sm font-bold ${
-                                                    formData.preConferenceWorkshop === option
+                                                    formData.preConferenceWorkshop === program.name
                                                         ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
                                                         : 'border-zinc-200 bg-white text-zinc-700'
                                                 }`}
@@ -1530,10 +1616,12 @@ function RegistrationPage() {
                                                     type="radio"
                                                     name="preConferenceWorkshop"
                                                     className="mr-2"
-                                                    checked={formData.preConferenceWorkshop === option}
-                                                    onChange={() => updateField('preConferenceWorkshop', option)}
+                                                    checked={formData.preConferenceWorkshop === program.name}
+                                                    onChange={() => updateField('preConferenceWorkshop', program.name)}
                                                 />
-                                                {option}
+                                                <span>{program.name}</span>
+                                                <span className="ml-2 text-xs font-bold text-emerald-700">{program.price ? `Rs. ${program.price.toLocaleString('en-IN')}` : 'Free'}</span>
+                                                {program.description && <span className="mt-1 block pl-6 text-xs font-normal text-zinc-500">{program.description}</span>}
                                             </label>
                                         ))}
                                     </div>
@@ -3077,7 +3165,7 @@ const adminModules = [
     { id: 'scientific', label: 'Scientific Content', description: 'Review abstracts and manage scientific resources.' },
 ];
 
-const implementedAdminModules = new Set(['dashboard', 'registrations', 'users', 'accommodation', 'scientific']);
+const implementedAdminModules = new Set(['dashboard', 'registrations', 'programs', 'users', 'accommodation', 'scientific']);
 
 function getAdminModuleFromPath() {
     const requestedModule = window.location.pathname.split('/')[2] || 'dashboard';
@@ -3114,6 +3202,14 @@ function AdminPage() {
     const [approvalStatusDraft, setApprovalStatusDraft] = useState('pending_review');
     const [approvalUpdating, setApprovalUpdating] = useState(false);
     const [approvalUpdateError, setApprovalUpdateError] = useState('');
+    const [programs, setPrograms] = useState([]);
+    const [programsLoading, setProgramsLoading] = useState(false);
+    const [programsError, setProgramsError] = useState('');
+    const [programSaving, setProgramSaving] = useState(false);
+    const [editingProgramId, setEditingProgramId] = useState(null);
+    const [programForm, setProgramForm] = useState({
+        name: '', type: 'competition', description: '', price: '0', capacity: '', sortOrder: '0', isActive: true,
+    });
     const [accommodationCms, setAccommodationCms] = useState(accommodationTravelDefaults);
     const [accommodationCmsLoading, setAccommodationCmsLoading] = useState(false);
     const [accommodationCmsSaving, setAccommodationCmsSaving] = useState(false);
@@ -3297,9 +3393,83 @@ function AdminPage() {
         }
     }
 
+    async function loadPrograms() {
+        setProgramsLoading(true);
+        setProgramsError('');
+        try {
+            const payload = await apiRequest('admin/programs');
+            setPrograms(payload.programs || []);
+        } catch (error) {
+            setProgramsError(error.message);
+        } finally {
+            setProgramsLoading(false);
+        }
+    }
+
+    function resetProgramForm() {
+        setEditingProgramId(null);
+        setProgramForm({ name: '', type: 'competition', description: '', price: '0', capacity: '', sortOrder: '0', isActive: true });
+        setProgramsError('');
+    }
+
+    function editProgram(program) {
+        setEditingProgramId(program.id);
+        setProgramForm({
+            name: program.name,
+            type: program.type,
+            description: program.description,
+            price: String(program.price),
+            capacity: program.capacity === '' ? '' : String(program.capacity),
+            sortOrder: String(program.sortOrder),
+            isActive: program.isActive,
+        });
+        setProgramsError('');
+    }
+
+    async function saveProgram(event) {
+        event.preventDefault();
+        setProgramSaving(true);
+        setProgramsError('');
+        try {
+            const path = editingProgramId ? `admin/programs/${editingProgramId}` : 'admin/programs';
+            const { program } = await apiRequest(path, {
+                method: editingProgramId ? 'PATCH' : 'POST',
+                body: JSON.stringify(programForm),
+            });
+            setPrograms((current) => editingProgramId
+                ? current.map((item) => item.id === program.id ? program : item)
+                : [...current, program]
+            );
+            resetProgramForm();
+        } catch (error) {
+            setProgramsError(error.message);
+        } finally {
+            setProgramSaving(false);
+        }
+    }
+
+    async function toggleProgramActive(program) {
+        setProgramsError('');
+        try {
+            const { program: updated } = await apiRequest(`admin/programs/${program.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify({ ...program, isActive: !program.isActive }),
+            });
+            setPrograms((current) => current.map((item) => item.id === updated.id ? updated : item));
+        } catch (error) {
+            setProgramsError(error.message);
+        }
+    }
+
     useEffect(() => {
         if (['dashboard', 'registrations'].includes(activeModule) && session) {
             loadRegistrations();
+        }
+    }, [activeModule, session]);
+
+    useEffect(() => {
+        if (['dashboard', 'programs'].includes(activeModule) && session) {
+            loadPrograms();
         }
     }, [activeModule, session]);
 
@@ -3346,7 +3516,7 @@ function AdminPage() {
         ['Total Registrations', registrations.length.toLocaleString('en-IN'), `${submittedRegistrations} submitted`, 'emerald'],
         ['Payment Collected', `Rs. ${paymentCollected.toLocaleString('en-IN')}`, 'Verified payments', 'amber'],
         ['Pending Payments', pendingRegistrationPayments.toLocaleString('en-IN'), 'Needs finance review', 'rose'],
-        ['Active Programs', '32', '8 limited capacity', 'sky'],
+        ['Active Programs', programs.filter((program) => program.isActive).length.toLocaleString('en-IN'), `${programs.filter((program) => program.capacity).length} capacity controlled`, 'sky'],
     ];
     const registrationFunnel = [
         ['Landing Visits', 3200, '#047857'],
@@ -4032,6 +4202,101 @@ function AdminPage() {
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {activeModule === 'programs' && (
+                        <div className="mt-2 grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
+                            <form onSubmit={saveProgram} className="rounded-lg border border-zinc-200 bg-zinc-50 p-5">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <h2 className="text-lg font-semibold text-zinc-950">{editingProgramId ? 'Edit program' : 'Add program'}</h2>
+                                        <p className="mt-1 text-sm text-zinc-500">Active programs appear on the registration form.</p>
+                                    </div>
+                                    {editingProgramId && <button type="button" onClick={resetProgramForm} className="text-xs font-semibold text-zinc-500 hover:text-zinc-950">Cancel</button>}
+                                </div>
+
+                                <div className="mt-5 grid gap-4">
+                                    <label className="text-sm font-medium text-zinc-800">
+                                        Program name
+                                        <input required value={programForm.name} onChange={(event) => setProgramForm((current) => ({ ...current, name: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" placeholder="e.g. Clinical Pharmacy Workshop" />
+                                    </label>
+                                    <label className="text-sm font-medium text-zinc-800">
+                                        Registration section
+                                        <select value={programForm.type} onChange={(event) => setProgramForm((current) => ({ ...current, type: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm">
+                                            <option value="competition">Student Competition</option>
+                                            <option value="workshop">Pre-Conference Workshop</option>
+                                        </select>
+                                    </label>
+                                    <label className="text-sm font-medium text-zinc-800">
+                                        Description
+                                        <textarea rows={3} value={programForm.description} onChange={(event) => setProgramForm((current) => ({ ...current, description: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" placeholder="Short information shown during registration" />
+                                    </label>
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <label className="text-sm font-medium text-zinc-800">
+                                            Price (Rs.)
+                                            <input type="number" min="0" step="0.01" required value={programForm.price} onChange={(event) => setProgramForm((current) => ({ ...current, price: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" />
+                                        </label>
+                                        <label className="text-sm font-medium text-zinc-800">
+                                            Capacity
+                                            <input type="number" min="1" value={programForm.capacity} onChange={(event) => setProgramForm((current) => ({ ...current, capacity: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" placeholder="Unlimited" />
+                                        </label>
+                                    </div>
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <label className="text-sm font-medium text-zinc-800">
+                                            Display order
+                                            <input type="number" min="0" value={programForm.sortOrder} onChange={(event) => setProgramForm((current) => ({ ...current, sortOrder: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" />
+                                        </label>
+                                        <label className="flex items-end gap-2 pb-2.5 text-sm font-medium text-zinc-800">
+                                            <input type="checkbox" checked={programForm.isActive} onChange={(event) => setProgramForm((current) => ({ ...current, isActive: event.target.checked }))} />
+                                            Active on registration
+                                        </label>
+                                    </div>
+                                    <button type="submit" disabled={programSaving} className="rounded-md bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50">
+                                        {programSaving ? 'Saving...' : editingProgramId ? 'Save changes' : 'Add program'}
+                                    </button>
+                                </div>
+                            </form>
+
+                            <div className="min-w-0">
+                                <div className="grid gap-3 sm:grid-cols-3">
+                                    {[
+                                        ['Total', programs.length],
+                                        ['Active', programs.filter((program) => program.isActive).length],
+                                        ['Paid', programs.filter((program) => program.price > 0).length],
+                                    ].map(([label, value]) => (
+                                        <div key={label} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                            <p className="text-xs font-semibold uppercase text-zinc-500">{label}</p>
+                                            <p className="mt-1 text-2xl font-semibold text-zinc-950">{value}</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {programsError && <p className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">{programsError}</p>}
+                                {programsLoading ? (
+                                    <p className="mt-4 rounded-lg border border-zinc-200 p-8 text-center text-sm text-zinc-500">Loading programs...</p>
+                                ) : (
+                                    <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200">
+                                        <table className="min-w-[760px] w-full text-left text-sm">
+                                            <thead className="bg-zinc-100 text-xs font-semibold uppercase text-zinc-500">
+                                                <tr><th className="px-4 py-3">Program</th><th className="px-4 py-3">Type</th><th className="px-4 py-3">Price</th><th className="px-4 py-3">Capacity</th><th className="px-4 py-3">Visibility</th><th className="px-4 py-3 text-right">Actions</th></tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-zinc-200 bg-white">
+                                                {programs.map((program) => (
+                                                    <tr key={program.id} className="align-top">
+                                                        <td className="px-4 py-3"><p className="font-semibold text-zinc-950">{program.name}</p>{program.description && <p className="mt-1 max-w-xs text-xs text-zinc-500">{program.description}</p>}</td>
+                                                        <td className="px-4 py-3 text-xs font-medium capitalize text-zinc-600">{program.type}</td>
+                                                        <td className="px-4 py-3 font-semibold text-zinc-950">{program.price ? `Rs. ${program.price.toLocaleString('en-IN')}` : 'Free'}</td>
+                                                        <td className="px-4 py-3 text-zinc-600">{program.capacity || 'Unlimited'}</td>
+                                                        <td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${program.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-zinc-100 text-zinc-600'}`}>{program.isActive ? 'Active' : 'Hidden'}</span></td>
+                                                        <td className="px-4 py-3"><div className="flex justify-end gap-2"><button type="button" onClick={() => editProgram(program)} className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">Edit</button><button type="button" onClick={() => toggleProgramActive(program)} className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">{program.isActive ? 'Hide' : 'Activate'}</button></div></td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 

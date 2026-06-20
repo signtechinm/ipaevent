@@ -592,6 +592,28 @@ body {
     content: '';
 }
 
+.snapshot-workshop-card::after {
+    position: absolute;
+    right: -3rem;
+    bottom: -4rem;
+    width: 10rem;
+    height: 10rem;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgb(244 162 27 / 0.16), transparent 68%);
+    content: '';
+    pointer-events: none;
+}
+
+.snapshot-workshop-card {
+    transition: transform 250ms ease, border-color 250ms ease, box-shadow 250ms ease;
+}
+
+.snapshot-workshop-card:hover {
+    border-color: rgb(255 211 106 / 0.65);
+    box-shadow: 0 26px 65px rgb(0 0 0 / 0.24);
+    transform: translateY(-3px);
+}
+
 .snapshot-flow-line {
     position: absolute;
     display: block;
