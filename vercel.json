@@ -24,6 +24,10 @@
         {
             "source": "/scientific-service",
             "destination": "/index.html"
+        },
+        {
+            "source": "/accommodation-travel",
+            "destination": "/index.html"
         }
     ]
 }
