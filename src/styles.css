@@ -294,6 +294,43 @@ body {
     border-color: var(--admin-border) !important;
 }
 
+.admin-theme .admin-shell {
+    background: var(--admin-background);
+}
+
+.admin-theme .admin-sidebar,
+.admin-theme .admin-topbar {
+    border-color: var(--admin-border) !important;
+    background: color-mix(in srgb, var(--admin-card) 96%, transparent) !important;
+}
+
+.admin-theme .admin-card {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.03);
+}
+
+.admin-theme .admin-nav-active {
+    background: var(--admin-foreground) !important;
+    color: var(--admin-background) !important;
+}
+
+.admin-theme.dark .admin-nav-active {
+    background: #fafafa !important;
+    color: #18181b !important;
+}
+
+.admin-theme .admin-nav {
+    scrollbar-color: var(--admin-border) transparent;
+    scrollbar-width: thin;
+}
+
+.admin-theme button,
+.admin-theme a,
+.admin-theme input,
+.admin-theme select,
+.admin-theme textarea {
+    transition-duration: 150ms;
+}
+
 .hero-image {
     animation: hero-zoom 18s ease-out forwards;
 }

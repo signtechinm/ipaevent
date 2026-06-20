@@ -24,6 +24,7 @@ Open `http://localhost:3000`. Use `npm run dev` only when working on frontend UI
 - `DATABASE_URL`: pooled Neon connection used by Vercel Functions.
 - `DATABASE_URL_UNPOOLED`: direct Neon connection used by schema migrations.
 - `ADMIN_SEED_EMAIL`: initial super-admin email.
+- `ADMIN_SEED_USERNAME`: initial super-admin username.
 - `ADMIN_SEED_PASSWORD`: initial super-admin password.
 
 Never expose these values through `VITE_*` variables or commit `.env.local`.

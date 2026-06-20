@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS event_registrations (
     group_coordinator_email VARCHAR(180),
     group_coordinator_whatsapp VARCHAR(25),
     expected_participants INTEGER,
+    group_members JSONB NOT NULL DEFAULT '[]'::jsonb,
     category VARCHAR(100),
     state_of_residence VARCHAR(100),
     whatsapp_number VARCHAR(25),
@@ -26,11 +27,18 @@ CREATE TABLE IF NOT EXISTS event_registrations (
     total_payable_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
     transaction_details TEXT,
     payment_status VARCHAR(40) NOT NULL DEFAULT 'pending',
+    approval_status VARCHAR(40) NOT NULL DEFAULT 'not_submitted',
     registration_status VARCHAR(40) NOT NULL DEFAULT 'draft',
     submitted_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS group_members JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS approval_status VARCHAR(40) NOT NULL DEFAULT 'not_submitted';
+UPDATE event_registrations
+SET approval_status = 'pending_review'
+WHERE registration_status = 'submitted' AND approval_status = 'not_submitted';
 
 CREATE TABLE IF NOT EXISTS registration_competitions (
     id BIGSERIAL PRIMARY KEY,
@@ -45,6 +53,7 @@ CREATE INDEX IF NOT EXISTS event_registrations_email_idx ON event_registrations 
 CREATE INDEX IF NOT EXISTS event_registrations_whatsapp_idx ON event_registrations (whatsapp_number);
 CREATE INDEX IF NOT EXISTS event_registrations_status_idx ON event_registrations (registration_status);
 CREATE INDEX IF NOT EXISTS event_registrations_payment_status_idx ON event_registrations (payment_status);
+CREATE INDEX IF NOT EXISTS event_registrations_approval_status_idx ON event_registrations (approval_status);
 
 CREATE TABLE IF NOT EXISTS sponsorship_applications (
     id BIGSERIAL PRIMARY KEY,

@@ -269,6 +269,39 @@ function calculateFees(data) {
     };
 }
 
+async function ensureRegistrationEnhancements(sql) {
+    await sql`
+        ALTER TABLE event_registrations
+        ADD COLUMN IF NOT EXISTS group_members JSONB NOT NULL DEFAULT '[]'::jsonb
+    `;
+    await sql`
+        ALTER TABLE event_registrations
+        ADD COLUMN IF NOT EXISTS approval_status VARCHAR(40) NOT NULL DEFAULT 'not_submitted'
+    `;
+    await sql`
+        UPDATE event_registrations
+        SET approval_status = 'pending_review'
+        WHERE registration_status = 'submitted' AND approval_status = 'not_submitted'
+    `;
+}
+
+function normalizeGroupMembers(value) {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value.slice(0, 500).map((member) => ({
+        name: String(member?.name || '').trim(),
+        email: String(member?.email || '').trim().toLowerCase(),
+        whatsapp: String(member?.whatsapp || '').trim(),
+        category: String(member?.category || '').trim(),
+        course: String(member?.course || '').trim(),
+        college: String(member?.college || '').trim(),
+        state: String(member?.state || '').trim(),
+        foodPreference: String(member?.foodPreference || '').trim(),
+    })).filter((member) => member.name);
+}
+
 function mapRegistration(row, competitions = []) {
     return {
         draftToken: row.draft_token,
@@ -279,6 +312,7 @@ function mapRegistration(row, competitions = []) {
         groupCoordinatorEmail: row.group_coordinator_email || '',
         groupCoordinatorWhatsapp: row.group_coordinator_whatsapp || '',
         expectedParticipants: row.expected_participants?.toString() || '',
+        groupMembers: normalizeGroupMembers(row.group_members),
         category: row.category || '',
         stateOfResidence: row.state_of_residence || '',
         whatsappNumber: row.whatsapp_number || '',
@@ -294,36 +328,78 @@ function mapRegistration(row, competitions = []) {
         transactionDetails: row.transaction_details || '',
         registrationNumber: row.registration_number || '',
         submittedAt: row.submitted_at || '',
+        approvalStatus: row.approval_status || 'not_submitted',
+    };
+}
+
+function mapAdminRegistration(row) {
+    return {
+        id: row.id,
+        registrationNumber: row.registration_number || '',
+        registrationMode: row.registration_mode,
+        participantName: row.participant_name || '',
+        institutionName: row.institution_name || '',
+        groupCoordinatorName: row.group_coordinator_name || '',
+        groupCoordinatorEmail: row.group_coordinator_email || '',
+        groupCoordinatorWhatsapp: row.group_coordinator_whatsapp || '',
+        expectedParticipants: row.expected_participants,
+        groupMembers: normalizeGroupMembers(row.group_members),
+        category: row.category || '',
+        stateOfResidence: row.state_of_residence || '',
+        whatsappNumber: row.whatsapp_number || '',
+        email: row.email || '',
+        foodPreference: row.food_preference || '',
+        courseOfStudy: row.course_of_study || '',
+        collegeWithState: row.college_with_state || '',
+        studentCompetitions: row.student_competitions || [],
+        competitionFeeAcknowledged: Boolean(row.competition_fee_acknowledged),
+        preConferenceWorkshop: row.pre_conference_workshop || '',
+        workshopFeeAcknowledged: Boolean(row.workshop_fee_acknowledged),
+        presentationType: row.presentation_type || '',
+        registrationFee: Number(row.registration_fee) || 0,
+        competitionFee: Number(row.competition_fee) || 0,
+        workshopFee: Number(row.workshop_fee) || 0,
+        totalPayableAmount: Number(row.total_payable_amount) || 0,
+        transactionDetails: row.transaction_details || '',
+        paymentStatus: row.payment_status,
+        approvalStatus: row.approval_status || 'not_submitted',
+        registrationStatus: row.registration_status,
+        submittedAt: row.submitted_at,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
     };
 }
 
 async function saveRegistration(sql, data, submit = false) {
+    await ensureRegistrationEnhancements(sql);
     const fees = calculateFees(data);
     const draftToken = data.draftToken || crypto.randomUUID();
     const expectedParticipants = data.expectedParticipants ? Number.parseInt(data.expectedParticipants, 10) : null;
+    const groupMembers = data.registrationMode === 'group' ? normalizeGroupMembers(data.groupMembers) : [];
 
     const rows = await sql`
         INSERT INTO event_registrations (
             draft_token, registration_mode, participant_name, institution_name,
             group_coordinator_name, group_coordinator_email, group_coordinator_whatsapp,
-            expected_participants, category, state_of_residence, whatsapp_number, email,
+            expected_participants, group_members, category, state_of_residence, whatsapp_number, email,
             food_preference, course_of_study, college_with_state,
             competition_fee_acknowledged, pre_conference_workshop,
             workshop_fee_acknowledged, presentation_type, registration_fee,
             competition_fee, workshop_fee, total_payable_amount, transaction_details,
-            registration_status, submitted_at
+            registration_status, approval_status, submitted_at
         )
         VALUES (
             ${draftToken}, ${data.registrationMode || 'individual'}, ${data.participantName || null},
             ${data.institutionName || null}, ${data.groupCoordinatorName || null},
             ${data.groupCoordinatorEmail || null}, ${data.groupCoordinatorWhatsapp || null},
-            ${expectedParticipants}, ${data.category || null}, ${data.stateOfResidence || null},
+            ${expectedParticipants}, ${JSON.stringify(groupMembers)}::jsonb, ${data.category || null}, ${data.stateOfResidence || null},
             ${data.whatsappNumber || null}, ${data.email || null}, ${data.foodPreference || null},
             ${data.courseOfStudy || null}, ${data.collegeWithState || null},
             ${booleanValue(data.competitionFeeAcknowledged)}, ${data.preConferenceWorkshop || null},
             ${booleanValue(data.workshopFeeAcknowledged)}, ${data.presentationType || null},
             ${fees.registrationFee}, ${fees.competitionFee}, ${fees.workshopFee}, ${fees.total},
             ${data.transactionDetails || null}, ${submit ? 'submitted' : 'draft'},
+            ${submit ? 'pending_review' : 'not_submitted'},
             ${submit ? new Date().toISOString() : null}
         )
         ON CONFLICT (draft_token) DO UPDATE SET
@@ -334,6 +410,7 @@ async function saveRegistration(sql, data, submit = false) {
             group_coordinator_email = EXCLUDED.group_coordinator_email,
             group_coordinator_whatsapp = EXCLUDED.group_coordinator_whatsapp,
             expected_participants = EXCLUDED.expected_participants,
+            group_members = EXCLUDED.group_members,
             category = EXCLUDED.category,
             state_of_residence = EXCLUDED.state_of_residence,
             whatsapp_number = EXCLUDED.whatsapp_number,
@@ -351,6 +428,11 @@ async function saveRegistration(sql, data, submit = false) {
             total_payable_amount = EXCLUDED.total_payable_amount,
             transaction_details = EXCLUDED.transaction_details,
             registration_status = EXCLUDED.registration_status,
+            approval_status = CASE
+                WHEN event_registrations.approval_status IN ('approved', 'rejected', 'cancelled')
+                    THEN event_registrations.approval_status
+                ELSE EXCLUDED.approval_status
+            END,
             submitted_at = COALESCE(EXCLUDED.submitted_at, event_registrations.submitted_at),
             updated_at = NOW()
         RETURNING *
@@ -642,23 +724,51 @@ function publicUser(row) {
 
 async function ensureSeedAdmin(sql) {
     const email = process.env.ADMIN_SEED_EMAIL;
+    const username = String(process.env.ADMIN_SEED_USERNAME || 'admin').trim();
     const password = process.env.ADMIN_SEED_PASSWORD;
-    if (!email || !password) {
+    if (!email || !username || !password) {
         return;
     }
 
-    const existing = await sql`SELECT id FROM admin_users WHERE email = ${email.toLowerCase()} LIMIT 1`;
+    const normalizedEmail = email.trim().toLowerCase();
+    const existing = await sql`
+        SELECT id, username, password_hash
+        FROM admin_users
+        WHERE email = ${normalizedEmail}
+        LIMIT 1
+    `;
     if (existing.length) {
+        const passwordMatches = await bcrypt.compare(password, existing[0].password_hash);
+        if (existing[0].username !== username || !passwordMatches) {
+            const passwordHash = passwordMatches ? existing[0].password_hash : await bcrypt.hash(password, 12);
+            await sql`
+                UPDATE admin_users
+                SET username = ${username},
+                    password_hash = ${passwordHash},
+                    salt = 'bcrypt',
+                    role_id = 'role-super-admin',
+                    status = 'Active',
+                    updated_at = NOW()
+                WHERE id = ${existing[0].id}
+            `;
+        }
         return;
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const legacyAdmin = await sql`SELECT id FROM admin_users WHERE username = 'admin' ORDER BY id LIMIT 1`;
+    const legacyAdmin = await sql`
+        SELECT id
+        FROM admin_users
+        WHERE LOWER(username) IN (LOWER(${username}), 'admin')
+        ORDER BY id
+        LIMIT 1
+    `;
     if (legacyAdmin.length) {
         await sql`
             UPDATE admin_users
-            SET name = 'Super Admin',
-                email = ${email.toLowerCase()},
+            SET username = ${username},
+                name = 'Super Admin',
+                email = ${normalizedEmail},
                 password_hash = ${passwordHash},
                 salt = 'bcrypt',
                 role_id = 'role-super-admin',
@@ -671,7 +781,7 @@ async function ensureSeedAdmin(sql) {
 
     await sql`
         INSERT INTO admin_users (username, name, email, password_hash, salt, role, role_id, status)
-        VALUES ('admin', 'Super Admin', ${email.toLowerCase()}, ${passwordHash}, 'bcrypt', 'admin', 'role-super-admin', 'Active')
+        VALUES (${username}, 'Super Admin', ${normalizedEmail}, ${passwordHash}, 'bcrypt', 'admin', 'role-super-admin', 'Active')
         ON CONFLICT (email) DO NOTHING
     `;
 }
@@ -715,6 +825,7 @@ export default async function handler(request, response) {
         }
 
         if (path === 'registrations/draft' && request.method === 'GET') {
+            await ensureRegistrationEnhancements(sql);
             const token = request.query.token;
             if (!token) {
                 return send(response, 400, { error: 'Draft token is required.' });
@@ -772,13 +883,13 @@ export default async function handler(request, response) {
 
         if (path === 'admin/auth/login' && request.method === 'POST') {
             await ensureSeedAdmin(sql);
-            const email = String(request.body?.email || '').trim().toLowerCase();
+            const login = String(request.body?.login || request.body?.email || '').trim().toLowerCase();
             const password = String(request.body?.password || '');
             const rows = await sql`
                 SELECT u.*, r.name AS role_name, r.permissions
                 FROM admin_users u
                 LEFT JOIN admin_roles r ON r.id = u.role_id
-                WHERE u.email = ${email}
+                WHERE LOWER(u.email) = ${login} OR LOWER(u.username) = ${login}
                 LIMIT 1
             `;
             const user = rows[0];
@@ -827,6 +938,85 @@ export default async function handler(request, response) {
                 roles: roleRows.map(publicRole),
                 users: userRows.map(publicUser),
             });
+        }
+
+        if (path === 'admin/registrations' && request.method === 'GET') {
+            if (!requirePermission(session, 'registration.view')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            await ensureRegistrationEnhancements(sql);
+            const rows = await sql`
+                SELECT r.*,
+                    ARRAY(
+                        SELECT rc.competition_name
+                        FROM registration_competitions rc
+                        WHERE rc.registration_id = r.id
+                        ORDER BY rc.id
+                    ) AS student_competitions
+                FROM event_registrations r
+                ORDER BY COALESCE(r.submitted_at, r.updated_at) DESC, r.id DESC
+            `;
+            return send(response, 200, { registrations: rows.map(mapAdminRegistration) });
+        }
+
+        const registrationPaymentMatch = path.match(/^admin\/registrations\/(\d+)\/payment$/);
+        if (registrationPaymentMatch && request.method === 'PATCH') {
+            if (!requirePermission(session, 'payment.verify') && !requirePermission(session, 'registration.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const allowedStatuses = new Set(['pending', 'success', 'failed', 'manual_verification_required', 'refunded']);
+            const paymentStatus = String(request.body?.paymentStatus || '').trim();
+            if (!allowedStatuses.has(paymentStatus)) {
+                return send(response, 400, { error: 'Select a valid payment status.' });
+            }
+            await ensureRegistrationEnhancements(sql);
+            const rows = await sql`
+                UPDATE event_registrations
+                SET payment_status = ${paymentStatus}, updated_at = NOW()
+                WHERE id = ${Number(registrationPaymentMatch[1])}
+                RETURNING *
+            `;
+            if (!rows.length) {
+                return send(response, 404, { error: 'Registration not found.' });
+            }
+            const competitions = await sql`
+                SELECT competition_name
+                FROM registration_competitions
+                WHERE registration_id = ${rows[0].id}
+                ORDER BY id
+            `;
+            rows[0].student_competitions = competitions.map((item) => item.competition_name);
+            return send(response, 200, { registration: mapAdminRegistration(rows[0]) });
+        }
+
+        const registrationApprovalMatch = path.match(/^admin\/registrations\/(\d+)\/approval$/);
+        if (registrationApprovalMatch && request.method === 'PATCH') {
+            if (!requirePermission(session, 'registration.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const allowedStatuses = new Set(['pending_review', 'approved', 'rejected', 'cancelled']);
+            const approvalStatus = String(request.body?.approvalStatus || '').trim();
+            if (!allowedStatuses.has(approvalStatus)) {
+                return send(response, 400, { error: 'Select a valid approval status.' });
+            }
+            await ensureRegistrationEnhancements(sql);
+            const rows = await sql`
+                UPDATE event_registrations
+                SET approval_status = ${approvalStatus}, updated_at = NOW()
+                WHERE id = ${Number(registrationApprovalMatch[1])}
+                RETURNING *
+            `;
+            if (!rows.length) {
+                return send(response, 404, { error: 'Registration not found.' });
+            }
+            const competitions = await sql`
+                SELECT competition_name
+                FROM registration_competitions
+                WHERE registration_id = ${rows[0].id}
+                ORDER BY id
+            `;
+            rows[0].student_competitions = competitions.map((item) => item.competition_name);
+            return send(response, 200, { registration: mapAdminRegistration(rows[0]) });
         }
 
         if (path === 'admin/roles' && request.method === 'POST') {

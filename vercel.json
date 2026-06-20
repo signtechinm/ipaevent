@@ -22,6 +22,10 @@
             "destination": "/index.html"
         },
         {
+            "source": "/admin/:path*",
+            "destination": "/index.html"
+        },
+        {
             "source": "/scientific-service",
             "destination": "/index.html"
         },

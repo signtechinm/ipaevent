@@ -265,6 +265,52 @@ function parseCmsRows(value, fields) {
 
 const registrationDraftKey = 'ipa-nsc-2026-registration-draft-token';
 
+const groupMemberColumns = [
+    ['name', 'Name'],
+    ['email', 'Email'],
+    ['whatsapp', 'WhatsApp Number'],
+    ['category', 'Category'],
+    ['course', 'Course'],
+    ['college', 'College'],
+    ['state', 'State'],
+    ['foodPreference', 'Food Preference'],
+];
+
+function parseCsv(text) {
+    const rows = [];
+    let row = [];
+    let value = '';
+    let quoted = false;
+
+    for (let index = 0; index < text.length; index += 1) {
+        const character = text[index];
+        if (character === '"' && quoted && text[index + 1] === '"') {
+            value += '"';
+            index += 1;
+        } else if (character === '"') {
+            quoted = !quoted;
+        } else if (character === ',' && !quoted) {
+            row.push(value.trim());
+            value = '';
+        } else if ((character === '\n' || character === '\r') && !quoted) {
+            if (character === '\r' && text[index + 1] === '\n') index += 1;
+            row.push(value.trim());
+            if (row.some(Boolean)) rows.push(row);
+            row = [];
+            value = '';
+        } else {
+            value += character;
+        }
+    }
+    row.push(value.trim());
+    if (row.some(Boolean)) rows.push(row);
+    return rows;
+}
+
+function normalizeCsvHeader(value) {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
 const categoryOptions = [
     'Student Delegate - IPA SF Member',
     'Student Delegate - Non IPA SF Member',
@@ -306,6 +352,7 @@ const initialRegistration = {
     groupCoordinatorEmail: '',
     groupCoordinatorWhatsapp: '',
     expectedParticipants: '',
+    groupMembers: [],
     category: '',
     stateOfResidence: '',
     whatsappNumber: '',
@@ -1008,6 +1055,47 @@ function RegistrationPage() {
         setNotice('');
     }
 
+    function downloadGroupTemplate() {
+        const csv = `${groupMemberColumns.map(([, label]) => `"${label}"`).join(',')}\r\n`;
+        const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'group-registration-student-template.csv';
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
+    async function uploadGroupSheet(file) {
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith('.csv')) {
+            setNotice('Upload the completed CSV template. Excel can save the template as CSV.');
+            return;
+        }
+
+        try {
+            const rows = parseCsv(await file.text());
+            if (rows.length < 2) throw new Error('The uploaded sheet does not contain any student rows.');
+            const headerIndexes = Object.fromEntries(
+                groupMemberColumns.map(([key, label]) => [key, rows[0].findIndex((header) => normalizeCsvHeader(header) === normalizeCsvHeader(label))])
+            );
+            if (headerIndexes.name < 0) throw new Error('The sheet must contain the Name column from the template.');
+
+            const groupMembers = rows.slice(1).map((cells) => Object.fromEntries(
+                groupMemberColumns.map(([key]) => [key, headerIndexes[key] >= 0 ? String(cells[headerIndexes[key]] || '').trim() : ''])
+            )).filter((member) => member.name);
+            if (!groupMembers.length) throw new Error('No student names were found in the uploaded sheet.');
+
+            setFormData((current) => ({
+                ...current,
+                groupMembers,
+                expectedParticipants: String(groupMembers.length),
+            }));
+            setNotice(`${groupMembers.length} students imported from the group sheet.`);
+        } catch (error) {
+            setNotice(error.message);
+        }
+    }
+
     async function saveSection(sectionId) {
         setIsSaving(true);
         setNotice('Saving...');
@@ -1318,9 +1406,38 @@ function RegistrationPage() {
                                         ))}
                                     </select>
                                 </label>
-                                <div className="rounded-lg bg-amber-50 p-4 text-sm leading-6 text-zinc-700 md:col-span-2">
-                                    A detailed participant sheet upload/import can be connected here when the backend is ready.
-                                    The coordinator can continue with workshop, presentation, and payment information for the group request.
+                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 md:col-span-2">
+                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                            <p className="text-sm font-bold text-emerald-950">Student roster sheet</p>
+                                            <p className="mt-1 text-sm leading-6 text-emerald-800">Download the CSV template, complete it in Excel or Google Sheets, then upload it here.</p>
+                                        </div>
+                                        <div className="flex shrink-0 flex-wrap gap-2">
+                                            <button type="button" onClick={downloadGroupTemplate} className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-bold text-emerald-800 hover:bg-emerald-100">
+                                                Download template
+                                            </button>
+                                            <label className="cursor-pointer rounded-lg bg-emerald-800 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-900">
+                                                Upload completed CSV
+                                                <input type="file" accept=".csv,text/csv" className="sr-only" onChange={(event) => uploadGroupSheet(event.target.files?.[0])} />
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {formData.groupMembers.length > 0 && (
+                                        <div className="mt-4 overflow-hidden rounded-lg border border-emerald-200 bg-white">
+                                            <div className="flex items-center justify-between px-3 py-2 text-sm">
+                                                <span className="font-bold text-zinc-900">{formData.groupMembers.length} students imported</span>
+                                                <button type="button" onClick={() => updateField('groupMembers', [])} className="font-semibold text-rose-700">Remove sheet</button>
+                                            </div>
+                                            <div className="max-h-40 overflow-auto border-t border-emerald-100">
+                                                {formData.groupMembers.slice(0, 10).map((member, index) => (
+                                                    <div key={`${member.email}-${index}`} className="flex justify-between gap-4 border-b border-zinc-100 px-3 py-2 text-xs last:border-0">
+                                                        <span className="font-semibold text-zinc-800">{index + 1}. {member.name}</span>
+                                                        <span className="text-zinc-500">{member.email || member.whatsapp || '-'}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -1496,6 +1613,7 @@ function RegistrationPage() {
                                         ['Coordinator WhatsApp', formData.groupCoordinatorWhatsapp || 'Not entered'],
                                         ['State', formData.stateOfResidence || 'Not entered'],
                                         ['Expected Participants', formData.expectedParticipants || 'Not entered'],
+                                        ['Uploaded Student Roster', `${formData.groupMembers.length} students`],
                                         ['Primary Category', formData.category || 'Not selected'],
                                         ['College Detail', formData.collegeWithState || 'Not entered'],
                                         ['Competitions', formData.studentCompetitions.join(', ') || 'None'],
@@ -1538,6 +1656,9 @@ function RegistrationPage() {
                                 <h3 className="mt-3 text-2xl font-bold text-emerald-950">Your response has been recorded.</h3>
                                 <p className="mt-3 text-sm leading-6 text-emerald-900">
                                     Registration number: <span className="font-bold">{formData.registrationNumber || 'Generated after submit'}</span>
+                                </p>
+                                <p className="mt-2 text-sm leading-6 text-emerald-900">
+                                    Approval status: <span className="font-bold">{formData.approvalStatus === 'approved' ? 'Approved' : 'Pending admin review'}</span>
                                 </p>
                                 <button
                                     type="button"
@@ -2728,7 +2849,7 @@ function Contact() {
 
 function AdminLoginPage() {
     const [theme, toggleTheme] = useAdminTheme();
-    const [email, setEmail] = useState('');
+    const [login, setLogin] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -2741,7 +2862,7 @@ function AdminLoginPage() {
         try {
             await apiRequest('admin/auth/login', {
                 method: 'POST',
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ login, password }),
             });
             window.location.href = '/admin';
         } catch (loginError) {
@@ -2767,14 +2888,15 @@ function AdminLoginPage() {
 
                 <form onSubmit={handleLogin} className="admin-card rounded-lg bg-white p-6 text-zinc-950 shadow-2xl">
                     <h2 className="text-2xl font-bold">Admin login</h2>
-                    <p className="mt-2 text-sm text-zinc-600">Sign in with your PostgreSQL-backed admin account.</p>
+                    <p className="mt-2 text-sm text-zinc-600">Sign in with your username or email.</p>
                     <label className="mt-6 block text-sm font-semibold text-zinc-800">
-                        Email
+                        Username or email
                         <input
                             className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                            type="email"
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
+                            type="text"
+                            autoComplete="username"
+                            value={login}
+                            onChange={(event) => setLogin(event.target.value)}
                         />
                     </label>
                     <label className="mt-4 block text-sm font-semibold text-zinc-800">
@@ -2782,6 +2904,7 @@ function AdminLoginPage() {
                         <input
                             className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
                             type="password"
+                            autoComplete="current-password"
                             value={password}
                             onChange={(event) => setPassword(event.target.value)}
                         />
@@ -2939,11 +3062,33 @@ function AdminSidebarIcon({ name }) {
     );
 }
 
+const adminModules = [
+    { id: 'dashboard', label: 'Dashboard', description: 'Overview of registrations, payments, and event operations.' },
+    { id: 'registrations', label: 'Registrations', description: 'Review delegate registrations, drafts, and contact details.' },
+    { id: 'payments', label: 'Payments', description: 'Track collections, pending payments, and reconciliation.' },
+    { id: 'programs', label: 'Programs', description: 'Manage event programs, schedules, and capacities.' },
+    { id: 'students', label: 'Students', description: 'Maintain student and institution records.' },
+    { id: 'pricing', label: 'Pricing', description: 'Configure registration, competition, and workshop fees.' },
+    { id: 'winners', label: 'Winners', description: 'Prepare and publish competition results.' },
+    { id: 'reports', label: 'Reports', description: 'Generate operational and financial reports.' },
+    { id: 'accommodation', label: 'Accommodation CMS', description: 'Publish stays, pickup points, and travel guidance.' },
+    { id: 'users', label: 'Users & Roles', description: 'Manage admin accounts, roles, and permissions.' },
+    { id: 'audit', label: 'Audit Logs', description: 'Review important administrative activity.' },
+    { id: 'scientific', label: 'Scientific Content', description: 'Review abstracts and manage scientific resources.' },
+];
+
+const implementedAdminModules = new Set(['dashboard', 'registrations', 'users', 'accommodation', 'scientific']);
+
+function getAdminModuleFromPath() {
+    const requestedModule = window.location.pathname.split('/')[2] || 'dashboard';
+    return adminModules.some((module) => module.id === requestedModule) ? requestedModule : 'dashboard';
+}
+
 function AdminPage() {
     const [theme, toggleTheme] = useAdminTheme();
     const [session, setSession] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [activeModule, setActiveModule] = useState('dashboard');
+    const activeModule = getAdminModuleFromPath();
     const [userModuleTab, setUserModuleTab] = useState('users');
     const [userSearch, setUserSearch] = useState('');
     const [roles, setRoles] = useState([]);
@@ -2958,6 +3103,17 @@ function AdminPage() {
         password: '',
     });
     const [notice, setNotice] = useState('');
+    const [registrations, setRegistrations] = useState([]);
+    const [registrationsLoading, setRegistrationsLoading] = useState(false);
+    const [registrationsError, setRegistrationsError] = useState('');
+    const [registrationSearch, setRegistrationSearch] = useState('');
+    const [selectedRegistration, setSelectedRegistration] = useState(null);
+    const [paymentStatusDraft, setPaymentStatusDraft] = useState('pending');
+    const [paymentUpdating, setPaymentUpdating] = useState(false);
+    const [paymentUpdateError, setPaymentUpdateError] = useState('');
+    const [approvalStatusDraft, setApprovalStatusDraft] = useState('pending_review');
+    const [approvalUpdating, setApprovalUpdating] = useState(false);
+    const [approvalUpdateError, setApprovalUpdateError] = useState('');
     const [accommodationCms, setAccommodationCms] = useState(accommodationTravelDefaults);
     const [accommodationCmsLoading, setAccommodationCmsLoading] = useState(false);
     const [accommodationCmsSaving, setAccommodationCmsSaving] = useState(false);
@@ -2998,6 +3154,12 @@ function AdminPage() {
     const [adminAbstractsError, setAdminAbstractsError] = useState('');
     const [abstractReviewing, setAbstractReviewing] = useState(null);
     const [abstractRemarksDraft, setAbstractRemarksDraft] = useState('');
+
+    useEffect(() => {
+        if (window.location.pathname === '/admin') {
+            window.history.replaceState({}, '', '/admin/dashboard');
+        }
+    }, []);
 
     async function loadAdminAbstracts() {
         setAdminAbstractsLoading(true);
@@ -3076,6 +3238,71 @@ function AdminPage() {
             .finally(() => setAccommodationCmsLoading(false));
     }, [activeModule, session]);
 
+    async function loadRegistrations() {
+        setRegistrationsLoading(true);
+        setRegistrationsError('');
+        try {
+            const payload = await apiRequest('admin/registrations');
+            setRegistrations(payload.registrations || []);
+        } catch (error) {
+            setRegistrationsError(error.message);
+        } finally {
+            setRegistrationsLoading(false);
+        }
+    }
+
+    function viewRegistration(registration) {
+        setSelectedRegistration(registration);
+        setPaymentStatusDraft(registration.paymentStatus);
+        setApprovalStatusDraft(registration.approvalStatus);
+        setPaymentUpdateError('');
+        setApprovalUpdateError('');
+    }
+
+    async function updateRegistrationPayment() {
+        if (!selectedRegistration) return;
+        setPaymentUpdating(true);
+        setPaymentUpdateError('');
+        try {
+            const { registration } = await apiRequest(`admin/registrations/${selectedRegistration.id}/payment`, {
+                method: 'PATCH',
+                body: JSON.stringify({ paymentStatus: paymentStatusDraft }),
+            });
+            setRegistrations((current) => current.map((item) => item.id === registration.id ? registration : item));
+            setSelectedRegistration(registration);
+            setPaymentStatusDraft(registration.paymentStatus);
+        } catch (error) {
+            setPaymentUpdateError(error.message);
+        } finally {
+            setPaymentUpdating(false);
+        }
+    }
+
+    async function updateRegistrationApproval() {
+        if (!selectedRegistration) return;
+        setApprovalUpdating(true);
+        setApprovalUpdateError('');
+        try {
+            const { registration } = await apiRequest(`admin/registrations/${selectedRegistration.id}/approval`, {
+                method: 'PATCH',
+                body: JSON.stringify({ approvalStatus: approvalStatusDraft }),
+            });
+            setRegistrations((current) => current.map((item) => item.id === registration.id ? registration : item));
+            setSelectedRegistration(registration);
+            setApprovalStatusDraft(registration.approvalStatus);
+        } catch (error) {
+            setApprovalUpdateError(error.message);
+        } finally {
+            setApprovalUpdating(false);
+        }
+    }
+
+    useEffect(() => {
+        if (['dashboard', 'registrations'].includes(activeModule) && session) {
+            loadRegistrations();
+        }
+    }, [activeModule, session]);
+
     if (isLoading || !session) {
         return <main className="min-h-screen bg-zinc-950 p-8 text-sm font-semibold text-white">Loading admin...</main>;
     }
@@ -3090,40 +3317,35 @@ function AdminPage() {
 
         return haystack.includes(userSearch.toLowerCase());
     });
+    const filteredRegistrations = registrations.filter((registration) => {
+        const haystack = [
+            registration.registrationNumber,
+            registration.participantName,
+            registration.institutionName,
+            registration.groupCoordinatorName,
+            registration.email,
+            registration.whatsappNumber,
+            registration.category,
+            registration.registrationStatus,
+            registration.paymentStatus,
+            registration.approvalStatus,
+        ].join(' ').toLowerCase();
+        return haystack.includes(registrationSearch.trim().toLowerCase());
+    });
+    const submittedRegistrations = registrations.filter((registration) => registration.registrationStatus === 'submitted').length;
+    const draftRegistrations = registrations.filter((registration) => registration.registrationStatus === 'draft').length;
+    const pendingRegistrationPayments = registrations.filter((registration) => registration.paymentStatus === 'pending').length;
+    const pendingRegistrationApprovals = registrations.filter((registration) => registration.approvalStatus === 'pending_review').length;
+    const approvedRegistrations = registrations.filter((registration) => registration.approvalStatus === 'approved').length;
 
-    const adminNavigation = [
-        ['dashboard', 'Dashboard'],
-        ['registrations', 'Registrations'],
-        ['payments', 'Payments'],
-        ['programs', 'Programs'],
-        ['students', 'Students'],
-        ['pricing', 'Pricing'],
-        ['winners', 'Winners'],
-        ['reports', 'Reports'],
-        ['accommodation', 'Accommodation CMS'],
-        ['users', 'Users & Roles'],
-        ['audit', 'Audit Logs'],
-        ['scientific', 'Scientific Content'],
-    ];
-
-    const moduleTitles = {
-        dashboard: 'Dashboard',
-        registrations: 'Registration Management',
-        payments: 'Payment Management',
-        programs: 'Program Master',
-        students: 'Student Master',
-        pricing: 'Pricing Master',
-        winners: 'Winner Announcements',
-        reports: 'Reports',
-        accommodation: 'Accommodation & Travel CMS',
-        users: 'Users & Roles',
-        audit: 'Audit Logs',
-        scientific: 'Scientific Content',
-    };
+    const activeModuleMeta = adminModules.find((module) => module.id === activeModule) || adminModules[0];
+    const paymentCollected = registrations
+        .filter((registration) => registration.paymentStatus === 'success')
+        .reduce((total, registration) => total + registration.totalPayableAmount, 0);
     const dashboardStats = [
-        ['Total Registrations', '1,248', '+18% this week', 'emerald'],
-        ['Payment Collected', 'Rs. 8.42L', '+Rs. 1.1L today', 'amber'],
-        ['Pending Payments', '186', 'Needs finance review', 'rose'],
+        ['Total Registrations', registrations.length.toLocaleString('en-IN'), `${submittedRegistrations} submitted`, 'emerald'],
+        ['Payment Collected', `Rs. ${paymentCollected.toLocaleString('en-IN')}`, 'Verified payments', 'amber'],
+        ['Pending Payments', pendingRegistrationPayments.toLocaleString('en-IN'), 'Needs finance review', 'rose'],
         ['Active Programs', '32', '8 limited capacity', 'sky'],
     ];
     const registrationFunnel = [
@@ -3323,50 +3545,76 @@ function AdminPage() {
     }
 
     return (
-        <main className={`admin-theme ${theme === 'dark' ? 'dark' : ''} min-h-screen bg-zinc-100 text-zinc-950`}>
-            <div className="border-b border-zinc-200 bg-white">
-                <div className="flex w-full items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-                    <a href="/" className="flex items-center gap-3">
-                        <img src="/14th NSC LOGO - DARK.png" alt="14th IPA National Students Congress logo" className="admin-logo size-12 rounded-lg bg-white object-contain p-1" />
-                        <div>
-                            <p className="text-sm font-bold text-emerald-800">14th IPA National Students Congress Admin</p>
-                            <p className="text-xs text-zinc-500">{currentRole?.name || 'Admin User'}</p>
-                        </div>
-                    </a>
-                    <div className="flex items-center gap-2">
-                        <AdminThemeToggle theme={theme} onToggle={toggleTheme} />
-                        <button type="button" onClick={logout} className="admin-button-secondary rounded-lg border border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-700 hover:bg-zinc-100">
-                            Logout
-                        </button>
+        <main className={`admin-theme ${theme === 'dark' ? 'dark' : ''} min-h-screen text-zinc-950`}>
+            <div className="admin-shell min-h-screen lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
+                <aside className="admin-sidebar border-b border-zinc-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
+                    <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-4">
+                        <a href="/admin/dashboard" className="flex min-w-0 items-center gap-3">
+                            <img src="/14th NSC LOGO - DARK.png" alt="14th IPA National Students Congress logo" className="admin-logo size-9 rounded-md border border-zinc-200 bg-white object-contain p-1" />
+                            <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-zinc-950">NSC Admin</p>
+                                <p className="truncate text-xs text-zinc-500">Event operations</p>
+                            </div>
+                        </a>
+                        <span className="rounded-md border border-zinc-200 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">2026</span>
                     </div>
-                </div>
-            </div>
 
-            <div className="grid min-h-[calc(100vh-73px)] w-full gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[280px_1fr] lg:px-8">
-                <aside className="admin-card h-full rounded-lg border border-zinc-200 bg-white p-3 shadow-sm lg:sticky lg:top-8 lg:max-h-[calc(100vh-96px)] lg:overflow-auto">
-                    {adminNavigation.map(([id, label]) => (
-                        <button
-                            key={id}
-                            type="button"
-                            onClick={() => setActiveModule(id)}
-                            className={`mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm font-bold ${
-                                activeModule === id ? 'bg-emerald-800 text-white' : 'text-zinc-700 hover:bg-emerald-50 hover:text-emerald-800'
-                            }`}
-                        >
-                            <AdminSidebarIcon name={id} />
-                            <span>{label}</span>
-                        </button>
-                    ))}
+                    <nav className="admin-nav flex gap-1 overflow-x-auto p-3 lg:block lg:h-[calc(100vh-137px)] lg:overflow-y-auto" aria-label="Admin navigation">
+                        <p className="mb-2 hidden px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500 lg:block">Workspace</p>
+                        {adminModules.map(({ id, label }) => (
+                            <a
+                                key={id}
+                                href={`/admin/${id}`}
+                                aria-current={activeModule === id ? 'page' : undefined}
+                                className={`flex shrink-0 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors lg:mb-1 lg:w-full ${
+                                    activeModule === id
+                                        ? 'admin-nav-active bg-zinc-900 text-white shadow-sm'
+                                        : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950'
+                                }`}
+                            >
+                                <AdminSidebarIcon name={id} />
+                                <span>{label}</span>
+                            </a>
+                        ))}
+                    </nav>
+
+                    <div className="hidden h-[73px] items-center gap-3 border-t border-zinc-200 px-4 lg:flex">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-800">
+                            {(session.name || 'A').split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase()}
+                        </span>
+                        <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-zinc-950">{session.name}</p>
+                            <p className="truncate text-xs text-zinc-500">{currentRole?.name || 'Admin User'}</p>
+                        </div>
+                    </div>
                 </aside>
 
-                <section className="admin-card rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-                    <div className="flex flex-col gap-2 border-b border-zinc-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <p className="text-sm font-bold uppercase text-emerald-700">Admin Control</p>
-                            <h1 className="mt-1 text-2xl font-bold">{moduleTitles[activeModule]}</h1>
+                <div className="min-w-0">
+                    <header className="admin-topbar sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-zinc-200 bg-white/95 px-4 backdrop-blur sm:px-6">
+                        <div className="flex min-w-0 items-center gap-2 text-sm">
+                            <a href="/admin/dashboard" className="hidden text-zinc-500 hover:text-zinc-950 sm:inline">Admin</a>
+                            <span className="hidden text-zinc-300 sm:inline">/</span>
+                            <span className="truncate font-medium text-zinc-950">{activeModuleMeta.label}</span>
                         </div>
-                        {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800">{notice}</p>}
-                    </div>
+                        <div className="flex items-center gap-2">
+                            <a href="/" className="admin-button-secondary hidden rounded-md px-3 py-2 text-sm font-medium sm:inline-flex">View site</a>
+                            <AdminThemeToggle theme={theme} onToggle={toggleTheme} />
+                            <button type="button" onClick={logout} className="admin-button-secondary rounded-md px-3 py-2 text-sm font-medium">
+                                Logout
+                            </button>
+                        </div>
+                    </header>
+
+                    <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-6 lg:p-8">
+                        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">{activeModuleMeta.label}</h1>
+                                <p className="mt-1.5 max-w-2xl text-sm text-zinc-500">{activeModuleMeta.description}</p>
+                            </div>
+                            {notice && <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">{notice}</p>}
+                        </div>
+
+                        <section className="admin-card rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
 
                     {activeModule === 'dashboard' && (
                         <div className="mt-6 grid gap-6">
@@ -3526,6 +3774,264 @@ function AdminPage() {
                                     </div>
                                 </section>
                             </div>
+                        </div>
+                    )}
+
+                    {activeModule === 'registrations' && (
+                        <div className="mt-6">
+                            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                {[
+                                    ['All Records', registrations.length],
+                                    ['Pending Approval', pendingRegistrationApprovals],
+                                    ['Approved', approvedRegistrations],
+                                    ['Pending Payments', pendingRegistrationPayments],
+                                ].map(([label, value]) => (
+                                    <div key={label} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                        <p className="text-xs font-bold uppercase text-zinc-500">{label}</p>
+                                        <p className="mt-2 text-2xl font-bold text-zinc-950">{value}</p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h2 className="text-lg font-bold">Registration Records</h2>
+                                    <p className="mt-1 text-sm text-zinc-600">Submitted registrations and in-progress drafts from the public form.</p>
+                                </div>
+                                <div className="flex flex-col gap-2 sm:flex-row">
+                                    <input
+                                        type="search"
+                                        value={registrationSearch}
+                                        onChange={(event) => setRegistrationSearch(event.target.value)}
+                                        placeholder="Search name, email, number..."
+                                        className="admin-input rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={loadRegistrations}
+                                        disabled={registrationsLoading}
+                                        className="rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {registrationsLoading ? 'Loading...' : 'Refresh'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {registrationsError && (
+                                <p className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{registrationsError}</p>
+                            )}
+
+                            {!registrationsLoading && !registrationsError && filteredRegistrations.length === 0 && (
+                                <p className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm font-semibold text-zinc-600">
+                                    {registrationSearch ? 'No registrations match your search.' : 'No registration records have been saved yet.'}
+                                </p>
+                            )}
+
+                            {filteredRegistrations.length > 0 && (
+                                <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200">
+                                    <table className="min-w-[1100px] w-full text-left text-sm">
+                                        <thead className="bg-zinc-100 text-xs font-bold uppercase text-zinc-600">
+                                            <tr>
+                                                <th className="px-4 py-3">Registration</th>
+                                                <th className="px-4 py-3">Participant</th>
+                                                <th className="px-4 py-3">Contact</th>
+                                                <th className="px-4 py-3">Category / Institution</th>
+                                                <th className="px-4 py-3">Programs</th>
+                                                <th className="px-4 py-3">Amount</th>
+                                                <th className="px-4 py-3">Status</th>
+                                                <th className="px-4 py-3">Saved</th>
+                                                <th className="px-4 py-3 text-right">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-200 bg-white">
+                                            {filteredRegistrations.map((registration) => (
+                                                <tr key={registration.id} className="align-top hover:bg-zinc-50">
+                                                    <td className="px-4 py-4">
+                                                        <p className="font-mono text-xs font-bold text-emerald-800">{registration.registrationNumber || `Draft #${registration.id}`}</p>
+                                                        <p className="mt-1 capitalize text-xs text-zinc-500">{registration.registrationMode}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <p className="font-bold text-zinc-950">{registration.participantName || registration.groupCoordinatorName || 'Not entered'}</p>
+                                                        {registration.registrationMode === 'group' && registration.expectedParticipants && (
+                                                            <p className="mt-1 text-xs text-zinc-500">{registration.expectedParticipants} expected participants</p>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-zinc-700">
+                                                        <p>{registration.email || registration.groupCoordinatorEmail || '-'}</p>
+                                                        <p className="mt-1">{registration.whatsappNumber || registration.groupCoordinatorWhatsapp || '-'}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <p className="font-semibold text-zinc-800">{registration.category || '-'}</p>
+                                                        <p className="mt-1 max-w-xs text-xs text-zinc-500">{registration.collegeWithState || registration.institutionName || '-'}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-xs text-zinc-600">
+                                                        <p>{registration.studentCompetitions.length ? registration.studentCompetitions.join(', ') : 'No competitions'}</p>
+                                                        {registration.preConferenceWorkshop && <p className="mt-1">Workshop: {registration.preConferenceWorkshop}</p>}
+                                                        {registration.presentationType && <p className="mt-1">Presentation: {registration.presentationType}</p>}
+                                                    </td>
+                                                    <td className="px-4 py-4 font-bold text-zinc-950">Rs. {registration.totalPayableAmount.toLocaleString('en-IN')}</td>
+                                                    <td className="px-4 py-4">
+                                                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ${registration.registrationStatus === 'submitted' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                                                            {registration.registrationStatus}
+                                                        </span>
+                                                        <p className="mt-2 text-xs capitalize text-zinc-500">Payment: {registration.paymentStatus}</p>
+                                                        <p className="mt-1 text-xs font-semibold capitalize text-zinc-600">Approval: {(registration.approvalStatus || 'not_submitted').replaceAll('_', ' ')}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-xs text-zinc-600">
+                                                        {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(registration.submittedAt || registration.updatedAt))}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-right">
+                                                        <button type="button" onClick={() => viewRegistration(registration)} className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-xs font-bold text-zinc-700 shadow-sm hover:bg-zinc-100">
+                                                            View details
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+
+                            {selectedRegistration && (
+                                <div className="fixed inset-0 z-50 flex justify-end bg-zinc-950/50" role="dialog" aria-modal="true" aria-label="Registration details">
+                                    <button type="button" className="absolute inset-0 cursor-default" onClick={() => setSelectedRegistration(null)} aria-label="Close registration details" />
+                                    <div className="admin-card relative h-full w-full max-w-3xl overflow-y-auto border-l border-zinc-200 bg-white shadow-2xl">
+                                        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-zinc-200 bg-white px-5 py-4 sm:px-6">
+                                            <div>
+                                                <p className="font-mono text-xs font-bold text-emerald-700">{selectedRegistration.registrationNumber || `Draft #${selectedRegistration.id}`}</p>
+                                                <h2 className="mt-1 text-xl font-semibold text-zinc-950">Registration details</h2>
+                                                <p className="mt-1 text-sm capitalize text-zinc-500">{selectedRegistration.registrationMode} registration</p>
+                                            </div>
+                                            <button type="button" onClick={() => setSelectedRegistration(null)} className="rounded-md border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100">Close</button>
+                                        </div>
+
+                                        <div className="space-y-6 p-5 sm:p-6">
+                                            <section className="rounded-lg border border-zinc-200 p-4">
+                                                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                                                    <label className="text-sm font-semibold text-zinc-800">
+                                                        Payment status
+                                                        <select value={paymentStatusDraft} onChange={(event) => setPaymentStatusDraft(event.target.value)} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm sm:min-w-64">
+                                                            <option value="pending">Pending</option>
+                                                            <option value="success">Success</option>
+                                                            <option value="failed">Failed</option>
+                                                            <option value="manual_verification_required">Manual verification required</option>
+                                                            <option value="refunded">Refunded</option>
+                                                        </select>
+                                                    </label>
+                                                    <button type="button" onClick={updateRegistrationPayment} disabled={paymentUpdating || paymentStatusDraft === selectedRegistration.paymentStatus} className="rounded-md bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50">
+                                                        {paymentUpdating ? 'Updating...' : 'Update payment'}
+                                                    </button>
+                                                </div>
+                                                {paymentUpdateError && <p className="mt-3 text-sm font-semibold text-rose-700">{paymentUpdateError}</p>}
+                                            </section>
+
+                                            <section className="rounded-lg border border-zinc-200 p-4">
+                                                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                                                    <label className="text-sm font-semibold text-zinc-800">
+                                                        Registration approval
+                                                        <select value={approvalStatusDraft} onChange={(event) => setApprovalStatusDraft(event.target.value)} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm sm:min-w-64">
+                                                            <option value="pending_review">Pending review</option>
+                                                            <option value="approved">Approved</option>
+                                                            <option value="rejected">Rejected</option>
+                                                            <option value="cancelled">Cancelled</option>
+                                                        </select>
+                                                    </label>
+                                                    <button type="button" onClick={updateRegistrationApproval} disabled={approvalUpdating || approvalStatusDraft === selectedRegistration.approvalStatus} className="rounded-md bg-zinc-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50">
+                                                        {approvalUpdating ? 'Updating...' : 'Update approval'}
+                                                    </button>
+                                                </div>
+                                                {approvalUpdateError && <p className="mt-3 text-sm font-semibold text-rose-700">{approvalUpdateError}</p>}
+                                            </section>
+
+                                            <section>
+                                                <h3 className="text-sm font-semibold text-zinc-950">Registration summary</h3>
+                                                <dl className="mt-3 grid gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 sm:grid-cols-2">
+                                                    {[
+                                                        ['Status', selectedRegistration.registrationStatus],
+                                                        ['Approval', selectedRegistration.approvalStatus.replaceAll('_', ' ')],
+                                                        ['Category', selectedRegistration.category],
+                                                        ['Participant', selectedRegistration.participantName],
+                                                        ['Institution', selectedRegistration.institutionName || selectedRegistration.collegeWithState],
+                                                        ['State', selectedRegistration.stateOfResidence],
+                                                        ['Food preference', selectedRegistration.foodPreference],
+                                                        ['Course', selectedRegistration.courseOfStudy],
+                                                        ['Presentation', selectedRegistration.presentationType],
+                                                        ['Competition fee acknowledged', selectedRegistration.competitionFeeAcknowledged ? 'Yes' : 'No'],
+                                                        ['Workshop fee acknowledged', selectedRegistration.workshopFeeAcknowledged ? 'Yes' : 'No'],
+                                                    ].map(([label, value]) => (
+                                                        <div key={label}>
+                                                            <dt className="text-xs font-medium text-zinc-500">{label}</dt>
+                                                            <dd className="mt-1 text-sm font-semibold capitalize text-zinc-900">{value || '-'}</dd>
+                                                        </div>
+                                                    ))}
+                                                </dl>
+                                            </section>
+
+                                            <section>
+                                                <h3 className="text-sm font-semibold text-zinc-950">Contact and coordinator</h3>
+                                                <dl className="mt-3 grid gap-3 rounded-lg border border-zinc-200 p-4 sm:grid-cols-2">
+                                                    {[
+                                                        ['Email', selectedRegistration.email],
+                                                        ['WhatsApp', selectedRegistration.whatsappNumber],
+                                                        ['Coordinator', selectedRegistration.groupCoordinatorName],
+                                                        ['Coordinator email', selectedRegistration.groupCoordinatorEmail],
+                                                        ['Coordinator WhatsApp', selectedRegistration.groupCoordinatorWhatsapp],
+                                                        ['Expected participants', selectedRegistration.expectedParticipants],
+                                                    ].map(([label, value]) => (
+                                                        <div key={label}>
+                                                            <dt className="text-xs font-medium text-zinc-500">{label}</dt>
+                                                            <dd className="mt-1 text-sm font-medium text-zinc-900">{value || '-'}</dd>
+                                                        </div>
+                                                    ))}
+                                                </dl>
+                                            </section>
+
+                                            <section>
+                                                <h3 className="text-sm font-semibold text-zinc-950">Programs and payment</h3>
+                                                <div className="mt-3 rounded-lg border border-zinc-200 p-4 text-sm text-zinc-700">
+                                                    <p><span className="font-semibold text-zinc-950">Competitions:</span> {selectedRegistration.studentCompetitions.length ? selectedRegistration.studentCompetitions.join(', ') : '-'}</p>
+                                                    <p className="mt-2"><span className="font-semibold text-zinc-950">Workshop:</span> {selectedRegistration.preConferenceWorkshop || '-'}</p>
+                                                    <p className="mt-2"><span className="font-semibold text-zinc-950">Transaction details:</span> {selectedRegistration.transactionDetails || '-'}</p>
+                                                    <div className="mt-4 grid gap-2 border-t border-zinc-200 pt-4 sm:grid-cols-2">
+                                                        <p>Registration fee: <strong>Rs. {selectedRegistration.registrationFee.toLocaleString('en-IN')}</strong></p>
+                                                        <p>Competition fee: <strong>Rs. {selectedRegistration.competitionFee.toLocaleString('en-IN')}</strong></p>
+                                                        <p>Workshop fee: <strong>Rs. {selectedRegistration.workshopFee.toLocaleString('en-IN')}</strong></p>
+                                                        <p>Total payable: <strong>Rs. {selectedRegistration.totalPayableAmount.toLocaleString('en-IN')}</strong></p>
+                                                    </div>
+                                                </div>
+                                            </section>
+
+                                            {selectedRegistration.registrationMode === 'group' && (
+                                                <section>
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <h3 className="text-sm font-semibold text-zinc-950">Group student roster</h3>
+                                                        <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600">{selectedRegistration.groupMembers.length} students</span>
+                                                    </div>
+                                                    {selectedRegistration.groupMembers.length ? (
+                                                        <div className="mt-3 overflow-x-auto rounded-lg border border-zinc-200">
+                                                            <table className="min-w-[850px] w-full text-left text-xs">
+                                                                <thead className="bg-zinc-100 text-zinc-600"><tr>{groupMemberColumns.map(([key, label]) => <th key={key} className="px-3 py-2 font-semibold">{label}</th>)}</tr></thead>
+                                                                <tbody className="divide-y divide-zinc-200">
+                                                                    {selectedRegistration.groupMembers.map((member, index) => (
+                                                                        <tr key={`${member.email}-${index}`}>{groupMemberColumns.map(([key]) => <td key={key} className="px-3 py-2 text-zinc-700">{member[key] || '-'}</td>)}</tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="mt-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 px-4 py-6 text-center text-sm text-zinc-500">No student roster was uploaded for this group.</p>
+                                                    )}
+                                                </section>
+                                            )}
+
+                                            <section className="border-t border-zinc-200 pt-4 text-xs text-zinc-500">
+                                                <p>Created: {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(selectedRegistration.createdAt))}</p>
+                                                <p className="mt-1">Last updated: {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(selectedRegistration.updatedAt))}</p>
+                                            </section>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -4096,16 +4602,29 @@ function AdminPage() {
                         </div>
                     )}
 
-                    {!['dashboard', 'users', 'scientific', 'accommodation'].includes(activeModule) && (
-                        <div className="mt-6 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
-                            <p className="text-sm font-bold uppercase text-emerald-700">Planned Module</p>
-                            <h2 className="mt-2 text-xl font-bold text-zinc-950">{moduleTitles[activeModule]}</h2>
-                            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-zinc-600">
-                                This section is reserved in the admin navigation. Its list, form, filters, exports, and permission checks can be connected as each backend API is implemented.
-                            </p>
+                    {!implementedAdminModules.has(activeModule) && (
+                        <div className="py-10 sm:py-16">
+                            <div className="mx-auto flex size-12 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-500 shadow-sm">
+                                <AdminSidebarIcon name={activeModule} />
+                            </div>
+                            <div className="mx-auto mt-5 max-w-lg text-center">
+                                <h2 className="text-lg font-semibold text-zinc-950">{activeModuleMeta.label} workspace</h2>
+                                <p className="mt-2 text-sm leading-6 text-zinc-500">
+                                    This page now has its own route and is ready for its database workflow, filters, actions, and permission rules.
+                                </p>
+                            </div>
+                            <div className="mx-auto mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
+                                {['Database integration', 'Role permissions', 'Reports & exports'].map((item) => (
+                                    <div key={item} className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-4 text-center text-xs font-medium text-zinc-500">
+                                        {item}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
-                </section>
+                        </section>
+                    </div>
+                </div>
             </div>
         </main>
     );
@@ -4733,7 +5252,7 @@ function ScientificServicePage() {
 export default function App() {
     useRevealOnScroll();
     const isAdminLoginPage = window.location.pathname === '/admin/login';
-    const isAdminPage = window.location.pathname === '/admin';
+    const isAdminPage = window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/');
     const isRegistrationPage = window.location.pathname === '/registration';
     const isSponsorRegistrationPage = window.location.pathname === '/sponsor-registration';
     const isScientificServicePage = window.location.pathname === '/scientific-service';
