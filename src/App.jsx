@@ -2934,39 +2934,37 @@ function Contact() {
                 </div>
 
                 <div className="mt-10 border-t border-white/10 pt-8">
-                    <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
-                        <section className="rounded-2xl bg-white/8 p-5 ring-1 ring-white/12 sm:p-6">
-                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">Address for Correspondence</p>
-                            <div className="mt-4 text-sm leading-7 text-white/75">
-                                <p className="font-bold text-white">Dr. John Joseph</p>
-                                <p>Organizing Secretary</p>
-                                <address className="mt-2 not-italic">
-                                    C/o Lisie College of Pharmacy,<br />
-                                    Vennala High School Road,<br />
-                                    Kochi, Pin - 682028,<br />
-                                    Kerala, India.
-                                </address>
-                            </div>
-                        </section>
+                    <div className="grid items-stretch gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+                        <div className="grid h-full grid-rows-[1fr_auto] gap-4">
+                            <section className="rounded-2xl bg-white/8 p-5 ring-1 ring-white/12 sm:p-6">
+                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">Address for Correspondence</p>
+                                <div className="mt-4 text-sm leading-7 text-white/75">
+                                    <p className="font-bold text-white">Dr. John Joseph</p>
+                                    <p>Organizing Secretary</p>
+                                    <address className="mt-2 not-italic">
+                                        C/o Lisie College of Pharmacy,<br />
+                                        Vennala High School Road,<br />
+                                        Kochi, Pin - 682028,<br />
+                                        Kerala, India.
+                                    </address>
+                                </div>
+                            </section>
 
-                        <section className="rounded-2xl bg-[#df0867]/15 p-5 ring-1 ring-[#df0867]/35 sm:p-6">
-                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">Official Email</p>
-                            <p className="mt-4 text-sm leading-6 text-white/65">For congress correspondence and general enquiries:</p>
-                            <a href="mailto:ipakeralastate@gmail.com" className="mt-4 block break-all text-base font-bold text-white underline decoration-[#df0867] decoration-2 underline-offset-4 hover:text-[#ffd36a]">
-                                ipakeralastate@gmail.com
-                            </a>
-                        </section>
-                    </div>
+                            <section className="rounded-2xl bg-[#df0867]/15 p-5 ring-1 ring-[#df0867]/35 sm:p-6">
+                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">Official Email</p>
+                                <a href="mailto:ipakeralastate@gmail.com" className="mt-3 block break-all text-base font-bold text-white underline decoration-[#df0867] decoration-2 underline-offset-4 hover:text-[#ffd36a]">
+                                    ipakeralastate@gmail.com
+                                </a>
+                            </section>
+                        </div>
 
-                    <div className="mt-8">
-                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">Key Contacts</p>
-                        <div className="mt-4 grid gap-4 md:grid-cols-3">
+                        <div className="grid h-full grid-rows-3 gap-4">
                             {[
                                 ['Chairperson LOC', 'Dr. P Jayasekhar', '+91 82810 36121', '+918281036121'],
                                 ['Secretary LOC', 'Dr. John Joseph', '+91 98461 68636', '+919846168636'],
                                 ['Chair - Digital Media', 'Mr. Prasanth Kumar M', '+91 97473 65858', '+919747365858'],
                             ].map(([role, name, phone, phoneHref]) => (
-                                <section key={role} className="rounded-xl bg-white/8 p-5 ring-1 ring-white/12 transition hover:bg-white/12">
+                                <section key={role} className="flex flex-col justify-center rounded-xl bg-white/8 p-5 ring-1 ring-white/12 transition hover:bg-white/12">
                                     <p className="text-xs font-bold uppercase tracking-wider text-[#df8abb]">{role}</p>
                                     <p className="mt-3 text-base font-bold text-white">{name}</p>
                                     <a href={`tel:${phoneHref}`} className="mt-2 inline-block text-sm font-semibold text-white/70 hover:text-[#ffd36a]">{phone}</a>
