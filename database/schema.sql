@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS event_registrations (
     college_with_state TEXT,
     competition_fee_acknowledged BOOLEAN DEFAULT FALSE,
     pre_conference_workshop VARCHAR(80),
+    selected_workshops JSONB NOT NULL DEFAULT '[]'::jsonb,
     workshop_fee_acknowledged BOOLEAN DEFAULT FALSE,
     presentation_type VARCHAR(80),
     registration_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
@@ -36,6 +37,10 @@ CREATE TABLE IF NOT EXISTS event_registrations (
 
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS group_members JSONB NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS approval_status VARCHAR(40) NOT NULL DEFAULT 'not_submitted';
+ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS selected_workshops JSONB NOT NULL DEFAULT '[]'::jsonb;
+UPDATE event_registrations
+SET selected_workshops = jsonb_build_array(pre_conference_workshop)
+WHERE selected_workshops = '[]'::jsonb AND pre_conference_workshop IS NOT NULL;
 UPDATE event_registrations
 SET approval_status = 'pending_review'
 WHERE registration_status = 'submitted' AND approval_status = 'not_submitted';
@@ -79,9 +84,14 @@ SELECT * FROM (VALUES
     ('Clinical Skill Sets', 'competition', 100, 60),
     ('AI', 'workshop', 0, 10),
     ('Vaccination', 'workshop', 0, 20),
-    ('3D Printing', 'workshop', 0, 30)
+    ('3D Printing', 'workshop', 0, 30),
+    ('NDDS Formulation and Characterization', 'workshop', 0, 40)
 ) AS seed(name, program_type, price, sort_order)
 WHERE NOT EXISTS (SELECT 1 FROM event_programs)
+ON CONFLICT (program_type, name) DO NOTHING;
+
+INSERT INTO event_programs (name, program_type, description, price, sort_order)
+VALUES ('NDDS Formulation and Characterization', 'workshop', 'Workshop session', 0, 40)
 ON CONFLICT (program_type, name) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS sponsorship_applications (

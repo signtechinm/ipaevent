@@ -48,6 +48,7 @@ const defaultPrograms = [
     ['AI', 'workshop', 0, 10],
     ['Vaccination', 'workshop', 0, 20],
     ['3D Printing', 'workshop', 0, 30],
+    ['NDDS Formulation and Characterization', 'workshop', 0, 40],
 ];
 
 const defaultAccommodationTravelContent = {
@@ -272,7 +273,10 @@ function calculateFees(data, programs = []) {
     const programPrices = new Map(programs.map((program) => [`${program.program_type}:${program.name}`, Number(program.price) || 0]));
     const competitions = (Array.isArray(data.studentCompetitions) ? data.studentCompetitions : []).slice(0, 2);
     const competitionFee = competitions.reduce((total, name) => total + (programPrices.get(`competition:${name}`) || 0), 0);
-    const workshopFee = programPrices.get(`workshop:${data.preConferenceWorkshop}`) || 0;
+    const selectedWorkshops = Array.isArray(data.selectedWorkshops) && data.selectedWorkshops.length
+        ? [...new Set(data.selectedWorkshops.map((name) => String(name).trim()).filter(Boolean))]
+        : data.preConferenceWorkshop ? [data.preConferenceWorkshop] : [];
+    const workshopFee = selectedWorkshops.reduce((total, name) => total + (programPrices.get(`workshop:${name}`) || 0), 0);
 
     return {
         registrationFee,
@@ -308,6 +312,11 @@ async function ensureProgramCatalog(sql) {
             `;
         }
     }
+    await sql`
+        INSERT INTO event_programs (name, program_type, description, price, sort_order)
+        VALUES ('NDDS Formulation and Characterization', 'workshop', 'Workshop session', 0, 40)
+        ON CONFLICT (program_type, name) DO NOTHING
+    `;
 }
 
 function mapProgram(row) {
@@ -335,6 +344,15 @@ async function ensureRegistrationEnhancements(sql) {
         ADD COLUMN IF NOT EXISTS approval_status VARCHAR(40) NOT NULL DEFAULT 'not_submitted'
     `;
     await sql`
+        ALTER TABLE event_registrations
+        ADD COLUMN IF NOT EXISTS selected_workshops JSONB NOT NULL DEFAULT '[]'::jsonb
+    `;
+    await sql`
+        UPDATE event_registrations
+        SET selected_workshops = jsonb_build_array(pre_conference_workshop)
+        WHERE selected_workshops = '[]'::jsonb AND pre_conference_workshop IS NOT NULL
+    `;
+    await sql`
         UPDATE event_registrations
         SET approval_status = 'pending_review'
         WHERE registration_status = 'submitted' AND approval_status = 'not_submitted'
@@ -358,6 +376,11 @@ function normalizeGroupMembers(value) {
     })).filter((member) => member.name);
 }
 
+function normalizeSelectedWorkshops(value, fallback = '') {
+    const workshops = Array.isArray(value) ? value : fallback ? [fallback] : [];
+    return [...new Set(workshops.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 20);
+}
+
 function mapRegistration(row, competitions = []) {
     return {
         draftToken: row.draft_token,
@@ -379,6 +402,7 @@ function mapRegistration(row, competitions = []) {
         studentCompetitions: competitions,
         competitionFeeAcknowledged: row.competition_fee_acknowledged ? 'Yes' : 'No',
         preConferenceWorkshop: row.pre_conference_workshop || '',
+        selectedWorkshops: normalizeSelectedWorkshops(row.selected_workshops, row.pre_conference_workshop),
         workshopFeeAcknowledged: row.workshop_fee_acknowledged ? 'Yes' : 'No',
         presentationType: row.presentation_type || '',
         transactionDetails: row.transaction_details || '',
@@ -410,6 +434,7 @@ function mapAdminRegistration(row) {
         studentCompetitions: row.student_competitions || [],
         competitionFeeAcknowledged: Boolean(row.competition_fee_acknowledged),
         preConferenceWorkshop: row.pre_conference_workshop || '',
+        selectedWorkshops: normalizeSelectedWorkshops(row.selected_workshops, row.pre_conference_workshop),
         workshopFeeAcknowledged: Boolean(row.workshop_fee_acknowledged),
         presentationType: row.presentation_type || '',
         registrationFee: Number(row.registration_fee) || 0,
@@ -434,6 +459,15 @@ async function saveRegistration(sql, data, submit = false) {
     const draftToken = data.draftToken || crypto.randomUUID();
     const expectedParticipants = data.expectedParticipants ? Number.parseInt(data.expectedParticipants, 10) : null;
     const groupMembers = data.registrationMode === 'group' ? normalizeGroupMembers(data.groupMembers) : [];
+    const selectedWorkshops = normalizeSelectedWorkshops(data.selectedWorkshops, data.preConferenceWorkshop);
+    if (submit) {
+        const activeWorkshopNames = new Set(
+            programs.filter((program) => program.program_type === 'workshop' && program.is_active).map((program) => program.name)
+        );
+        if (selectedWorkshops.some((name) => !activeWorkshopNames.has(name))) {
+            throw inputError('One or more selected workshops are no longer available. Review the workshop section.');
+        }
+    }
 
     const rows = await sql`
         INSERT INTO event_registrations (
@@ -442,7 +476,7 @@ async function saveRegistration(sql, data, submit = false) {
             expected_participants, group_members, category, state_of_residence, whatsapp_number, email,
             food_preference, course_of_study, college_with_state,
             competition_fee_acknowledged, pre_conference_workshop,
-            workshop_fee_acknowledged, presentation_type, registration_fee,
+            selected_workshops, workshop_fee_acknowledged, presentation_type, registration_fee,
             competition_fee, workshop_fee, total_payable_amount, transaction_details,
             registration_status, approval_status, submitted_at
         )
@@ -453,8 +487,8 @@ async function saveRegistration(sql, data, submit = false) {
             ${expectedParticipants}, ${JSON.stringify(groupMembers)}::jsonb, ${data.category || null}, ${data.stateOfResidence || null},
             ${data.whatsappNumber || null}, ${data.email || null}, ${data.foodPreference || null},
             ${data.courseOfStudy || null}, ${data.collegeWithState || null},
-            ${booleanValue(data.competitionFeeAcknowledged)}, ${data.preConferenceWorkshop || null},
-            ${booleanValue(data.workshopFeeAcknowledged)}, ${data.presentationType || null},
+            ${booleanValue(data.competitionFeeAcknowledged)}, ${selectedWorkshops[0] || null},
+            ${JSON.stringify(selectedWorkshops)}::jsonb, ${booleanValue(data.workshopFeeAcknowledged)}, ${data.presentationType || null},
             ${fees.registrationFee}, ${fees.competitionFee}, ${fees.workshopFee}, ${fees.total},
             ${data.transactionDetails || null}, ${submit ? 'submitted' : 'draft'},
             ${submit ? 'pending_review' : 'not_submitted'},
@@ -478,6 +512,7 @@ async function saveRegistration(sql, data, submit = false) {
             college_with_state = EXCLUDED.college_with_state,
             competition_fee_acknowledged = EXCLUDED.competition_fee_acknowledged,
             pre_conference_workshop = EXCLUDED.pre_conference_workshop,
+            selected_workshops = EXCLUDED.selected_workshops,
             workshop_fee_acknowledged = EXCLUDED.workshop_fee_acknowledged,
             presentation_type = EXCLUDED.presentation_type,
             registration_fee = EXCLUDED.registration_fee,

@@ -370,6 +370,7 @@ const initialRegistration = {
     studentCompetitions: [],
     competitionFeeAcknowledged: '',
     preConferenceWorkshop: '',
+    selectedWorkshops: [],
     workshopFeeAcknowledged: '',
     presentationType: '',
     transactionDetails: '',
@@ -661,8 +662,8 @@ function Hero() {
                         {eventDate}
                     </p>
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                        <a href="/registration" className="button-pop rounded-lg bg-[#df0867] px-5 py-3 text-center text-sm font-bold text-white hover:bg-[#bd0758]">
-                            Start Registration
+                        <a href="#fourteenth-ipa-national-students-congress-souvenir" className="button-pop rounded-lg bg-[#df0867] px-5 py-3 text-center text-sm font-bold text-white hover:bg-[#bd0758]">
+                            Souvenir
                         </a>
                         <a href="#fourteenth-nsc-brochures" className="button-pop rounded-lg bg-white/12 px-5 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-black/10 backdrop-blur-md backdrop-saturate-150 hover:bg-white/20 hover:backdrop-blur-lg">
                             Congress Brochures
@@ -1124,7 +1125,10 @@ function RegistrationPage() {
             (total, name) => total + (competitionPrograms.find((program) => program.name === name)?.price || 0),
             0
         );
-        const workshopFee = workshopPrograms.find((program) => program.name === formData.preConferenceWorkshop)?.price || 0;
+        const workshopFee = formData.selectedWorkshops.reduce(
+            (total, name) => total + (workshopPrograms.find((program) => program.name === name)?.price || 0),
+            0
+        );
 
         return {
             registrationFee,
@@ -1132,7 +1136,7 @@ function RegistrationPage() {
             workshopFee,
             total: registrationFee + competitionFee + workshopFee,
         };
-    }, [formData.category, formData.preConferenceWorkshop, formData.studentCompetitions, programCatalog]);
+    }, [formData.category, formData.studentCompetitions, formData.selectedWorkshops, programCatalog]);
 
     function updateField(name, value) {
         setFormData((current) => ({ ...current, [name]: value }));
@@ -1210,6 +1214,16 @@ function RegistrationPage() {
                     : current.studentCompetitions;
 
             return { ...current, studentCompetitions: nextCompetitions };
+        });
+        setNotice('');
+    }
+
+    function toggleWorkshop(name) {
+        setFormData((current) => {
+            const selectedWorkshops = current.selectedWorkshops.includes(name)
+                ? current.selectedWorkshops.filter((workshop) => workshop !== name)
+                : [...current.selectedWorkshops, name];
+            return { ...current, selectedWorkshops, preConferenceWorkshop: selectedWorkshops[0] || '' };
         });
         setNotice('');
     }
@@ -1537,6 +1551,9 @@ function RegistrationPage() {
                                             onChange={(event) => updateField('courseOfStudy', event.target.value)}
                                         >
                                             <option value="B.Pharm">B.Pharm</option>
+                                            <option value="Pharm.D">Pharm.D</option>
+                                            <option value="M.Pharm">M.Pharm</option>
+                                            <option value="D.Pharm">D.Pharm</option>
                                         </select>
                                     </label>
                                     <label className={labelClass}>
@@ -1607,17 +1624,16 @@ function RegistrationPage() {
                                             <label
                                                 key={program.name}
                                                 className={`rounded-lg border p-4 text-sm font-bold ${
-                                                    formData.preConferenceWorkshop === program.name
+                                                    formData.selectedWorkshops.includes(program.name)
                                                         ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
                                                         : 'border-zinc-200 bg-white text-zinc-700'
                                                 }`}
                                             >
                                                 <input
-                                                    type="radio"
-                                                    name="preConferenceWorkshop"
+                                                    type="checkbox"
                                                     className="mr-2"
-                                                    checked={formData.preConferenceWorkshop === program.name}
-                                                    onChange={() => updateField('preConferenceWorkshop', program.name)}
+                                                    checked={formData.selectedWorkshops.includes(program.name)}
+                                                    onChange={() => toggleWorkshop(program.name)}
                                                 />
                                                 <span>{program.name}</span>
                                                 <span className="ml-2 text-xs font-bold text-emerald-700">{program.price ? `Rs. ${program.price.toLocaleString('en-IN')}` : 'Free'}</span>
@@ -1705,7 +1721,7 @@ function RegistrationPage() {
                                         ['Primary Category', formData.category || 'Not selected'],
                                         ['College Detail', formData.collegeWithState || 'Not entered'],
                                         ['Competitions', formData.studentCompetitions.join(', ') || 'None'],
-                                        ['Workshop', formData.preConferenceWorkshop || 'Not selected'],
+                                        ['Workshops', formData.selectedWorkshops.join(', ') || 'Not selected'],
                                         ['Presentation', formData.presentationType || 'Not selected'],
                                         ['Registration Fee', `Rs. ${totals.registrationFee}`],
                                         ['Competition Fee', `Rs. ${totals.competitionFee}`],
@@ -1720,7 +1736,7 @@ function RegistrationPage() {
                                         ['WhatsApp', formData.whatsappNumber || 'Not entered'],
                                         ['College', formData.collegeWithState || 'Not entered'],
                                         ['Competitions', formData.studentCompetitions.join(', ') || 'None'],
-                                        ['Workshop', formData.preConferenceWorkshop || 'Not selected'],
+                                        ['Workshops', formData.selectedWorkshops.join(', ') || 'Not selected'],
                                         ['Presentation', formData.presentationType || 'Not selected'],
                                         ['Registration Fee', `Rs. ${totals.registrationFee}`],
                                         ['Competition Fee', `Rs. ${totals.competitionFee}`],
@@ -2265,10 +2281,29 @@ function SponsorRegistrationPage() {
 
                             {activeTab === 'payment' && (
                                 <div className="mt-6 grid gap-5 md:grid-cols-2">
-                                    <div className="rounded-lg bg-emerald-50 p-4 text-sm leading-6 text-emerald-950 md:col-span-2">
-                                        <strong>PHARMA FIRST</strong><br />
-                                        Current A/C: 31140200001427 | IFSC: BARB0MUVATT<br />
-                                        Branch: Muvattupuzha | MICR: 686012252
+                                    <div className="grid gap-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 md:col-span-2 lg:grid-cols-[1fr_340px] lg:items-start lg:p-6">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Payment Collection</p>
+                                            <h3 className="mt-2 text-xl font-bold text-emerald-950">PHARMA FIRST</h3>
+                                            <div className="mt-4 rounded-lg border border-emerald-200 bg-white p-4 text-sm leading-7 text-zinc-700">
+                                                <p><span className="font-semibold text-zinc-950">Current A/C:</span> 31140200001427</p>
+                                                <p><span className="font-semibold text-zinc-950">IFSC:</span> BARB0MUVATT</p>
+                                                <p><span className="font-semibold text-zinc-950">Branch:</span> Muvattupuzha</p>
+                                                <p><span className="font-semibold text-zinc-950">MICR:</span> 686012252</p>
+                                            </div>
+                                            <div className="mt-4 rounded-lg bg-emerald-900 px-4 py-3 text-white">
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200">Verified UPI ID</p>
+                                                <p className="mt-1 break-all font-mono text-sm font-bold">pharm94460427@barodampay</p>
+                                            </div>
+                                            <p className="mt-4 text-sm leading-6 text-emerald-900">Scan using any UPI or CBDC payment app, then enter the transaction reference and upload the receipt below.</p>
+                                        </div>
+                                        <figure className="rounded-xl border border-emerald-200 bg-white p-3 shadow-sm">
+                                            <img src="/sponsor-payment-qr.jpg" alt="Verified PHARMA FIRST Bank of Baroda UPI payment QR code" className="mx-auto h-auto w-full max-w-xs rounded-lg" loading="lazy" />
+                                            <figcaption className="mt-3 text-center">
+                                                <p className="text-xs font-bold text-zinc-800">Bank of Baroda Verified Merchant</p>
+                                                <a href="/pharm94460427@barodampayVerified%20Merchant.pdf" target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-semibold text-emerald-700 underline">Open verified merchant PDF</a>
+                                            </figcaption>
+                                        </figure>
                                     </div>
                                     <label className={labelClass}>
                                         Payment Method
@@ -2808,12 +2843,21 @@ function SponsorSection() {
                                 </div>
                             ))}
                         </div>
-                        <a
-                            href="/sponsor-registration"
-                            className="button-pop mt-7 inline-flex rounded-lg bg-[#df0867] px-5 py-3 text-sm font-bold text-white hover:bg-[#bd0758]"
-                        >
-                            Become a Sponsor
-                        </a>
+                        <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+                            <a
+                                href="/sponsor-registration"
+                                className="button-pop inline-flex justify-center rounded-lg bg-[#df0867] px-5 py-3 text-sm font-bold text-white hover:bg-[#bd0758]"
+                            >
+                                Become a Sponsor
+                            </a>
+                            <a
+                                href="/sponsorship-brochure.pdf"
+                                download="14th-IPA-NSC-Sponsorship-Brochure.pdf"
+                                className="button-pop inline-flex justify-center rounded-lg border border-[#11145f]/20 bg-white px-5 py-3 text-sm font-bold text-[#11145f] shadow-sm hover:border-[#11145f] hover:bg-[#11145f] hover:text-white"
+                            >
+                                Sponsorship Brochure
+                            </a>
+                        </div>
                     </div>
                 </Reveal>
 
@@ -2838,7 +2882,7 @@ function Contact() {
             <div className="event-footer-glow event-footer-glow-right" aria-hidden="true" />
 
             <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-14 sm:px-6 lg:px-8">
-                <div className="grid gap-10 lg:grid-cols-[1.25fr_0.7fr_0.8fr]">
+                <div className="grid gap-10 lg:grid-cols-[1.35fr_0.65fr]">
                     <div>
                         <div className="flex max-w-2xl items-center gap-6 rounded-2xl bg-white/8 p-6 backdrop-blur-md ring-1 ring-white/12">
                             <img
@@ -2887,26 +2931,47 @@ function Contact() {
                         </nav>
                     </div>
 
-                    <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">Important Contacts</p>
-                        <p className="mt-4 text-sm leading-6 text-white/60">
-                            LOC and support desk contact details will be updated here.
-                        </p>
-                        <div className="mt-5 grid gap-3">
-                            <a
-                                href="mailto:info@example.com"
-                                className="rounded-xl bg-white/8 px-4 py-3 text-sm font-semibold text-white/80 ring-1 ring-white/12 transition hover:bg-white/14 hover:text-white"
-                            >
-                                <span className="block text-xs font-bold uppercase tracking-wider text-[#ffd36a]">Email</span>
-                                <span className="mt-1 block">info@example.com</span>
+                </div>
+
+                <div className="mt-10 border-t border-white/10 pt-8">
+                    <div className="grid gap-4 lg:grid-cols-[1.4fr_0.6fr]">
+                        <section className="rounded-2xl bg-white/8 p-5 ring-1 ring-white/12 sm:p-6">
+                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">Address for Correspondence</p>
+                            <div className="mt-4 text-sm leading-7 text-white/75">
+                                <p className="font-bold text-white">Dr. John Joseph</p>
+                                <p>Organizing Secretary</p>
+                                <address className="mt-2 not-italic">
+                                    C/o Lisie College of Pharmacy,<br />
+                                    Vennala High School Road,<br />
+                                    Kochi, Pin - 682028,<br />
+                                    Kerala, India.
+                                </address>
+                            </div>
+                        </section>
+
+                        <section className="rounded-2xl bg-[#df0867]/15 p-5 ring-1 ring-[#df0867]/35 sm:p-6">
+                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">Official Email</p>
+                            <p className="mt-4 text-sm leading-6 text-white/65">For congress correspondence and general enquiries:</p>
+                            <a href="mailto:ipakeralastate@gmail.com" className="mt-4 block break-all text-base font-bold text-white underline decoration-[#df0867] decoration-2 underline-offset-4 hover:text-[#ffd36a]">
+                                ipakeralastate@gmail.com
                             </a>
-                            <a
-                                href="tel:+910000000000"
-                                className="rounded-xl bg-white/8 px-4 py-3 text-sm font-semibold text-white/80 ring-1 ring-white/12 transition hover:bg-white/14 hover:text-white"
-                            >
-                                <span className="block text-xs font-bold uppercase tracking-wider text-[#ffd36a]">Phone</span>
-                                <span className="mt-1 block">+91 00000 00000</span>
-                            </a>
+                        </section>
+                    </div>
+
+                    <div className="mt-8">
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">Key Contacts</p>
+                        <div className="mt-4 grid gap-4 md:grid-cols-3">
+                            {[
+                                ['Chairperson LOC', 'Dr. P Jayasekhar', '+91 82810 36121', '+918281036121'],
+                                ['Secretary LOC', 'Dr. John Joseph', '+91 98461 68636', '+919846168636'],
+                                ['Chair - Digital Media', 'Mr. Prasanth Kumar M', '+91 97473 65858', '+919747365858'],
+                            ].map(([role, name, phone, phoneHref]) => (
+                                <section key={role} className="rounded-xl bg-white/8 p-5 ring-1 ring-white/12 transition hover:bg-white/12">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-[#df8abb]">{role}</p>
+                                    <p className="mt-3 text-base font-bold text-white">{name}</p>
+                                    <a href={`tel:${phoneHref}`} className="mt-2 inline-block text-sm font-semibold text-white/70 hover:text-[#ffd36a]">{phone}</a>
+                                </section>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -4036,7 +4101,7 @@ function AdminPage() {
                                                     </td>
                                                     <td className="px-4 py-4 text-xs text-zinc-600">
                                                         <p>{registration.studentCompetitions.length ? registration.studentCompetitions.join(', ') : 'No competitions'}</p>
-                                                        {registration.preConferenceWorkshop && <p className="mt-1">Workshop: {registration.preConferenceWorkshop}</p>}
+                                                        {registration.selectedWorkshops.length > 0 && <p className="mt-1">Workshops: {registration.selectedWorkshops.join(', ')}</p>}
                                                         {registration.presentationType && <p className="mt-1">Presentation: {registration.presentationType}</p>}
                                                     </td>
                                                     <td className="px-4 py-4 font-bold text-zinc-950">Rs. {registration.totalPayableAmount.toLocaleString('en-IN')}</td>
@@ -4160,7 +4225,7 @@ function AdminPage() {
                                                 <h3 className="text-sm font-semibold text-zinc-950">Programs and payment</h3>
                                                 <div className="mt-3 rounded-lg border border-zinc-200 p-4 text-sm text-zinc-700">
                                                     <p><span className="font-semibold text-zinc-950">Competitions:</span> {selectedRegistration.studentCompetitions.length ? selectedRegistration.studentCompetitions.join(', ') : '-'}</p>
-                                                    <p className="mt-2"><span className="font-semibold text-zinc-950">Workshop:</span> {selectedRegistration.preConferenceWorkshop || '-'}</p>
+                                                    <p className="mt-2"><span className="font-semibold text-zinc-950">Workshops:</span> {selectedRegistration.selectedWorkshops.length ? selectedRegistration.selectedWorkshops.join(', ') : '-'}</p>
                                                     <p className="mt-2"><span className="font-semibold text-zinc-950">Transaction details:</span> {selectedRegistration.transactionDetails || '-'}</p>
                                                     <div className="mt-4 grid gap-2 border-t border-zinc-200 pt-4 sm:grid-cols-2">
                                                         <p>Registration fee: <strong>Rs. {selectedRegistration.registrationFee.toLocaleString('en-IN')}</strong></p>
@@ -5092,7 +5157,7 @@ function ScientificServicePage() {
                         14th IPA National Students Congress 2026
                     </div>
                     <h1 className="mt-4 text-3xl font-extrabold leading-tight sm:text-4xl lg:text-5xl">
-                        Scientific Service
+                        Scientific Service &amp; Abstract
                     </h1>
                     <div className="mt-5 max-w-2xl border-l-4 border-[#df0867] bg-[#0d124f]/50 px-4 py-3 backdrop-blur-sm">
                         <p className="text-base leading-7 text-blue-100">
