@@ -88,12 +88,21 @@ const updates = [
 
 const preCongressWorkshops = [
     {
-        title: '3D Printing & Scientific Writing',
+        title: '3D Printing and Scientific Writing',
+        events: [
+            { number: 1, name: '3D Printing' },
+            { number: 2, name: 'Scientific Writing' },
+        ],
         date: '17-18 September 2026',
         venue: 'Lisie College of Pharmacy, Ernakulam',
     },
     {
-        title: 'FIP Vaccination, NDDS & CADD',
+        title: 'FIP Vaccination, NDDS and CADD',
+        events: [
+            { number: 3, name: 'FIP Vaccination' },
+            { number: 4, name: 'NDDS' },
+            { number: 5, name: 'CADD' },
+        ],
         date: '17-18 September 2026',
         venue: 'Amrita School of Pharmacy, Ernakulam',
     },
@@ -102,7 +111,12 @@ const preCongressWorkshops = [
 const sponsorShowcase = [
     { tier: 'Title Sponsor', slots: 1, accent: 'from-[#df0867] to-[#f4a21b]' },
     { tier: 'Premium Sponsors', slots: 2, accent: 'from-[#f4a21b] to-[#ffd36a]' },
-    { tier: 'Supporting Partners', slots: 3, accent: 'from-[#00652f] to-[#0f9f58]' },
+    { tier: 'Supporting Partners', slots: 2, accent: 'from-[#00652f] to-[#0f9f58]' },
+];
+
+const supportingPartners = [
+    { name: 'Pharma First', logo: '/supportting partners/pharma-first-logo.png' },
+    { name: 'PHARMABIZ.com', logo: '/supportting partners/pharmabiz-logo.png' },
 ];
 
 const accommodationTravelDefaults = {
@@ -740,16 +754,20 @@ function QuickFacts() {
                         <p className="text-sm text-white/70">Two workshop venues in Ernakulam</p>
                     </div>
                     <div className="grid gap-4 lg:grid-cols-2">
-                        {preCongressWorkshops.map((workshop, index) => (
+                        {preCongressWorkshops.map((workshop) => (
                             <article key={workshop.title} className="snapshot-workshop-card relative overflow-hidden rounded-xl border border-white/15 bg-white/95 p-5 text-zinc-950 shadow-2xl sm:p-6">
-                                <div className="flex items-start gap-4">
-                                    <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-[#11145f] text-sm font-black text-white shadow-lg">
-                                        {String(index + 1).padStart(2, '0')}
-                                    </span>
-                                    <div className="min-w-0">
-                                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#df0867]">Pre-Congress Workshop</p>
-                                        <h4 className="mt-2 text-xl font-bold leading-snug text-[#11145f]">{workshop.title}</h4>
-                                    </div>
+                                <div className="min-w-0">
+                                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#df0867]">Pre-Congress Workshops</p>
+                                    <h4 className="mt-3 grid gap-3 text-xl font-bold leading-snug text-[#11145f]">
+                                        {workshop.events.map((event) => (
+                                            <span key={event.number} className="flex items-center gap-3">
+                                                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#11145f] text-sm font-black text-white shadow-lg">
+                                                    {String(event.number).padStart(2, '0')}
+                                                </span>
+                                                <span>{event.name}</span>
+                                            </span>
+                                        ))}
+                                    </h4>
                                 </div>
                                 <dl className="mt-5 grid gap-3 border-t border-dashed border-zinc-200 pt-4 sm:grid-cols-2">
                                     <div>
@@ -775,7 +793,7 @@ function QuickFacts() {
                     <article className="snapshot-workshop-card snapshot-main-event relative overflow-hidden rounded-xl border border-white/20 bg-white p-5 text-zinc-950 shadow-2xl sm:p-6">
                         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                             <div className="flex items-start gap-4">
-                                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-[#df0867] text-sm font-black text-white shadow-lg">03</span>
+                                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-[#df0867] text-sm font-black text-white shadow-lg">06</span>
                                 <div>
                                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#df0867]">Main Event</p>
                                     <h3 className="mt-2 text-2xl font-bold leading-snug text-[#11145f]">14th IPA National Students Congress</h3>
@@ -819,7 +837,6 @@ function SponsorShowcase() {
                     </h2>
                     <p className="mt-4 text-base leading-7 text-zinc-600">
                         We gratefully acknowledge the organizations supporting the 14th IPA National Students Congress.
-                        Confirmed sponsor logos will be featured here.
                     </p>
                 </div>
 
@@ -836,20 +853,16 @@ function SponsorShowcase() {
                                     <div className="supporting-partners-track">
                                         {[0, 1].map((set) => (
                                             <div key={set} className="supporting-partners-group" aria-hidden={set === 1}>
-                                                {Array.from({ length: slots }, (_, index) => (
+                                                {supportingPartners.map((partner) => (
                                                     <div
-                                                        key={`${set}-${index}`}
+                                                        key={`${set}-${partner.name}`}
                                                         className="group flex min-h-36 w-[260px] shrink-0 items-center justify-center rounded-2xl bg-zinc-50 p-6 shadow-sm ring-1 ring-zinc-200 transition duration-300 hover:bg-white hover:shadow-xl sm:w-[300px]"
                                                     >
-                                                        <div className="text-center">
-                                                            <div className={`mx-auto mb-3 h-1.5 w-16 rounded-full bg-gradient-to-r ${accent}`} />
-                                                            <p className="text-lg font-bold text-zinc-400 transition group-hover:text-[#11145f]">
-                                                                Sponsor Logo
-                                                            </p>
-                                                            <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                                                                Coming soon
-                                                            </p>
-                                                        </div>
+                                                        <img
+                                                            src={partner.logo}
+                                                            alt={`${partner.name} logo`}
+                                                            className="h-24 w-56 object-contain"
+                                                        />
                                                     </div>
                                                 ))}
                                             </div>
