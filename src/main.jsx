@@ -4,17 +4,22 @@ import './styles.css';
 import App from './App.jsx';
 
 function SiteRoot() {
-    const [isLoading, setIsLoading] = useState(true);
+    const showPublicLoader = !window.location.pathname.startsWith('/admin');
+    const [isLoading, setIsLoading] = useState(showPublicLoader);
     const [isLeaving, setIsLeaving] = useState(false);
 
     useEffect(() => {
+        if (!showPublicLoader) {
+            return undefined;
+        }
+
         const minimumTimer = window.setTimeout(() => {
             setIsLeaving(true);
             window.setTimeout(() => setIsLoading(false), 500);
         }, 1000);
 
         return () => window.clearTimeout(minimumTimer);
-    }, []);
+    }, [showPublicLoader]);
 
     return (
         <>

@@ -119,6 +119,12 @@ const supportingPartners = [
     { name: 'PHARMABIZ.com', logo: '/supportting partners/pharmabiz-logo.png' },
 ];
 
+const heroLogos = [
+    { name: 'IPA Students Forum', logo: '/logo/IPA-SF Light (1).png', className: 'w-36 sm:w-44' },
+    { name: 'IPA Education Division', logo: '/logo/IPA - ED - Light (1).png', className: 'w-28 sm:w-36' },
+    { name: 'IPA Kerala State Branch', logo: '/logo/HOST LOGO - LIGHT (1).png', className: 'w-24 sm:w-32' },
+];
+
 const accommodationTravelDefaults = {
     pageTitle: 'Accommodation & Travel',
     heading: 'Stay options, pickup points, and nearby places to visit.',
@@ -365,6 +371,17 @@ const workshopFees = {
     '3D Printing': 0,
 };
 
+const hrCoreAreaOptions = [
+    'Production / Manufacturing',
+    'QA/QC',
+    'Marketing / Sales',
+    'Pharmacist',
+    'Pharmacovigilance / Clinical Trial',
+    'Regulatory / Documentation',
+    'Higher Studies',
+    'Others',
+];
+
 const initialRegistration = {
     registrationMode: 'individual',
     participantName: '',
@@ -387,6 +404,13 @@ const initialRegistration = {
     selectedWorkshops: [],
     workshopFeeAcknowledged: '',
     presentationType: '',
+    hrCollegeWithState: '',
+    hrCourseOrQualification: '',
+    hrWhatsappNumber: '',
+    hrWhatsappConfirmation: '',
+    hrEmail: '',
+    hrEmailConfirmation: '',
+    hrCoreArea: '',
     transactionDetails: '',
     registrationNumber: '',
     submittedAt: '',
@@ -394,9 +418,10 @@ const initialRegistration = {
 
 const registrationTabs = [
     { id: 'general', label: 'General' },
-    { id: 'competitions', label: 'Competitions' },
+    { id: 'competitions', label: 'Student Competitions' },
     { id: 'workshop', label: 'Workshop' },
     { id: 'presentation', label: 'Presentation' },
+    { id: 'hr-drive', label: 'HR Drive' },
     { id: 'payment', label: 'Payment' },
     { id: 'review', label: 'Review' },
     { id: 'confirmation', label: 'Confirmation' },
@@ -668,7 +693,17 @@ function Hero() {
                     <h1 className="max-w-3xl text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
                         14th IPA National Students Congress
                     </h1>
-                    <div className="mt-5 max-w-3xl border-l-4 border-[#df0867] bg-[#0d124f]/55 px-4 py-3 backdrop-blur-sm">
+                    <div className="mt-5 max-w-3xl border-l-4 border-[#df0867] bg-[#0d124f]/55 px-5 py-5 backdrop-blur-sm">
+                        <div className="mb-4 flex flex-wrap items-center gap-5 border-b border-white/20 pb-4 sm:gap-7">
+                            {heroLogos.map((item) => (
+                                <img
+                                    key={item.name}
+                                    src={item.logo}
+                                    alt={`${item.name} logo`}
+                                    className={`h-28 object-contain sm:h-32 ${item.className}`}
+                                />
+                            ))}
+                        </div>
                         <p className="text-xs font-bold uppercase tracking-wider text-[#ffd36a]">Theme</p>
                         <p className="mt-1 text-base font-semibold leading-7 text-white sm:text-lg">{eventTheme}</p>
                     </div>
@@ -679,7 +714,7 @@ function Hero() {
                         <a href="#fourteenth-ipa-national-students-congress-souvenir" className="button-pop rounded-lg bg-[#df0867] px-5 py-3 text-center text-sm font-bold text-white hover:bg-[#bd0758]">
                             Souvenir
                         </a>
-                        <a href="#fourteenth-nsc-brochures" className="button-pop rounded-lg bg-white/12 px-5 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-black/10 backdrop-blur-md backdrop-saturate-150 hover:bg-white/20 hover:backdrop-blur-lg">
+                        <a href="#fourteenth-nsc-brochures" className="button-pop rounded-lg bg-[#1b2074] px-5 py-3 text-center text-sm font-bold text-white shadow-lg shadow-black/15 hover:bg-[#1b2074]">
                             Congress Brochures
                         </a>
                     </div>
@@ -807,7 +842,10 @@ function QuickFacts() {
                                 </div>
                                 <div>
                                     <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">Venue</dt>
-                                    <dd className="mt-1 text-sm font-semibold text-zinc-900">Kerala</dd>
+                                    <dd className="mt-1 text-sm font-semibold leading-5 text-zinc-900">
+                                        <span className="block">Toc-H Public School</span>
+                                        <span className="block">Kochi, Kerala.</span>
+                                    </dd>
                                 </div>
                                 <div>
                                     <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">Host</dt>
@@ -1102,11 +1140,18 @@ function RegistrationPage() {
     const [notice, setNotice] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [programCatalog, setProgramCatalog] = useState([]);
+    const [categoryCatalog, setCategoryCatalog] = useState([]);
 
     useEffect(() => {
         apiRequest('programs')
-            .then(({ programs }) => setProgramCatalog(programs || []))
-            .catch(() => setProgramCatalog([]));
+            .then(({ programs, categories }) => {
+                setProgramCatalog(programs || []);
+                setCategoryCatalog(categories || []);
+            })
+            .catch(() => {
+                setProgramCatalog([]);
+                setCategoryCatalog([]);
+            });
     }, []);
 
     useEffect(() => {
@@ -1125,15 +1170,28 @@ function RegistrationPage() {
             });
     }, []);
 
-    const competitionPrograms = programCatalog.length
-        ? programCatalog.filter((program) => program.type === 'competition')
-        : competitionOptions.map((name) => ({ name, price: 100, description: '' }));
-    const workshopPrograms = programCatalog.length
-        ? programCatalog.filter((program) => program.type === 'workshop')
-        : workshopOptions.map((name) => ({ name, price: workshopFees[name] || 0, description: '' }));
+    const registrationCategories = categoryCatalog.length
+        ? categoryCatalog
+        : categoryOptions.map((name, index) => ({ id: `fallback-${index}`, name, registrationFee: categoryFees[name] || 0 }));
+    const selectedCategory = registrationCategories.find((category) => category.name === formData.category);
+    const priceProgramForCategory = (program) => {
+        if (!program.categoryPricing) return program;
+        const categoryPrice = program.categoryPricing.find((item) => String(item.categoryId) === String(selectedCategory?.id));
+        return categoryPrice?.isAvailable ? { ...program, price: categoryPrice.price } : null;
+    };
+    const competitionPrograms = formData.category
+        ? (programCatalog.length
+            ? programCatalog.filter((program) => program.type === 'competition').map(priceProgramForCategory).filter(Boolean)
+            : competitionOptions.map((name) => ({ name, price: 100, description: '' })))
+        : [];
+    const workshopPrograms = formData.category
+        ? (programCatalog.length
+            ? programCatalog.filter((program) => program.type === 'workshop').map(priceProgramForCategory).filter(Boolean)
+            : workshopOptions.map((name) => ({ name, price: workshopFees[name] || 0, description: '' })))
+        : [];
 
     const totals = useMemo(() => {
-        const registrationFee = categoryFees[formData.category] || 0;
+        const registrationFee = selectedCategory?.registrationFee || 0;
         const competitionFee = formData.studentCompetitions.reduce(
             (total, name) => total + (competitionPrograms.find((program) => program.name === name)?.price || 0),
             0
@@ -1149,11 +1207,22 @@ function RegistrationPage() {
             workshopFee,
             total: registrationFee + competitionFee + workshopFee,
         };
-    }, [formData.category, formData.studentCompetitions, formData.selectedWorkshops, programCatalog]);
+    }, [formData.category, formData.studentCompetitions, formData.selectedWorkshops, programCatalog, categoryCatalog]);
 
     function updateField(name, value) {
         setFormData((current) => ({ ...current, [name]: value }));
         setNotice('');
+    }
+
+    function updateRegistrationCategory(value) {
+        setFormData((current) => ({
+            ...current,
+            category: value,
+            studentCompetitions: [],
+            selectedWorkshops: [],
+            preConferenceWorkshop: '',
+        }));
+        setNotice(value ? 'Category changed. Program options and prices have been refreshed.' : '');
     }
 
     function downloadGroupTemplate() {
@@ -1254,6 +1323,24 @@ function RegistrationPage() {
     }
 
     async function submitRegistration() {
+        if (!formData.hrCollegeWithState.trim() || !formData.hrCourseOrQualification.trim()
+            || !formData.hrWhatsappNumber.trim() || !formData.hrWhatsappConfirmation.trim()
+            || !formData.hrEmail.trim() || !formData.hrEmailConfirmation.trim() || !formData.hrCoreArea) {
+            setActiveTab('hr-drive');
+            setNotice('Complete all HR Drive fields before submitting.');
+            return;
+        }
+        if (formData.hrWhatsappNumber.trim() !== formData.hrWhatsappConfirmation.trim()) {
+            setActiveTab('hr-drive');
+            setNotice('The HR Drive WhatsApp numbers do not match.');
+            return;
+        }
+        if (formData.hrEmail.trim().toLowerCase() !== formData.hrEmailConfirmation.trim().toLowerCase()) {
+            setActiveTab('hr-drive');
+            setNotice('The HR Drive email addresses do not match.');
+            return;
+        }
+
         setIsSaving(true);
         setNotice('Submitting...');
 
@@ -1394,11 +1481,13 @@ function RegistrationPage() {
                                     <select
                                         className={fieldClass}
                                         value={formData.category}
-                                        onChange={(event) => updateField('category', event.target.value)}
+                                        onChange={(event) => updateRegistrationCategory(event.target.value)}
                                     >
                                         <option value="">Choose category</option>
-                                        {categoryOptions.map((option) => (
-                                            <option key={option} value={option}>{option}</option>
+                                        {registrationCategories.map((category) => (
+                                            <option key={category.id} value={category.name}>
+                                                {category.name} - Rs. {category.registrationFee.toLocaleString('en-IN')}
+                                            </option>
                                         ))}
                                     </select>
                                 </label>
@@ -1509,11 +1598,13 @@ function RegistrationPage() {
                                     <select
                                         className={fieldClass}
                                         value={formData.category}
-                                        onChange={(event) => updateField('category', event.target.value)}
+                                        onChange={(event) => updateRegistrationCategory(event.target.value)}
                                     >
                                         <option value="">Choose category</option>
-                                        {categoryOptions.map((option) => (
-                                            <option key={option} value={option}>{option}</option>
+                                        {registrationCategories.map((category) => (
+                                            <option key={category.id} value={category.name}>
+                                                {category.name} - Rs. {category.registrationFee.toLocaleString('en-IN')}
+                                            </option>
                                         ))}
                                     </select>
                                 </label>
@@ -1582,7 +1673,10 @@ function RegistrationPage() {
                                 <div>
                                     <p className={labelClass}>Student Competitions</p>
                                     <p className="mt-1 text-sm text-zinc-500">Select a maximum of 2 events. Pricing is configured by the event administrator.</p>
-                                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                    {!formData.category ? (
+                                        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Select a category in the General step to view available competitions and prices.</p>
+                                    ) : competitionPrograms.length ? (
+                                        <div className="mt-3 grid gap-3 md:grid-cols-2">
                                         {competitionPrograms.map((program) => {
                                             const checked = formData.studentCompetitions.includes(program.name);
                                             const disabled = !checked && formData.studentCompetitions.length >= 2;
@@ -1611,7 +1705,10 @@ function RegistrationPage() {
                                                 </label>
                                             );
                                         })}
-                                    </div>
+                                        </div>
+                                    ) : (
+                                        <p className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">No student competitions are available for this category.</p>
+                                    )}
                                 </div>
                                 <label className={labelClass}>
                                     Competition Fee Acknowledgement
@@ -1632,7 +1729,10 @@ function RegistrationPage() {
                             <div className="mt-6 grid gap-6">
                                 <div>
                                     <p className={labelClass}>Pre-Conference Workshop Area</p>
-                                    <div className="mt-3 grid gap-3 md:grid-cols-3">
+                                    {!formData.category ? (
+                                        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Select a category in the General step to view available workshops and prices.</p>
+                                    ) : workshopPrograms.length ? (
+                                        <div className="mt-3 grid gap-3 md:grid-cols-3">
                                         {workshopPrograms.map((program) => (
                                             <label
                                                 key={program.name}
@@ -1653,7 +1753,10 @@ function RegistrationPage() {
                                                 {program.description && <span className="mt-1 block pl-6 text-xs font-normal text-zinc-500">{program.description}</span>}
                                             </label>
                                         ))}
-                                    </div>
+                                        </div>
+                                    ) : (
+                                        <p className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">No workshops are available for this category.</p>
+                                    )}
                                 </div>
                                 <label className={labelClass}>
                                     Workshop Fee Acknowledgement
@@ -1697,6 +1800,84 @@ function RegistrationPage() {
                             </div>
                         )}
 
+                        {activeTab === 'hr-drive' && (
+                            <div className="mt-6 grid gap-5 md:grid-cols-2">
+                                <label className={`${labelClass} md:col-span-2`}>
+                                    Name of College Studying or Last Studied (in capital letters) with State
+                                    <input
+                                        className={fieldClass}
+                                        value={formData.hrCollegeWithState}
+                                        onChange={(event) => updateField('hrCollegeWithState', event.target.value.toUpperCase())}
+                                        placeholder="ABC COLLEGE OF PHARMACY, KERALA"
+                                    />
+                                </label>
+                                <label className={`${labelClass} md:col-span-2`}>
+                                    Course and Year of Study or Highest Qualification (if passed out)
+                                    <input
+                                        className={fieldClass}
+                                        value={formData.hrCourseOrQualification}
+                                        onChange={(event) => updateField('hrCourseOrQualification', event.target.value)}
+                                        placeholder="B.Pharm, 4th Year or M.Pharm"
+                                    />
+                                </label>
+                                <label className={labelClass}>
+                                    WhatsApp Number
+                                    <input
+                                        className={fieldClass}
+                                        type="tel"
+                                        value={formData.hrWhatsappNumber}
+                                        onChange={(event) => updateField('hrWhatsappNumber', event.target.value)}
+                                        placeholder="+91 9876543210"
+                                    />
+                                </label>
+                                <label className={labelClass}>
+                                    Confirm WhatsApp Number
+                                    <input
+                                        className={fieldClass}
+                                        type="tel"
+                                        value={formData.hrWhatsappConfirmation}
+                                        onChange={(event) => updateField('hrWhatsappConfirmation', event.target.value)}
+                                        placeholder="Re-enter WhatsApp number"
+                                    />
+                                </label>
+                                <label className={labelClass}>
+                                    Email ID <span className="text-rose-600">*</span>
+                                    <input
+                                        className={fieldClass}
+                                        type="email"
+                                        required
+                                        value={formData.hrEmail}
+                                        onChange={(event) => updateField('hrEmail', event.target.value.toLowerCase())}
+                                        placeholder="name@example.com"
+                                    />
+                                </label>
+                                <label className={labelClass}>
+                                    Confirm Email ID <span className="text-rose-600">*</span>
+                                    <input
+                                        className={fieldClass}
+                                        type="email"
+                                        required
+                                        value={formData.hrEmailConfirmation}
+                                        onChange={(event) => updateField('hrEmailConfirmation', event.target.value.toLowerCase())}
+                                        placeholder="Re-enter email address"
+                                    />
+                                </label>
+                                <label className={`${labelClass} md:col-span-2`}>
+                                    Select the core area of your preference
+                                    <select
+                                        className={fieldClass}
+                                        value={formData.hrCoreArea}
+                                        onChange={(event) => updateField('hrCoreArea', event.target.value)}
+                                    >
+                                        <option value="">Choose</option>
+                                        {hrCoreAreaOptions.map((option) => (
+                                            <option key={option} value={option}>{option}</option>
+                                        ))}
+                                    </select>
+                                </label>
+                            </div>
+                        )}
+
                         {activeTab === 'payment' && (
                             <div className="mt-6 grid gap-5 md:grid-cols-2">
                                 <label className={labelClass}>
@@ -1736,6 +1917,11 @@ function RegistrationPage() {
                                         ['Competitions', formData.studentCompetitions.join(', ') || 'None'],
                                         ['Workshops', formData.selectedWorkshops.join(', ') || 'Not selected'],
                                         ['Presentation', formData.presentationType || 'Not selected'],
+                                        ['HR College', formData.hrCollegeWithState || 'Not entered'],
+                                        ['HR Course / Qualification', formData.hrCourseOrQualification || 'Not entered'],
+                                        ['HR WhatsApp', formData.hrWhatsappNumber || 'Not entered'],
+                                        ['HR Email', formData.hrEmail || 'Not entered'],
+                                        ['Preferred Core Area', formData.hrCoreArea || 'Not selected'],
                                         ['Registration Fee', `Rs. ${totals.registrationFee}`],
                                         ['Competition Fee', `Rs. ${totals.competitionFee}`],
                                         ['Workshop Fee', `Rs. ${totals.workshopFee}`],
@@ -1751,6 +1937,11 @@ function RegistrationPage() {
                                         ['Competitions', formData.studentCompetitions.join(', ') || 'None'],
                                         ['Workshops', formData.selectedWorkshops.join(', ') || 'Not selected'],
                                         ['Presentation', formData.presentationType || 'Not selected'],
+                                        ['HR College', formData.hrCollegeWithState || 'Not entered'],
+                                        ['HR Course / Qualification', formData.hrCourseOrQualification || 'Not entered'],
+                                        ['HR WhatsApp', formData.hrWhatsappNumber || 'Not entered'],
+                                        ['HR Email', formData.hrEmail || 'Not entered'],
+                                        ['Preferred Core Area', formData.hrCoreArea || 'Not selected'],
                                         ['Registration Fee', `Rs. ${totals.registrationFee}`],
                                         ['Competition Fee', `Rs. ${totals.competitionFee}`],
                                         ['Workshop Fee', `Rs. ${totals.workshopFee}`],
@@ -3157,6 +3348,14 @@ function AdminSidebarIcon({ name }) {
                 <path d="M21 8v6" />
             </>
         ),
+        categories: (
+            <>
+                <path d="M4 5h6v6H4V5Z" />
+                <path d="M14 5h6v6h-6V5Z" />
+                <path d="M4 15h6v4H4v-4Z" />
+                <path d="M14 15h6v4h-6v-4Z" />
+            </>
+        ),
         pricing: (
             <>
                 <path d="M20 12V6H4v12h8" />
@@ -3189,6 +3388,14 @@ function AdminSidebarIcon({ name }) {
                 <path d="M6 10.5V20h12v-9.5" />
                 <path d="M9 20v-5h6v5" />
                 <path d="M9 9.5h6" />
+            </>
+        ),
+        scientific: (
+            <>
+                <path d="M9 3h6" />
+                <path d="M10 3v5l-5 9a2.5 2.5 0 0 0 2.2 4h9.6a2.5 2.5 0 0 0 2.2-4l-5-9V3" />
+                <path d="M7.5 15h9" />
+                <path d="M9.5 12h5" />
             </>
         ),
         users: (
@@ -3230,6 +3437,7 @@ const adminModules = [
     { id: 'dashboard', label: 'Dashboard', description: 'Overview of registrations, payments, and event operations.' },
     { id: 'registrations', label: 'Registrations', description: 'Review delegate registrations, drafts, and contact details.' },
     { id: 'payments', label: 'Payments', description: 'Track collections, pending payments, and reconciliation.' },
+    { id: 'categories', label: 'Categories', description: 'Create registration categories and configure their base registration fees.' },
     { id: 'programs', label: 'Programs', description: 'Manage event programs, schedules, and capacities.' },
     { id: 'students', label: 'Students', description: 'Maintain student and institution records.' },
     { id: 'pricing', label: 'Pricing', description: 'Configure registration, competition, and workshop fees.' },
@@ -3241,7 +3449,16 @@ const adminModules = [
     { id: 'scientific', label: 'Scientific Content', description: 'Review abstracts and manage scientific resources.' },
 ];
 
-const implementedAdminModules = new Set(['dashboard', 'registrations', 'programs', 'users', 'accommodation', 'scientific']);
+const adminNavigationGroups = [
+    { label: 'Overview', modules: ['dashboard'] },
+    { label: 'Registration', modules: ['registrations', 'students', 'payments'] },
+    { label: 'Event Setup', modules: ['categories', 'programs', 'pricing'] },
+    { label: 'Content', modules: ['scientific', 'winners', 'accommodation'] },
+    { label: 'Insights', modules: ['reports'] },
+    { label: 'Administration', modules: ['users', 'audit'] },
+];
+
+const implementedAdminModules = new Set(['dashboard', 'registrations', 'categories', 'pricing', 'programs', 'users', 'accommodation', 'scientific']);
 
 function getAdminModuleFromPath() {
     const requestedModule = window.location.pathname.split('/')[2] || 'dashboard';
@@ -3283,9 +3500,19 @@ function AdminPage() {
     const [programsError, setProgramsError] = useState('');
     const [programSaving, setProgramSaving] = useState(false);
     const [editingProgramId, setEditingProgramId] = useState(null);
+    const [programDrawerOpen, setProgramDrawerOpen] = useState(false);
     const [programForm, setProgramForm] = useState({
-        name: '', type: 'competition', description: '', price: '0', capacity: '', sortOrder: '0', isActive: true,
+        name: '', type: 'competition', description: '', price: '0', capacity: '', sortOrder: '0', isActive: true, categoryPricing: [],
     });
+    const [pricingCategories, setPricingCategories] = useState([]);
+    const [pricingPrograms, setPricingPrograms] = useState([]);
+    const [pricingLoading, setPricingLoading] = useState(false);
+    const [pricingError, setPricingError] = useState('');
+    const [pricingSaving, setPricingSaving] = useState(false);
+    const [editingCategoryId, setEditingCategoryId] = useState(null);
+    const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false);
+    const [selectedPricingCategoryId, setSelectedPricingCategoryId] = useState('');
+    const [categoryForm, setCategoryForm] = useState({ name: '', registrationFee: '0', sortOrder: '0', isActive: true });
     const [accommodationCms, setAccommodationCms] = useState(accommodationTravelDefaults);
     const [accommodationCmsLoading, setAccommodationCmsLoading] = useState(false);
     const [accommodationCmsSaving, setAccommodationCmsSaving] = useState(false);
@@ -3475,6 +3702,7 @@ function AdminPage() {
         try {
             const payload = await apiRequest('admin/programs');
             setPrograms(payload.programs || []);
+            setPricingCategories(payload.categories || []);
         } catch (error) {
             setProgramsError(error.message);
         } finally {
@@ -3484,8 +3712,19 @@ function AdminPage() {
 
     function resetProgramForm() {
         setEditingProgramId(null);
-        setProgramForm({ name: '', type: 'competition', description: '', price: '0', capacity: '', sortOrder: '0', isActive: true });
+        setProgramForm({ name: '', type: 'competition', description: '', price: '0', capacity: '', sortOrder: '0', isActive: true, categoryPricing: [] });
         setProgramsError('');
+        setProgramDrawerOpen(false);
+    }
+
+    function addProgram() {
+        setEditingProgramId(null);
+        setProgramForm({
+            name: '', type: 'competition', description: '', price: '0', capacity: '', sortOrder: '0', isActive: true,
+            categoryPricing: pricingCategories.map((category) => ({ categoryId: category.id, price: 0, isAvailable: false })),
+        });
+        setProgramsError('');
+        setProgramDrawerOpen(true);
     }
 
     function editProgram(program) {
@@ -3498,8 +3737,22 @@ function AdminPage() {
             capacity: program.capacity === '' ? '' : String(program.capacity),
             sortOrder: String(program.sortOrder),
             isActive: program.isActive,
+            categoryPricing: pricingCategories.map((category) => {
+                const mapping = program.categoryPricing?.find((item) => String(item.categoryId) === String(category.id));
+                return { categoryId: category.id, price: mapping?.price || 0, isAvailable: mapping?.isAvailable === true };
+            }),
         });
         setProgramsError('');
+        setProgramDrawerOpen(true);
+    }
+
+    function updateProgramCategoryMapping(categoryId, updates) {
+        setProgramForm((current) => ({
+            ...current,
+            categoryPricing: current.categoryPricing.map((item) => String(item.categoryId) === String(categoryId)
+                ? { ...item, ...updates }
+                : item),
+        }));
     }
 
     async function saveProgram(event) {
@@ -3508,15 +3761,26 @@ function AdminPage() {
         setProgramsError('');
         try {
             const path = editingProgramId ? `admin/programs/${editingProgramId}` : 'admin/programs';
+            const payload = programForm.type === 'workshop'
+                ? {
+                    ...programForm,
+                    categoryPricing: pricingCategories.map((category) => ({
+                        categoryId: category.id,
+                        price: programForm.price,
+                        isAvailable: true,
+                    })),
+                }
+                : programForm;
             const { program } = await apiRequest(path, {
                 method: editingProgramId ? 'PATCH' : 'POST',
-                body: JSON.stringify(programForm),
+                body: JSON.stringify(payload),
             });
             setPrograms((current) => editingProgramId
                 ? current.map((item) => item.id === program.id ? program : item)
                 : [...current, program]
             );
             resetProgramForm();
+            await loadPrograms();
         } catch (error) {
             setProgramsError(error.message);
         } finally {
@@ -3537,6 +3801,93 @@ function AdminPage() {
         }
     }
 
+    async function loadPricing() {
+        setPricingLoading(true);
+        setPricingError('');
+        try {
+            const payload = await apiRequest('admin/pricing');
+            setPricingCategories(payload.categories || []);
+            setPricingPrograms(payload.programs || []);
+            setSelectedPricingCategoryId((current) => current || String(payload.categories?.[0]?.id || ''));
+        } catch (error) {
+            setPricingError(error.message);
+        } finally {
+            setPricingLoading(false);
+        }
+    }
+
+    function resetCategoryForm() {
+        setEditingCategoryId(null);
+        setCategoryForm({ name: '', registrationFee: '0', sortOrder: '0', isActive: true });
+        setCategoryDrawerOpen(false);
+    }
+
+    function addPricingCategory() {
+        setEditingCategoryId(null);
+        setCategoryForm({ name: '', registrationFee: '0', sortOrder: '0', isActive: true });
+        setPricingError('');
+        setCategoryDrawerOpen(true);
+    }
+
+    function editPricingCategory(category) {
+        setEditingCategoryId(category.id);
+        setCategoryForm({
+            name: category.name,
+            registrationFee: String(category.registrationFee),
+            sortOrder: String(category.sortOrder),
+            isActive: category.isActive,
+        });
+        setCategoryDrawerOpen(true);
+    }
+
+    async function savePricingCategory(event) {
+        event.preventDefault();
+        setPricingSaving(true);
+        setPricingError('');
+        try {
+            const path = editingCategoryId ? `admin/pricing/categories/${editingCategoryId}` : 'admin/pricing/categories';
+            const { category } = await apiRequest(path, {
+                method: editingCategoryId ? 'PATCH' : 'POST',
+                body: JSON.stringify(categoryForm),
+            });
+            setPricingCategories((current) => editingCategoryId
+                ? current.map((item) => String(item.id) === String(category.id) ? category : item)
+                : [...current, category]);
+            if (!selectedPricingCategoryId) setSelectedPricingCategoryId(String(category.id));
+            resetCategoryForm();
+            await loadPricing();
+        } catch (error) {
+            setPricingError(error.message);
+        } finally {
+            setPricingSaving(false);
+        }
+    }
+
+    async function saveProgramCategoryPricing(program, categoryId, updates) {
+        const currentPricing = program.categoryPricing.find((item) => String(item.categoryId) === String(categoryId))
+            || { price: 0, isAvailable: true };
+        const nextPricing = { ...currentPricing, ...updates };
+        setPricingError('');
+        setPricingPrograms((current) => current.map((item) => item.id === program.id
+            ? {
+                ...item,
+                categoryPricing: [
+                    ...item.categoryPricing.filter((price) => String(price.categoryId) !== String(categoryId)),
+                    { categoryId, ...nextPricing },
+                ],
+            }
+            : item));
+        try {
+            await apiRequest('admin/pricing/program', {
+                method: 'PATCH',
+                body: JSON.stringify({ programId: program.id, categoryId, ...nextPricing }),
+            });
+        } catch (error) {
+            setPricingError(error.message);
+            loadPricing();
+        }
+    }
+
     useEffect(() => {
         if (['dashboard', 'registrations'].includes(activeModule) && session) {
             loadRegistrations();
@@ -3546,6 +3897,12 @@ function AdminPage() {
     useEffect(() => {
         if (['dashboard', 'programs'].includes(activeModule) && session) {
             loadPrograms();
+        }
+    }, [activeModule, session]);
+
+    useEffect(() => {
+        if (['categories', 'pricing'].includes(activeModule) && session) {
+            loadPricing();
         }
     }, [activeModule, session]);
 
@@ -3806,21 +4163,31 @@ function AdminPage() {
                     </div>
 
                     <nav className="admin-nav flex gap-1 overflow-x-auto p-3 lg:block lg:h-[calc(100vh-137px)] lg:overflow-y-auto" aria-label="Admin navigation">
-                        <p className="mb-2 hidden px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500 lg:block">Workspace</p>
-                        {adminModules.map(({ id, label }) => (
-                            <a
-                                key={id}
-                                href={`/admin/${id}`}
-                                aria-current={activeModule === id ? 'page' : undefined}
-                                className={`flex shrink-0 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors lg:mb-1 lg:w-full ${
-                                    activeModule === id
-                                        ? 'admin-nav-active bg-zinc-900 text-white shadow-sm'
-                                        : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950'
-                                }`}
-                            >
-                                <AdminSidebarIcon name={id} />
-                                <span>{label}</span>
-                            </a>
+                        {adminNavigationGroups.map((group, groupIndex) => (
+                            <div key={group.label} className={groupIndex ? 'lg:mt-5' : ''}>
+                                <p className="mb-2 hidden px-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-400 lg:block">{group.label}</p>
+                                <div className="flex gap-1 lg:block">
+                                    {group.modules.map((moduleId) => {
+                                        const module = adminModules.find((item) => item.id === moduleId);
+                                        if (!module) return null;
+                                        return (
+                                            <a
+                                                key={module.id}
+                                                href={`/admin/${module.id}`}
+                                                aria-current={activeModule === module.id ? 'page' : undefined}
+                                                className={`flex shrink-0 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors lg:mb-1 lg:w-full ${
+                                                    activeModule === module.id
+                                                        ? 'admin-nav-active bg-zinc-900 text-white shadow-sm'
+                                                        : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950'
+                                                }`}
+                                            >
+                                                <AdminSidebarIcon name={module.id} />
+                                                <span>{module.label}</span>
+                                            </a>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         ))}
                     </nav>
 
@@ -4233,6 +4600,24 @@ function AdminPage() {
                                             </section>
 
                                             <section>
+                                                <h3 className="text-sm font-semibold text-zinc-950">HR Drive</h3>
+                                                <dl className="mt-3 grid gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 sm:grid-cols-2">
+                                                    {[
+                                                        ['College / State', selectedRegistration.hrCollegeWithState],
+                                                        ['Course / Qualification', selectedRegistration.hrCourseOrQualification],
+                                                        ['WhatsApp', selectedRegistration.hrWhatsappNumber],
+                                                        ['Email', selectedRegistration.hrEmail],
+                                                        ['Preferred Core Area', selectedRegistration.hrCoreArea],
+                                                    ].map(([label, value]) => (
+                                                        <div key={label}>
+                                                            <dt className="text-xs font-medium text-zinc-500">{label}</dt>
+                                                            <dd className="mt-1 text-sm font-semibold text-zinc-900">{value || '-'}</dd>
+                                                        </div>
+                                                    ))}
+                                                </dl>
+                                            </section>
+
+                                            <section>
                                                 <h3 className="text-sm font-semibold text-zinc-950">Programs and payment</h3>
                                                 <div className="mt-3 rounded-lg border border-zinc-200 p-4 text-sm text-zinc-700">
                                                     <p><span className="font-semibold text-zinc-950">Competitions:</span> {selectedRegistration.studentCompetitions.length ? selectedRegistration.studentCompetitions.join(', ') : '-'}</p>
@@ -4281,60 +4666,150 @@ function AdminPage() {
                         </div>
                     )}
 
-                    {activeModule === 'programs' && (
-                        <div className="mt-2 grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
-                            <form onSubmit={saveProgram} className="rounded-lg border border-zinc-200 bg-zinc-50 p-5">
-                                <div className="flex items-start justify-between gap-3">
+                    {['categories', 'pricing'].includes(activeModule) && (
+                        <div className="mt-2">
+                            {activeModule === 'categories' && (
+                            <div>
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
-                                        <h2 className="text-lg font-semibold text-zinc-950">{editingProgramId ? 'Edit program' : 'Add program'}</h2>
-                                        <p className="mt-1 text-sm text-zinc-500">Active programs appear on the registration form.</p>
+                                        <h2 className="text-lg font-semibold text-zinc-950">Registration categories</h2>
+                                        <p className="mt-1 text-sm text-zinc-500">Manage the categories shown in the General registration step.</p>
                                     </div>
-                                    {editingProgramId && <button type="button" onClick={resetProgramForm} className="text-xs font-semibold text-zinc-500 hover:text-zinc-950">Cancel</button>}
-                                </div>
-
-                                <div className="mt-5 grid gap-4">
-                                    <label className="text-sm font-medium text-zinc-800">
-                                        Program name
-                                        <input required value={programForm.name} onChange={(event) => setProgramForm((current) => ({ ...current, name: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" placeholder="e.g. Clinical Pharmacy Workshop" />
-                                    </label>
-                                    <label className="text-sm font-medium text-zinc-800">
-                                        Registration section
-                                        <select value={programForm.type} onChange={(event) => setProgramForm((current) => ({ ...current, type: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm">
-                                            <option value="competition">Student Competition</option>
-                                            <option value="workshop">Pre-Conference Workshop</option>
-                                        </select>
-                                    </label>
-                                    <label className="text-sm font-medium text-zinc-800">
-                                        Description
-                                        <textarea rows={3} value={programForm.description} onChange={(event) => setProgramForm((current) => ({ ...current, description: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" placeholder="Short information shown during registration" />
-                                    </label>
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <label className="text-sm font-medium text-zinc-800">
-                                            Price (Rs.)
-                                            <input type="number" min="0" step="0.01" required value={programForm.price} onChange={(event) => setProgramForm((current) => ({ ...current, price: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" />
-                                        </label>
-                                        <label className="text-sm font-medium text-zinc-800">
-                                            Capacity
-                                            <input type="number" min="1" value={programForm.capacity} onChange={(event) => setProgramForm((current) => ({ ...current, capacity: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" placeholder="Unlimited" />
-                                        </label>
-                                    </div>
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <label className="text-sm font-medium text-zinc-800">
-                                            Display order
-                                            <input type="number" min="0" value={programForm.sortOrder} onChange={(event) => setProgramForm((current) => ({ ...current, sortOrder: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" />
-                                        </label>
-                                        <label className="flex items-end gap-2 pb-2.5 text-sm font-medium text-zinc-800">
-                                            <input type="checkbox" checked={programForm.isActive} onChange={(event) => setProgramForm((current) => ({ ...current, isActive: event.target.checked }))} />
-                                            Active on registration
-                                        </label>
-                                    </div>
-                                    <button type="submit" disabled={programSaving} className="rounded-md bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50">
-                                        {programSaving ? 'Saving...' : editingProgramId ? 'Save changes' : 'Add program'}
+                                    <button type="button" onClick={addPricingCategory} className="rounded-md bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-900">
+                                        Add New Category
                                     </button>
                                 </div>
-                            </form>
 
-                            <div className="min-w-0">
+                                {pricingError && <p className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">{pricingError}</p>}
+                                {pricingLoading ? (
+                                    <p className="mt-5 rounded-lg border border-zinc-200 py-12 text-center text-sm text-zinc-500">Loading categories...</p>
+                                ) : (
+                                    <div className="mt-5 overflow-x-auto rounded-lg border border-zinc-200">
+                                        <table className="min-w-[720px] w-full text-left text-sm">
+                                            <thead className="bg-zinc-100 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                                <tr>
+                                                    <th className="px-4 py-3">Category</th>
+                                                    <th className="px-4 py-3">Registration Fee</th>
+                                                    <th className="px-4 py-3">Display Order</th>
+                                                    <th className="px-4 py-3">Status</th>
+                                                    <th className="px-4 py-3 text-right">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-zinc-200 bg-white">
+                                                {pricingCategories.map((category) => (
+                                                    <tr key={category.id} className="hover:bg-zinc-50">
+                                                        <td className="px-4 py-4 font-semibold text-zinc-950">{category.name}</td>
+                                                        <td className="px-4 py-4 font-medium text-zinc-800">Rs. {category.registrationFee.toLocaleString('en-IN')}</td>
+                                                        <td className="px-4 py-4 text-zinc-600">{category.sortOrder}</td>
+                                                        <td className="px-4 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${category.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-zinc-100 text-zinc-600'}`}>{category.isActive ? 'Active' : 'Hidden'}</span></td>
+                                                        <td className="px-4 py-4 text-right"><button type="button" onClick={() => editPricingCategory(category)} className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">Edit</button></td>
+                                                    </tr>
+                                                ))}
+                                                {!pricingCategories.length && <tr><td colSpan="5" className="px-4 py-12 text-center text-sm text-zinc-500">No registration categories found.</td></tr>}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+
+                                {categoryDrawerOpen && (
+                                    <div className="fixed inset-0 z-50 flex justify-end bg-zinc-950/45" role="dialog" aria-modal="true" aria-label={editingCategoryId ? 'Edit category' : 'Add category'}>
+                                        <button type="button" className="absolute inset-0 cursor-default" onClick={resetCategoryForm} aria-label="Close category panel" />
+                                        <form onSubmit={savePricingCategory} className="relative flex h-full w-full max-w-lg flex-col border-l border-zinc-200 bg-white shadow-2xl">
+                                            <div className="flex items-start justify-between gap-4 border-b border-zinc-200 px-5 py-5 sm:px-6">
+                                                <div>
+                                                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Registration Setup</p>
+                                                    <h2 className="mt-1 text-xl font-semibold text-zinc-950">{editingCategoryId ? 'Edit Category' : 'Add New Category'}</h2>
+                                                    <p className="mt-1 text-sm text-zinc-500">Set the category name, base fee, order, and visibility.</p>
+                                                </div>
+                                                <button type="button" onClick={resetCategoryForm} className="rounded-md border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100">Close</button>
+                                            </div>
+                                            <div className="flex-1 space-y-5 overflow-y-auto p-5 sm:p-6">
+                                                <label className="block text-sm font-medium text-zinc-800">
+                                                    Category Name
+                                                    <input required autoFocus value={categoryForm.name} onChange={(event) => setCategoryForm((current) => ({ ...current, name: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" placeholder="e.g. Student Delegate" />
+                                                </label>
+                                                <label className="block text-sm font-medium text-zinc-800">
+                                                    Registration Fee (Rs.)
+                                                    <input type="number" min="0" step="0.01" required value={categoryForm.registrationFee} onChange={(event) => setCategoryForm((current) => ({ ...current, registrationFee: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" />
+                                                </label>
+                                                <label className="block text-sm font-medium text-zinc-800">
+                                                    Display Order
+                                                    <input type="number" min="0" value={categoryForm.sortOrder} onChange={(event) => setCategoryForm((current) => ({ ...current, sortOrder: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" />
+                                                </label>
+                                                <label className="flex items-center justify-between gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm font-medium text-zinc-800">
+                                                    <span><span className="block font-semibold">Active on registration</span><span className="mt-1 block text-xs font-normal text-zinc-500">Inactive categories are hidden from delegates.</span></span>
+                                                    <input type="checkbox" checked={categoryForm.isActive} onChange={(event) => setCategoryForm((current) => ({ ...current, isActive: event.target.checked }))} />
+                                                </label>
+                                            </div>
+                                            <div className="flex justify-end gap-3 border-t border-zinc-200 px-5 py-4 sm:px-6">
+                                                <button type="button" onClick={resetCategoryForm} className="rounded-md border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100">Cancel</button>
+                                                <button type="submit" disabled={pricingSaving} className="rounded-md bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50">{pricingSaving ? 'Saving...' : editingCategoryId ? 'Save Changes' : 'Add Category'}</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                )}
+                            </div>
+                            )}
+
+                            {activeModule === 'pricing' && (
+                            <div className="min-w-0 rounded-lg border border-zinc-200 bg-white p-5">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                                    <div>
+                                        <h2 className="text-lg font-semibold text-zinc-950">Competition availability and pricing</h2>
+                                        <p className="mt-1 text-sm text-zinc-500">Choose a category, then set which student competitions appear and what they cost. Workshop prices are managed globally under Programs.</p>
+                                    </div>
+                                    <label className="text-sm font-medium text-zinc-800">
+                                        Category
+                                        <select value={selectedPricingCategoryId} onChange={(event) => setSelectedPricingCategoryId(event.target.value)} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm sm:min-w-72">
+                                            {pricingCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                                        </select>
+                                    </label>
+                                </div>
+
+                                {pricingError && <p className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">{pricingError}</p>}
+                                {pricingLoading ? (
+                                    <p className="mt-5 py-10 text-center text-sm text-zinc-500">Loading pricing...</p>
+                                ) : (
+                                    <div className="mt-5 overflow-x-auto rounded-lg border border-zinc-200">
+                                        <table className="min-w-[680px] w-full text-left text-sm">
+                                            <thead className="bg-zinc-100 text-xs font-semibold uppercase text-zinc-500"><tr><th className="px-4 py-3">Program</th><th className="px-4 py-3">Section</th><th className="px-4 py-3">Price (Rs.)</th><th className="px-4 py-3">Available</th></tr></thead>
+                                            <tbody className="divide-y divide-zinc-200">
+                                                {pricingPrograms.filter((program) => program.type === 'competition').map((program) => {
+                                                    const categoryPrice = program.categoryPricing.find((item) => String(item.categoryId) === String(selectedPricingCategoryId)) || { price: 0, isAvailable: true };
+                                                    return (
+                                                        <tr key={`${selectedPricingCategoryId}-${program.id}`}>
+                                                            <td className="px-4 py-3"><p className="font-semibold text-zinc-950">{program.name}</p>{!program.isActive && <p className="mt-1 text-xs text-zinc-500">Program is globally hidden</p>}</td>
+                                                            <td className="px-4 py-3 text-xs font-medium capitalize text-zinc-600">{program.type}</td>
+                                                            <td className="px-4 py-3"><input key={`${program.id}-${selectedPricingCategoryId}-${categoryPrice.price}-${categoryPrice.isAvailable}`} type="number" min="0" step="0.01" disabled={!categoryPrice.isAvailable} defaultValue={categoryPrice.price} onBlur={(event) => saveProgramCategoryPricing(program, selectedPricingCategoryId, { price: event.target.value })} className="admin-input w-32 rounded-md border border-zinc-300 px-3 py-2 text-sm disabled:bg-zinc-100 disabled:text-zinc-400" /></td>
+                                                            <td className="px-4 py-3">
+                                                                <button type="button" role="switch" aria-checked={categoryPrice.isAvailable} onClick={() => saveProgramCategoryPricing(program, selectedPricingCategoryId, { isAvailable: !categoryPrice.isAvailable })} className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-600">
+                                                                    <span className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition ${categoryPrice.isAvailable ? 'bg-emerald-600' : 'bg-zinc-300'}`}><span className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition ${categoryPrice.isAvailable ? 'translate-x-[18px]' : 'translate-x-0.5'}`} /></span>
+                                                                    {categoryPrice.isAvailable ? 'Included' : 'Excluded'}
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeModule === 'programs' && (
+                        <div className="mt-2">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h2 className="text-lg font-semibold text-zinc-950">Event programs</h2>
+                                    <p className="mt-1 text-sm text-zinc-500">Manage competitions, workshops, capacity, order, and visibility.</p>
+                                </div>
+                                <button type="button" onClick={addProgram} className="rounded-md bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-900">Add New Program</button>
+                            </div>
+
+                            <div className="mt-5 min-w-0">
                                 <div className="grid gap-3 sm:grid-cols-3">
                                     {[
                                         ['Total', programs.length],
@@ -4373,6 +4848,94 @@ function AdminPage() {
                                     </div>
                                 )}
                             </div>
+
+                            {programDrawerOpen && (
+                                <div className="fixed inset-0 z-50 flex justify-end bg-zinc-950/45" role="dialog" aria-modal="true" aria-label={editingProgramId ? 'Edit program' : 'Add program'}>
+                                    <button type="button" className="absolute inset-0 cursor-default" onClick={resetProgramForm} aria-label="Close program panel" />
+                                    <form onSubmit={saveProgram} className="relative flex h-full w-full max-w-xl flex-col border-l border-zinc-200 bg-white shadow-2xl">
+                                        <div className="flex items-start justify-between gap-4 border-b border-zinc-200 px-5 py-5 sm:px-6">
+                                            <div>
+                                                <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Event Setup</p>
+                                                <h2 className="mt-1 text-xl font-semibold text-zinc-950">{editingProgramId ? 'Edit Program' : 'Add New Program'}</h2>
+                                                <p className="mt-1 text-sm text-zinc-500">Configure the program details shown during registration.</p>
+                                            </div>
+                                            <button type="button" onClick={resetProgramForm} className="rounded-md border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100">Close</button>
+                                        </div>
+                                        <div className="flex-1 space-y-5 overflow-y-auto p-5 sm:p-6">
+                                            <label className="block text-sm font-medium text-zinc-800">
+                                                Program Name
+                                                <input required autoFocus value={programForm.name} onChange={(event) => setProgramForm((current) => ({ ...current, name: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" placeholder="e.g. Clinical Pharmacy Workshop" />
+                                            </label>
+                                            <label className="block text-sm font-medium text-zinc-800">
+                                                Registration Section
+                                                <select value={programForm.type} onChange={(event) => setProgramForm((current) => ({ ...current, type: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm">
+                                                    <option value="competition">Student Competition</option>
+                                                    <option value="workshop">Pre-Conference Workshop</option>
+                                                </select>
+                                            </label>
+                                            <label className="block text-sm font-medium text-zinc-800">
+                                                Description
+                                                <textarea rows={4} value={programForm.description} onChange={(event) => setProgramForm((current) => ({ ...current, description: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" placeholder="Short information shown during registration" />
+                                            </label>
+                                            <div className="grid gap-4 sm:grid-cols-2">
+                                                <label className="block text-sm font-medium text-zinc-800">
+                                                    Default Price (Rs.)
+                                                    <input type="number" min="0" step="0.01" required value={programForm.price} onChange={(event) => setProgramForm((current) => ({ ...current, price: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" />
+                                                </label>
+                                                <label className="block text-sm font-medium text-zinc-800">
+                                                    Capacity
+                                                    <input type="number" min="1" value={programForm.capacity} onChange={(event) => setProgramForm((current) => ({ ...current, capacity: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" placeholder="Unlimited" />
+                                                </label>
+                                            </div>
+                                            <label className="block text-sm font-medium text-zinc-800">
+                                                Display Order
+                                                <input type="number" min="0" value={programForm.sortOrder} onChange={(event) => setProgramForm((current) => ({ ...current, sortOrder: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm" />
+                                            </label>
+                                            {programForm.type === 'competition' ? (
+                                            <div>
+                                                <div className="flex items-end justify-between gap-3">
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-zinc-900">Category Mapping</p>
+                                                        <p className="mt-1 text-xs leading-5 text-zinc-500">Select the registration categories where this program should appear and set the price for each.</p>
+                                                    </div>
+                                                    <span className="text-xs font-semibold text-zinc-500">{programForm.categoryPricing.filter((item) => item.isAvailable).length} selected</span>
+                                                </div>
+                                                <div className="mt-3 divide-y divide-zinc-200 overflow-hidden rounded-lg border border-zinc-200">
+                                                    {pricingCategories.map((category) => {
+                                                        const mapping = programForm.categoryPricing.find((item) => String(item.categoryId) === String(category.id)) || { categoryId: category.id, price: 0, isAvailable: false };
+                                                        return (
+                                                            <div key={category.id} className={`grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_140px] sm:items-center ${mapping.isAvailable ? 'bg-emerald-50/50' : 'bg-white'}`}>
+                                                                <div className="flex items-start gap-3 text-sm text-zinc-800">
+                                                                    <button type="button" role="switch" aria-checked={mapping.isAvailable} aria-label={`${mapping.isAvailable ? 'Exclude' : 'Include'} ${category.name}`} onClick={() => updateProgramCategoryMapping(category.id, { isAvailable: !mapping.isAvailable })} className={`relative mt-0.5 inline-flex h-5 w-9 shrink-0 rounded-full transition ${mapping.isAvailable ? 'bg-emerald-600' : 'bg-zinc-300'}`}><span className={`absolute top-0.5 size-4 rounded-full bg-white shadow-sm transition ${mapping.isAvailable ? 'translate-x-[18px]' : 'translate-x-0.5'}`} /></button>
+                                                                    <span><span className="block font-semibold">{category.name}</span><span className="mt-1 block text-xs text-zinc-500">{mapping.isAvailable ? 'Included in this category' : 'Not included in this category'}</span>{!category.isActive && <span className="mt-1 block text-xs text-zinc-500">Category is currently hidden</span>}</span>
+                                                                </div>
+                                                                <label className="text-xs font-medium text-zinc-600">
+                                                                    Price (Rs.)
+                                                                    <input type="number" min="0" step="0.01" disabled={!mapping.isAvailable} value={mapping.price} onChange={(event) => updateProgramCategoryMapping(category.id, { price: event.target.value })} className="admin-input mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm disabled:bg-zinc-100 disabled:text-zinc-400" />
+                                                                </label>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    {!pricingCategories.length && <p className="p-4 text-sm text-zinc-500">Create a registration category before mapping this program.</p>}
+                                                </div>
+                                            </div>
+                                            ) : (
+                                                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
+                                                    Pre-Conference Workshops do not require category mapping. The default price above applies to every active registration category.
+                                                </div>
+                                            )}
+                                            <label className="flex items-center justify-between gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm font-medium text-zinc-800">
+                                                <span><span className="block font-semibold">Active on registration</span><span className="mt-1 block text-xs font-normal text-zinc-500">Inactive programs are hidden from all categories.</span></span>
+                                                <input type="checkbox" checked={programForm.isActive} onChange={(event) => setProgramForm((current) => ({ ...current, isActive: event.target.checked }))} />
+                                            </label>
+                                        </div>
+                                        <div className="flex justify-end gap-3 border-t border-zinc-200 px-5 py-4 sm:px-6">
+                                            <button type="button" onClick={resetProgramForm} className="rounded-md border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100">Cancel</button>
+                                            <button type="submit" disabled={programSaving} className="rounded-md bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50">{programSaving ? 'Saving...' : editingProgramId ? 'Save Changes' : 'Add Program'}</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            )}
                         </div>
                     )}
 

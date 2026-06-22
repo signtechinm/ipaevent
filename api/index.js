@@ -4,13 +4,13 @@ import { neon } from '@neondatabase/serverless';
 
 const sessionCookie = 'ipa_admin_session';
 const sessionDurationSeconds = 60 * 60 * 12;
-const categoryFees = {
-    'Student Delegate - IPA SF Member': 100,
-    'Student Delegate - Non IPA SF Member': 100,
-    'Delegate IPA Member - Faculty': 100,
-    'Delegate IPA Member - Others': 100,
-    Others: 100,
-};
+const defaultCategories = [
+    ['Student Delegate - IPA SF Member', 100, 10],
+    ['Student Delegate - Non IPA SF Member', 100, 20],
+    ['Delegate IPA Member - Faculty', 100, 30],
+    ['Delegate IPA Member - Others', 100, 40],
+    ['Others', 100, 50],
+];
 const premiumSponsorFees = {
     diamond: 300000,
     platinum: 200000,
@@ -268,15 +268,25 @@ async function ensureAccommodationTravelContent(sql) {
     return existing[0] || { content: defaultAccommodationTravelContent, updated_at: null };
 }
 
-function calculateFees(data, programs = []) {
-    const registrationFee = categoryFees[data.category] || 0;
-    const programPrices = new Map(programs.map((program) => [`${program.program_type}:${program.name}`, Number(program.price) || 0]));
+function calculateFees(data, programs = [], categories = [], pricing = []) {
+    const category = categories.find((item) => item.name === data.category);
+    const registrationFee = Number(category?.registration_fee) || 0;
+    const programByKey = new Map(programs.map((program) => [`${program.program_type}:${program.name}`, program]));
+    const categoryPricing = new Map(
+        pricing
+            .filter((item) => String(item.category_id) === String(category?.id) && item.is_available)
+            .map((item) => [String(item.program_id), Number(item.price) || 0])
+    );
+    const getPrice = (type, name) => {
+        const program = programByKey.get(`${type}:${name}`);
+        return program ? categoryPricing.get(String(program.id)) || 0 : 0;
+    };
     const competitions = (Array.isArray(data.studentCompetitions) ? data.studentCompetitions : []).slice(0, 2);
-    const competitionFee = competitions.reduce((total, name) => total + (programPrices.get(`competition:${name}`) || 0), 0);
+    const competitionFee = competitions.reduce((total, name) => total + getPrice('competition', name), 0);
     const selectedWorkshops = Array.isArray(data.selectedWorkshops) && data.selectedWorkshops.length
         ? [...new Set(data.selectedWorkshops.map((name) => String(name).trim()).filter(Boolean))]
         : data.preConferenceWorkshop ? [data.preConferenceWorkshop] : [];
-    const workshopFee = selectedWorkshops.reduce((total, name) => total + (programPrices.get(`workshop:${name}`) || 0), 0);
+    const workshopFee = selectedWorkshops.reduce((total, name) => total + getPrice('workshop', name), 0);
 
     return {
         registrationFee,
@@ -319,6 +329,67 @@ async function ensureProgramCatalog(sql) {
     `;
 }
 
+async function ensurePricingCatalog(sql) {
+    await ensureProgramCatalog(sql);
+    await sql`
+        CREATE TABLE IF NOT EXISTS registration_categories (
+            id BIGSERIAL PRIMARY KEY,
+            name VARCHAR(120) NOT NULL UNIQUE,
+            registration_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `;
+    const categoryCount = await sql`SELECT COUNT(*)::int AS count FROM registration_categories`;
+    if (!categoryCount[0].count) {
+        for (const [name, registrationFee, sortOrder] of defaultCategories) {
+            await sql`
+                INSERT INTO registration_categories (name, registration_fee, sort_order)
+                VALUES (${name}, ${registrationFee}, ${sortOrder})
+                ON CONFLICT (name) DO NOTHING
+            `;
+        }
+    }
+    await sql`
+        CREATE TABLE IF NOT EXISTS program_category_pricing (
+            program_id BIGINT NOT NULL REFERENCES event_programs(id) ON DELETE CASCADE,
+            category_id BIGINT NOT NULL REFERENCES registration_categories(id) ON DELETE CASCADE,
+            price NUMERIC(10, 2) NOT NULL DEFAULT 0,
+            is_available BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            PRIMARY KEY (program_id, category_id)
+        )
+    `;
+    await sql`
+        INSERT INTO program_category_pricing (program_id, category_id, price, is_available)
+        SELECT program.id, category.id, program.price, TRUE
+        FROM event_programs program
+        CROSS JOIN registration_categories category
+        ON CONFLICT (program_id, category_id) DO NOTHING
+    `;
+    await sql`
+        UPDATE program_category_pricing pricing
+        SET price = program.price, is_available = TRUE, updated_at = NOW()
+        FROM event_programs program
+        WHERE pricing.program_id = program.id
+            AND program.program_type = 'workshop'
+            AND (pricing.price <> program.price OR pricing.is_available = FALSE)
+    `;
+}
+
+function mapCategory(row) {
+    return {
+        id: row.id,
+        name: row.name,
+        registrationFee: Number(row.registration_fee) || 0,
+        sortOrder: Number(row.sort_order) || 0,
+        isActive: Boolean(row.is_active),
+    };
+}
+
 function mapProgram(row) {
     return {
         id: row.id,
@@ -334,6 +405,19 @@ function mapProgram(row) {
     };
 }
 
+function mapProgramsWithPricing(programRows, pricingRows) {
+    return programRows.map((row) => ({
+        ...mapProgram(row),
+        categoryPricing: pricingRows
+            .filter((item) => String(item.program_id) === String(row.id))
+            .map((item) => ({
+                categoryId: item.category_id,
+                price: Number(item.price) || 0,
+                isAvailable: Boolean(item.is_available),
+            })),
+    }));
+}
+
 async function ensureRegistrationEnhancements(sql) {
     await sql`
         ALTER TABLE event_registrations
@@ -346,6 +430,16 @@ async function ensureRegistrationEnhancements(sql) {
     await sql`
         ALTER TABLE event_registrations
         ADD COLUMN IF NOT EXISTS selected_workshops JSONB NOT NULL DEFAULT '[]'::jsonb
+    `;
+    await sql`
+        ALTER TABLE event_registrations
+        ADD COLUMN IF NOT EXISTS hr_college_with_state TEXT,
+        ADD COLUMN IF NOT EXISTS hr_course_or_qualification VARCHAR(180),
+        ADD COLUMN IF NOT EXISTS hr_whatsapp_number VARCHAR(25),
+        ADD COLUMN IF NOT EXISTS hr_whatsapp_confirmation VARCHAR(25),
+        ADD COLUMN IF NOT EXISTS hr_email VARCHAR(180),
+        ADD COLUMN IF NOT EXISTS hr_email_confirmation VARCHAR(180),
+        ADD COLUMN IF NOT EXISTS hr_core_area VARCHAR(100)
     `;
     await sql`
         UPDATE event_registrations
@@ -405,6 +499,13 @@ function mapRegistration(row, competitions = []) {
         selectedWorkshops: normalizeSelectedWorkshops(row.selected_workshops, row.pre_conference_workshop),
         workshopFeeAcknowledged: row.workshop_fee_acknowledged ? 'Yes' : 'No',
         presentationType: row.presentation_type || '',
+        hrCollegeWithState: row.hr_college_with_state || '',
+        hrCourseOrQualification: row.hr_course_or_qualification || '',
+        hrWhatsappNumber: row.hr_whatsapp_number || '',
+        hrWhatsappConfirmation: row.hr_whatsapp_confirmation || '',
+        hrEmail: row.hr_email || '',
+        hrEmailConfirmation: row.hr_email_confirmation || '',
+        hrCoreArea: row.hr_core_area || '',
         transactionDetails: row.transaction_details || '',
         registrationNumber: row.registration_number || '',
         submittedAt: row.submitted_at || '',
@@ -437,6 +538,13 @@ function mapAdminRegistration(row) {
         selectedWorkshops: normalizeSelectedWorkshops(row.selected_workshops, row.pre_conference_workshop),
         workshopFeeAcknowledged: Boolean(row.workshop_fee_acknowledged),
         presentationType: row.presentation_type || '',
+        hrCollegeWithState: row.hr_college_with_state || '',
+        hrCourseOrQualification: row.hr_course_or_qualification || '',
+        hrWhatsappNumber: row.hr_whatsapp_number || '',
+        hrWhatsappConfirmation: row.hr_whatsapp_confirmation || '',
+        hrEmail: row.hr_email || '',
+        hrEmailConfirmation: row.hr_email_confirmation || '',
+        hrCoreArea: row.hr_core_area || '',
         registrationFee: Number(row.registration_fee) || 0,
         competitionFee: Number(row.competition_fee) || 0,
         workshopFee: Number(row.workshop_fee) || 0,
@@ -453,19 +561,47 @@ function mapAdminRegistration(row) {
 
 async function saveRegistration(sql, data, submit = false) {
     await ensureRegistrationEnhancements(sql);
-    await ensureProgramCatalog(sql);
+    await ensurePricingCatalog(sql);
     const programs = await sql`SELECT * FROM event_programs`;
-    const fees = calculateFees(data, programs);
+    const categories = await sql`SELECT * FROM registration_categories`;
+    const pricing = await sql`SELECT * FROM program_category_pricing`;
+    const fees = calculateFees(data, programs, categories, pricing);
     const draftToken = data.draftToken || crypto.randomUUID();
     const expectedParticipants = data.expectedParticipants ? Number.parseInt(data.expectedParticipants, 10) : null;
     const groupMembers = data.registrationMode === 'group' ? normalizeGroupMembers(data.groupMembers) : [];
     const selectedWorkshops = normalizeSelectedWorkshops(data.selectedWorkshops, data.preConferenceWorkshop);
     if (submit) {
-        const activeWorkshopNames = new Set(
-            programs.filter((program) => program.program_type === 'workshop' && program.is_active).map((program) => program.name)
+        const selectedCategory = categories.find((category) => category.name === data.category && category.is_active);
+        if (!selectedCategory) {
+            throw inputError('Select an active registration category.');
+        }
+        const availableProgramIds = new Set(
+            pricing
+                .filter((item) => String(item.category_id) === String(selectedCategory.id) && item.is_available)
+                .map((item) => String(item.program_id))
         );
-        if (selectedWorkshops.some((name) => !activeWorkshopNames.has(name))) {
-            throw inputError('One or more selected workshops are no longer available. Review the workshop section.');
+        const selectedProgramNames = [
+            ...(Array.isArray(data.studentCompetitions) ? data.studentCompetitions.slice(0, 2) : []),
+            ...selectedWorkshops,
+        ];
+        if (selectedProgramNames.some((name) => {
+            const program = programs.find((item) => item.name === name && item.is_active);
+            return !program || !availableProgramIds.has(String(program.id));
+        })) {
+            throw inputError('One or more selected programs are not available for this category. Review your selections.');
+        }
+        if (!String(data.hrCollegeWithState || '').trim() || !String(data.hrCourseOrQualification || '').trim()
+            || !String(data.hrWhatsappNumber || '').trim() || !String(data.hrCoreArea || '').trim()) {
+            throw inputError('Complete all HR Drive fields before submitting.');
+        }
+        if (!String(data.hrEmail || '').trim() || !String(data.hrEmailConfirmation || '').trim()) {
+            throw inputError('Enter and confirm your HR Drive email address.');
+        }
+        if (String(data.hrEmail).trim().toLowerCase() !== String(data.hrEmailConfirmation).trim().toLowerCase()) {
+            throw inputError('The HR Drive email addresses do not match.');
+        }
+        if (String(data.hrWhatsappNumber || '').trim() !== String(data.hrWhatsappConfirmation || '').trim()) {
+            throw inputError('The HR Drive WhatsApp numbers do not match.');
         }
     }
 
@@ -476,7 +612,9 @@ async function saveRegistration(sql, data, submit = false) {
             expected_participants, group_members, category, state_of_residence, whatsapp_number, email,
             food_preference, course_of_study, college_with_state,
             competition_fee_acknowledged, pre_conference_workshop,
-            selected_workshops, workshop_fee_acknowledged, presentation_type, registration_fee,
+            selected_workshops, workshop_fee_acknowledged, presentation_type,
+            hr_college_with_state, hr_course_or_qualification, hr_whatsapp_number,
+            hr_whatsapp_confirmation, hr_email, hr_email_confirmation, hr_core_area, registration_fee,
             competition_fee, workshop_fee, total_payable_amount, transaction_details,
             registration_status, approval_status, submitted_at
         )
@@ -489,6 +627,8 @@ async function saveRegistration(sql, data, submit = false) {
             ${data.courseOfStudy || null}, ${data.collegeWithState || null},
             ${booleanValue(data.competitionFeeAcknowledged)}, ${selectedWorkshops[0] || null},
             ${JSON.stringify(selectedWorkshops)}::jsonb, ${booleanValue(data.workshopFeeAcknowledged)}, ${data.presentationType || null},
+            ${data.hrCollegeWithState || null}, ${data.hrCourseOrQualification || null}, ${data.hrWhatsappNumber || null},
+            ${data.hrWhatsappConfirmation || null}, ${data.hrEmail || null}, ${data.hrEmailConfirmation || null}, ${data.hrCoreArea || null},
             ${fees.registrationFee}, ${fees.competitionFee}, ${fees.workshopFee}, ${fees.total},
             ${data.transactionDetails || null}, ${submit ? 'submitted' : 'draft'},
             ${submit ? 'pending_review' : 'not_submitted'},
@@ -515,6 +655,13 @@ async function saveRegistration(sql, data, submit = false) {
             selected_workshops = EXCLUDED.selected_workshops,
             workshop_fee_acknowledged = EXCLUDED.workshop_fee_acknowledged,
             presentation_type = EXCLUDED.presentation_type,
+            hr_college_with_state = EXCLUDED.hr_college_with_state,
+            hr_course_or_qualification = EXCLUDED.hr_course_or_qualification,
+            hr_whatsapp_number = EXCLUDED.hr_whatsapp_number,
+            hr_whatsapp_confirmation = EXCLUDED.hr_whatsapp_confirmation,
+            hr_email = EXCLUDED.hr_email,
+            hr_email_confirmation = EXCLUDED.hr_email_confirmation,
+            hr_core_area = EXCLUDED.hr_core_area,
             registration_fee = EXCLUDED.registration_fee,
             competition_fee = EXCLUDED.competition_fee,
             workshop_fee = EXCLUDED.workshop_fee,
@@ -546,10 +693,14 @@ async function saveRegistration(sql, data, submit = false) {
 
     await sql`DELETE FROM registration_competitions WHERE registration_id = ${row.id}`;
     const competitions = (Array.isArray(data.studentCompetitions) ? data.studentCompetitions : []).slice(0, 2);
+    const selectedCategory = categories.find((category) => category.name === data.category);
     for (const competition of competitions) {
+        const program = programs.find((item) => item.program_type === 'competition' && item.name === competition);
+        const categoryPrice = pricing.find((item) => String(item.program_id) === String(program?.id)
+            && String(item.category_id) === String(selectedCategory?.id));
         await sql`
             INSERT INTO registration_competitions (registration_id, competition_name, fee_amount)
-            VALUES (${row.id}, ${competition}, ${programs.find((program) => program.program_type === 'competition' && program.name === competition)?.price || 0})
+            VALUES (${row.id}, ${competition}, ${Number(categoryPrice?.price) || 0})
         `;
     }
 
@@ -918,13 +1069,25 @@ export default async function handler(request, response) {
         }
 
         if (request.method === 'GET' && path === 'programs') {
-            await ensureProgramCatalog(sql);
-            const rows = await sql`
+            await ensurePricingCatalog(sql);
+            const categories = await sql`
+                SELECT * FROM registration_categories
+                WHERE is_active = TRUE
+                ORDER BY sort_order, name
+            `;
+            const programs = await sql`
                 SELECT * FROM event_programs
                 WHERE is_active = TRUE
                 ORDER BY program_type, sort_order, name
             `;
-            return send(response, 200, { programs: rows.map(mapProgram) });
+            const pricing = await sql`
+                SELECT program_id, category_id, price, is_available
+                FROM program_category_pricing
+            `;
+            return send(response, 200, {
+                categories: categories.map(mapCategory),
+                programs: mapProgramsWithPricing(programs, pricing),
+            });
         }
 
         if (path === 'registrations/draft' && request.method === 'GET') {
@@ -1066,9 +1229,103 @@ export default async function handler(request, response) {
             if (!requirePermission(session, 'program.view')) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
-            await ensureProgramCatalog(sql);
-            const rows = await sql`SELECT * FROM event_programs ORDER BY program_type, sort_order, name`;
-            return send(response, 200, { programs: rows.map(mapProgram) });
+            await ensurePricingCatalog(sql);
+            const categories = await sql`SELECT * FROM registration_categories ORDER BY sort_order, name`;
+            const programs = await sql`SELECT * FROM event_programs ORDER BY program_type, sort_order, name`;
+            const pricing = await sql`SELECT * FROM program_category_pricing`;
+            return send(response, 200, {
+                categories: categories.map(mapCategory),
+                programs: mapProgramsWithPricing(programs, pricing),
+            });
+        }
+
+        if (path === 'admin/pricing' && request.method === 'GET') {
+            if (!requirePermission(session, 'program.view')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            await ensurePricingCatalog(sql);
+            const categories = await sql`SELECT * FROM registration_categories ORDER BY sort_order, name`;
+            const programs = await sql`SELECT * FROM event_programs ORDER BY program_type, sort_order, name`;
+            const pricing = await sql`SELECT * FROM program_category_pricing`;
+            return send(response, 200, {
+                categories: categories.map(mapCategory),
+                programs: mapProgramsWithPricing(programs, pricing),
+            });
+        }
+
+        if (path === 'admin/pricing/categories' && request.method === 'POST') {
+            if (!requirePermission(session, 'program.create')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const name = String(request.body?.name || '').trim();
+            if (!name) return send(response, 400, { error: 'Category name is required.' });
+            await ensurePricingCatalog(sql);
+            const rows = await sql`
+                INSERT INTO registration_categories (name, registration_fee, sort_order, is_active)
+                VALUES (
+                    ${name}, ${Math.max(Number(request.body?.registrationFee) || 0, 0)},
+                    ${Number.parseInt(request.body?.sortOrder, 10) || 0}, ${request.body?.isActive !== false}
+                )
+                RETURNING *
+            `;
+            await sql`
+                INSERT INTO program_category_pricing (program_id, category_id, price, is_available)
+                SELECT id, ${rows[0].id}, price, TRUE FROM event_programs
+                ON CONFLICT (program_id, category_id) DO NOTHING
+            `;
+            return send(response, 201, { category: mapCategory(rows[0]) });
+        }
+
+        const adminCategoryMatch = path.match(/^admin\/pricing\/categories\/(\d+)$/);
+        if (adminCategoryMatch && request.method === 'PATCH') {
+            if (!requirePermission(session, 'program.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const name = String(request.body?.name || '').trim();
+            if (!name) return send(response, 400, { error: 'Category name is required.' });
+            await ensurePricingCatalog(sql);
+            const rows = await sql`
+                UPDATE registration_categories SET
+                    name = ${name},
+                    registration_fee = ${Math.max(Number(request.body?.registrationFee) || 0, 0)},
+                    sort_order = ${Number.parseInt(request.body?.sortOrder, 10) || 0},
+                    is_active = ${request.body?.isActive !== false},
+                    updated_at = NOW()
+                WHERE id = ${Number(adminCategoryMatch[1])}
+                RETURNING *
+            `;
+            if (!rows.length) return send(response, 404, { error: 'Category not found.' });
+            return send(response, 200, { category: mapCategory(rows[0]) });
+        }
+
+        if (path === 'admin/pricing/program' && request.method === 'PATCH') {
+            if (!requirePermission(session, 'program.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const programId = Number(request.body?.programId);
+            const categoryId = Number(request.body?.categoryId);
+            if (!programId || !categoryId) return send(response, 400, { error: 'Program and category are required.' });
+            await ensurePricingCatalog(sql);
+            const rows = await sql`
+                INSERT INTO program_category_pricing (program_id, category_id, price, is_available, updated_at)
+                VALUES (
+                    ${programId}, ${categoryId}, ${Math.max(Number(request.body?.price) || 0, 0)},
+                    ${request.body?.isAvailable !== false}, NOW()
+                )
+                ON CONFLICT (program_id, category_id) DO UPDATE SET
+                    price = EXCLUDED.price,
+                    is_available = EXCLUDED.is_available,
+                    updated_at = NOW()
+                RETURNING *
+            `;
+            return send(response, 200, {
+                pricing: {
+                    programId: rows[0].program_id,
+                    categoryId: rows[0].category_id,
+                    price: Number(rows[0].price) || 0,
+                    isAvailable: Boolean(rows[0].is_available),
+                },
+            });
         }
 
         if (path === 'admin/programs' && request.method === 'POST') {
@@ -1077,10 +1334,13 @@ export default async function handler(request, response) {
             }
             const name = String(request.body?.name || '').trim();
             const type = String(request.body?.type || '').trim();
+            const requestedPricing = type === 'workshop'
+                ? []
+                : Array.isArray(request.body?.categoryPricing) ? request.body.categoryPricing : [];
             if (!name || !['competition', 'workshop'].includes(type)) {
                 return send(response, 400, { error: 'Program name and type are required.' });
             }
-            await ensureProgramCatalog(sql);
+            await ensurePricingCatalog(sql);
             const rows = await sql`
                 INSERT INTO event_programs (name, program_type, description, price, capacity, sort_order, is_active)
                 VALUES (
@@ -1092,6 +1352,24 @@ export default async function handler(request, response) {
                 )
                 RETURNING *
             `;
+            await sql`
+                INSERT INTO program_category_pricing (program_id, category_id, price, is_available)
+                SELECT ${rows[0].id}, id, ${Math.max(Number(request.body?.price) || 0, 0)}, ${!requestedPricing.length}
+                FROM registration_categories
+                ON CONFLICT (program_id, category_id) DO NOTHING
+            `;
+            for (const item of requestedPricing) {
+                if (!Number(item?.categoryId)) continue;
+                await sql`
+                    INSERT INTO program_category_pricing (program_id, category_id, price, is_available, updated_at)
+                    VALUES (
+                        ${rows[0].id}, ${Number(item.categoryId)}, ${Math.max(Number(item.price) || 0, 0)},
+                        ${item.isAvailable === true}, NOW()
+                    )
+                    ON CONFLICT (program_id, category_id) DO UPDATE SET
+                        price = EXCLUDED.price, is_available = EXCLUDED.is_available, updated_at = NOW()
+                `;
+            }
             return send(response, 201, { program: mapProgram(rows[0]) });
         }
 
@@ -1102,10 +1380,13 @@ export default async function handler(request, response) {
             }
             const name = String(request.body?.name || '').trim();
             const type = String(request.body?.type || '').trim();
+            const requestedPricing = type === 'workshop'
+                ? []
+                : Array.isArray(request.body?.categoryPricing) ? request.body.categoryPricing : [];
             if (!name || !['competition', 'workshop'].includes(type)) {
                 return send(response, 400, { error: 'Program name and type are required.' });
             }
-            await ensureProgramCatalog(sql);
+            await ensurePricingCatalog(sql);
             const rows = await sql`
                 UPDATE event_programs SET
                     name = ${name},
@@ -1120,6 +1401,28 @@ export default async function handler(request, response) {
                 RETURNING *
             `;
             if (!rows.length) return send(response, 404, { error: 'Program not found.' });
+            if (type === 'workshop') {
+                await sql`
+                    INSERT INTO program_category_pricing (program_id, category_id, price, is_available, updated_at)
+                    SELECT ${rows[0].id}, id, ${Math.max(Number(request.body?.price) || 0, 0)}, TRUE, NOW()
+                    FROM registration_categories
+                    ON CONFLICT (program_id, category_id) DO UPDATE SET
+                        price = EXCLUDED.price, is_available = TRUE, updated_at = NOW()
+                `;
+            } else {
+                for (const item of requestedPricing) {
+                    if (!Number(item?.categoryId)) continue;
+                    await sql`
+                        INSERT INTO program_category_pricing (program_id, category_id, price, is_available, updated_at)
+                        VALUES (
+                            ${rows[0].id}, ${Number(item.categoryId)}, ${Math.max(Number(item.price) || 0, 0)},
+                            ${item.isAvailable === true}, NOW()
+                        )
+                        ON CONFLICT (program_id, category_id) DO UPDATE SET
+                            price = EXCLUDED.price, is_available = EXCLUDED.is_available, updated_at = NOW()
+                    `;
+                }
+            }
             return send(response, 200, { program: mapProgram(rows[0]) });
         }
 

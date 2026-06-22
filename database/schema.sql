@@ -22,6 +22,13 @@ CREATE TABLE IF NOT EXISTS event_registrations (
     selected_workshops JSONB NOT NULL DEFAULT '[]'::jsonb,
     workshop_fee_acknowledged BOOLEAN DEFAULT FALSE,
     presentation_type VARCHAR(80),
+    hr_college_with_state TEXT,
+    hr_course_or_qualification VARCHAR(180),
+    hr_whatsapp_number VARCHAR(25),
+    hr_whatsapp_confirmation VARCHAR(25),
+    hr_email VARCHAR(180),
+    hr_email_confirmation VARCHAR(180),
+    hr_core_area VARCHAR(100),
     registration_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
     competition_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
     workshop_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
@@ -38,6 +45,13 @@ CREATE TABLE IF NOT EXISTS event_registrations (
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS group_members JSONB NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS approval_status VARCHAR(40) NOT NULL DEFAULT 'not_submitted';
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS selected_workshops JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_college_with_state TEXT;
+ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_course_or_qualification VARCHAR(180);
+ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_whatsapp_number VARCHAR(25);
+ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_whatsapp_confirmation VARCHAR(25);
+ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_email VARCHAR(180);
+ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_email_confirmation VARCHAR(180);
+ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_core_area VARCHAR(100);
 UPDATE event_registrations
 SET selected_workshops = jsonb_build_array(pre_conference_workshop)
 WHERE selected_workshops = '[]'::jsonb AND pre_conference_workshop IS NOT NULL;
@@ -93,6 +107,48 @@ ON CONFLICT (program_type, name) DO NOTHING;
 INSERT INTO event_programs (name, program_type, description, price, sort_order)
 VALUES ('NDDS Formulation and Characterization', 'workshop', 'Workshop session', 0, 40)
 ON CONFLICT (program_type, name) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS registration_categories (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(120) NOT NULL UNIQUE,
+    registration_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO registration_categories (name, registration_fee, sort_order)
+VALUES
+    ('Student Delegate - IPA SF Member', 100, 10),
+    ('Student Delegate - Non IPA SF Member', 100, 20),
+    ('Delegate IPA Member - Faculty', 100, 30),
+    ('Delegate IPA Member - Others', 100, 40),
+    ('Others', 100, 50)
+ON CONFLICT (name) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS program_category_pricing (
+    program_id BIGINT NOT NULL REFERENCES event_programs(id) ON DELETE CASCADE,
+    category_id BIGINT NOT NULL REFERENCES registration_categories(id) ON DELETE CASCADE,
+    price NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    is_available BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (program_id, category_id)
+);
+
+INSERT INTO program_category_pricing (program_id, category_id, price, is_available)
+SELECT program.id, category.id, program.price, TRUE
+FROM event_programs program
+CROSS JOIN registration_categories category
+ON CONFLICT (program_id, category_id) DO NOTHING;
+
+UPDATE program_category_pricing pricing
+SET price = program.price, is_available = TRUE, updated_at = NOW()
+FROM event_programs program
+WHERE pricing.program_id = program.id
+    AND program.program_type = 'workshop'
+    AND (pricing.price <> program.price OR pricing.is_available = FALSE);
 
 CREATE TABLE IF NOT EXISTS sponsorship_applications (
     id BIGSERIAL PRIMARY KEY,
