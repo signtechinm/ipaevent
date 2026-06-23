@@ -248,18 +248,35 @@ CREATE TABLE IF NOT EXISTS abstract_submissions (
     file_name TEXT NOT NULL,
     file_size BIGINT NOT NULL DEFAULT 0,
     file_type VARCHAR(120),
-    file_data TEXT NOT NULL,
+    file_data TEXT,
+    file_url TEXT,
+    blob_path TEXT,
     status VARCHAR(30) NOT NULL DEFAULT 'pending',
     admin_remarks TEXT,
     reviewed_at TIMESTAMPTZ,
     poster_video_link TEXT,
     video_link_submitted_at TIMESTAMPTZ,
+    video_review_status VARCHAR(30) NOT NULL DEFAULT 'pending',
+    video_review_remarks TEXT,
+    video_reviewed_at TIMESTAMPTZ,
     submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS abstract_submissions_status_idx ON abstract_submissions (status);
 CREATE INDEX IF NOT EXISTS abstract_submissions_registration_idx ON abstract_submissions (registration_number);
+
+CREATE TABLE IF NOT EXISTS abstract_book_content (
+    id TEXT PRIMARY KEY DEFAULT 'main',
+    file_name TEXT,
+    file_url TEXT,
+    blob_path TEXT,
+    file_size BIGINT NOT NULL DEFAULT 0,
+    file_type VARCHAR(120),
+    updated_by BIGINT REFERENCES admin_users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 CREATE TABLE IF NOT EXISTS accommodation_travel_content (
     id TEXT PRIMARY KEY DEFAULT 'main',

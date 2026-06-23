@@ -15,8 +15,8 @@ function SiteRoot() {
 
         const minimumTimer = window.setTimeout(() => {
             setIsLeaving(true);
-            window.setTimeout(() => setIsLoading(false), 500);
-        }, 1000);
+            window.setTimeout(() => setIsLoading(false), 220);
+        }, 250);
 
         return () => window.clearTimeout(minimumTimer);
     }, [showPublicLoader]);
@@ -40,7 +40,11 @@ function SiteRoot() {
     );
 }
 
-createRoot(document.getElementById('root')).render(
+const rootElement = document.getElementById('root');
+const root = globalThis.__ipaEventRoot || createRoot(rootElement);
+globalThis.__ipaEventRoot = root;
+
+root.render(
     <React.StrictMode>
         <SiteRoot />
     </React.StrictMode>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiRequest } from './api';
 
 const eventTheme = "Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era";
@@ -266,28 +266,13 @@ function normalizeAccommodationCms(data = {}) {
     return {
         ...accommodationTravelDefaults,
         ...data,
-        accommodationSpaces: Array.isArray(data.accommodationSpaces) && data.accommodationSpaces.length ? data.accommodationSpaces : accommodationTravelDefaults.accommodationSpaces,
-        pickupPoints: Array.isArray(data.pickupPoints) && data.pickupPoints.length ? data.pickupPoints : accommodationTravelDefaults.pickupPoints,
-        touristAttractions: (Array.isArray(data.touristAttractions) && data.touristAttractions.length ? data.touristAttractions : accommodationTravelDefaults.touristAttractions).map((place = {}, index) => ({
+        accommodationSpaces: Array.isArray(data.accommodationSpaces) ? data.accommodationSpaces : accommodationTravelDefaults.accommodationSpaces,
+        pickupPoints: Array.isArray(data.pickupPoints) ? data.pickupPoints : accommodationTravelDefaults.pickupPoints,
+        touristAttractions: (Array.isArray(data.touristAttractions) ? data.touristAttractions : accommodationTravelDefaults.touristAttractions).map((place = {}, index) => ({
             ...accommodationTravelDefaults.touristAttractions[index % accommodationTravelDefaults.touristAttractions.length],
             ...place,
         })),
     };
-}
-
-function formatCmsRows(items, fields) {
-    return items.map((item) => fields.map((field) => item[field] || '').join(' | ')).join('\n');
-}
-
-function parseCmsRows(value, fields) {
-    return value
-        .split('\n')
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .map((line) => {
-            const parts = line.split('|').map((part) => part.trim());
-            return fields.reduce((item, field, index) => ({ ...item, [field]: parts[index] || '' }), {});
-        });
 }
 
 const registrationDraftKey = 'ipa-nsc-2026-registration-draft-token';
@@ -583,14 +568,31 @@ function useRevealOnScroll() {
 
 function Header() {
     const [isCompact, setIsCompact] = useState(false);
+    const isCompactRef = useRef(false);
+    const scrollFrameRef = useRef(0);
 
     useEffect(() => {
-        const updateHeader = () => setIsCompact(window.scrollY > 40);
+        const updateHeader = () => {
+            if (scrollFrameRef.current) return;
+            scrollFrameRef.current = window.requestAnimationFrame(() => {
+                scrollFrameRef.current = 0;
+                const nextIsCompact = window.scrollY > 40;
+                if (isCompactRef.current !== nextIsCompact) {
+                    isCompactRef.current = nextIsCompact;
+                    setIsCompact(nextIsCompact);
+                }
+            });
+        };
 
         updateHeader();
         window.addEventListener('scroll', updateHeader, { passive: true });
 
-        return () => window.removeEventListener('scroll', updateHeader);
+        return () => {
+            window.removeEventListener('scroll', updateHeader);
+            if (scrollFrameRef.current) {
+                window.cancelAnimationFrame(scrollFrameRef.current);
+            }
+        };
     }, []);
 
     return (
@@ -747,6 +749,8 @@ function QuickFacts() {
                 alt=""
                 className="snapshot-background absolute inset-0 -z-30 h-full w-full object-cover"
                 aria-hidden="true"
+                loading="lazy"
+                decoding="async"
             />
             <div className="snapshot-overlay absolute inset-0 -z-20" aria-hidden="true" />
             <div className="snapshot-flow-lines absolute inset-0 -z-10" aria-hidden="true">
@@ -900,6 +904,8 @@ function SponsorShowcase() {
                                                             src={partner.logo}
                                                             alt={`${partner.name} logo`}
                                                             className="h-24 w-56 object-contain"
+                                                            loading="lazy"
+                                                            decoding="async"
                                                         />
                                                     </div>
                                                 ))}
@@ -1072,6 +1078,8 @@ function AccommodationTravelPage() {
                                             src={place.image}
                                             alt={place.name}
                                             className="h-40 w-full object-cover"
+                                            loading="lazy"
+                                            decoding="async"
                                         />
                                     )}
                                     <div className="flex flex-1 flex-col p-5">
@@ -1126,6 +1134,8 @@ function HomeWelcome() {
                         src="/images/nsc-welcome-delegates.png"
                         alt="Delegates and students at the 14th IPA National Students Congress"
                         className="h-full w-full object-contain"
+                        loading="lazy"
+                        decoding="async"
                     />
                 </div>
             </div>
@@ -3071,6 +3081,8 @@ function SponsorSection() {
                             src="/images/nsc-sponsor-exhibition.png"
                             alt="Sponsor representatives speaking with student delegates at an exhibition booth"
                             className="h-[360px] w-full object-cover sm:h-[440px]"
+                            loading="lazy"
+                            decoding="async"
                         />
                     </div>
                 </Reveal>
@@ -3398,6 +3410,14 @@ function AdminSidebarIcon({ name }) {
                 <path d="M9.5 12h5" />
             </>
         ),
+        abstracts: (
+            <>
+                <path d="M6 3h9l4 4v14H6V3Z" />
+                <path d="M15 3v5h4" />
+                <path d="M9 12h6" />
+                <path d="M9 16h6" />
+            </>
+        ),
         users: (
             <>
                 <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
@@ -3446,23 +3466,69 @@ const adminModules = [
     { id: 'accommodation', label: 'Accommodation CMS', description: 'Publish stays, pickup points, and travel guidance.' },
     { id: 'users', label: 'Users & Roles', description: 'Manage admin accounts, roles, and permissions.' },
     { id: 'audit', label: 'Audit Logs', description: 'Review important administrative activity.' },
-    { id: 'scientific', label: 'Scientific Content', description: 'Review abstracts and manage scientific resources.' },
+    { id: 'scientific', label: 'Scientific Content', description: 'Manage scientific page content and resources.' },
+    { id: 'abstracts', label: 'Abstracts CMS', description: 'Manage student abstracts and the published abstract book.' },
 ];
 
 const adminNavigationGroups = [
     { label: 'Overview', modules: ['dashboard'] },
-    { label: 'Registration', modules: ['registrations', 'students', 'payments'] },
+    { label: 'Registration', modules: ['registrations', 'students'] },
     { label: 'Event Setup', modules: ['categories', 'programs', 'pricing'] },
-    { label: 'Content', modules: ['scientific', 'winners', 'accommodation'] },
-    { label: 'Insights', modules: ['reports'] },
+    { label: 'Content', modules: ['abstracts', 'scientific', 'winners', 'accommodation'] },
+    { label: 'Reports', modules: ['reports', 'payments'] },
     { label: 'Administration', modules: ['users', 'audit'] },
 ];
 
-const implementedAdminModules = new Set(['dashboard', 'registrations', 'categories', 'pricing', 'programs', 'users', 'accommodation', 'scientific']);
+const accommodationAdminSections = [
+    { id: 'spaces', label: 'Accommodation Spaces', description: 'Manage hotel, stay type, tariff, contact, and notes rows.' },
+    { id: 'pickup-points', label: 'Pickup Points', description: 'Manage arrival points, distance, travel time, and pickup instructions.' },
+    { id: 'tourist-attractions', label: 'Tourist Attractions', description: 'Manage nearby places to visit, descriptions, and photos.' },
+    { id: 'settings', label: 'Settings', description: 'Manage page headings, desk contact details, and travel notes.' },
+];
+
+const abstractsAdminSections = [
+    { id: 'student-abstracts', label: 'Student Abstracts', description: 'Review uploaded student abstracts, approval status, and poster video review.' },
+    { id: 'abstract-book', label: 'Abstract Book Submission', description: 'Upload or replace the final abstract book PDF shown on the public scientific page.' },
+];
+
+const implementedAdminModules = new Set(['dashboard', 'registrations', 'students', 'payments', 'categories', 'pricing', 'programs', 'users', 'accommodation', 'scientific', 'abstracts']);
+
+function registrationStatusBadgeClass(status) {
+    if (status === 'submitted') return 'bg-emerald-100 text-emerald-800';
+    if (status === 'draft') return 'bg-amber-100 text-amber-800';
+    return 'bg-zinc-100 text-zinc-700';
+}
+
+function paymentStatusBadgeClass(status) {
+    if (status === 'success') return 'bg-emerald-100 text-emerald-800';
+    if (status === 'failed') return 'bg-red-100 text-red-700';
+    if (status === 'refunded') return 'bg-zinc-100 text-zinc-700';
+    return 'bg-amber-100 text-amber-800';
+}
+
+function approvalStatusBadgeClass(status) {
+    if (status === 'approved') return 'bg-emerald-100 text-emerald-800';
+    if (['cancelled', 'rejected'].includes(status)) return 'bg-red-100 text-red-700';
+    return 'bg-amber-100 text-amber-800';
+}
+
+function formatAdminStatus(status) {
+    return String(status || '-').replaceAll('_', ' ');
+}
 
 function getAdminModuleFromPath() {
     const requestedModule = window.location.pathname.split('/')[2] || 'dashboard';
     return adminModules.some((module) => module.id === requestedModule) ? requestedModule : 'dashboard';
+}
+
+function getAccommodationAdminSectionFromPath() {
+    const requestedSection = window.location.pathname.split('/')[3] || 'settings';
+    return accommodationAdminSections.some((section) => section.id === requestedSection) ? requestedSection : 'settings';
+}
+
+function getAbstractsAdminSectionFromPath() {
+    const requestedSection = window.location.pathname.split('/')[3] || 'student-abstracts';
+    return abstractsAdminSections.some((section) => section.id === requestedSection) ? requestedSection : 'student-abstracts';
 }
 
 function AdminPage() {
@@ -3470,6 +3536,8 @@ function AdminPage() {
     const [session, setSession] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const activeModule = getAdminModuleFromPath();
+    const activeAbstractsSection = activeModule === 'abstracts' ? getAbstractsAdminSectionFromPath() : 'student-abstracts';
+    const [openAdminDropdown, setOpenAdminDropdown] = useState(['accommodation', 'abstracts'].includes(activeModule) ? activeModule : '');
     const [userModuleTab, setUserModuleTab] = useState('users');
     const [userSearch, setUserSearch] = useState('');
     const [roles, setRoles] = useState([]);
@@ -3488,9 +3556,12 @@ function AdminPage() {
     const [registrationsLoading, setRegistrationsLoading] = useState(false);
     const [registrationsError, setRegistrationsError] = useState('');
     const [registrationSearch, setRegistrationSearch] = useState('');
+    const [paymentSearch, setPaymentSearch] = useState('');
+    const [studentSearch, setStudentSearch] = useState('');
     const [selectedRegistration, setSelectedRegistration] = useState(null);
     const [paymentStatusDraft, setPaymentStatusDraft] = useState('pending');
     const [paymentUpdating, setPaymentUpdating] = useState(false);
+    const [paymentUpdatingId, setPaymentUpdatingId] = useState(null);
     const [paymentUpdateError, setPaymentUpdateError] = useState('');
     const [approvalStatusDraft, setApprovalStatusDraft] = useState('pending_review');
     const [approvalUpdating, setApprovalUpdating] = useState(false);
@@ -3517,35 +3588,75 @@ function AdminPage() {
     const [accommodationCmsLoading, setAccommodationCmsLoading] = useState(false);
     const [accommodationCmsSaving, setAccommodationCmsSaving] = useState(false);
     const [accommodationCmsNotice, setAccommodationCmsNotice] = useState('');
-    const abstractBookKey = 'ipa-nsc-2026-abstract-book';
-    const [abstractBookDataUrl, setAbstractBookDataUrl] = useState(() => localStorage.getItem(abstractBookKey) || '');
-    const [abstractBookFileName, setAbstractBookFileName] = useState(() => localStorage.getItem(abstractBookKey + '-name') || '');
+    const [accommodationEditing, setAccommodationEditing] = useState({ section: '', index: null });
+    const [accommodationRowDraft, setAccommodationRowDraft] = useState({});
+    const [touristAttractionPhotoUploading, setTouristAttractionPhotoUploading] = useState(null);
+    const [touristAttractionDraftPhotoUploading, setTouristAttractionDraftPhotoUploading] = useState(false);
+    const [abstractBook, setAbstractBook] = useState(null);
+    const [abstractBookLoading, setAbstractBookLoading] = useState(false);
     const [abstractBookUploading, setAbstractBookUploading] = useState(false);
     const [abstractBookError, setAbstractBookError] = useState('');
 
-    function handleAbstractBookUpload(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        if (file.type !== 'application/pdf') { setAbstractBookError('Only PDF files are accepted.'); return; }
-        if (file.size > 10 * 1024 * 1024) { setAbstractBookError('File exceeds 10 MB. Please use a smaller PDF.'); return; }
+    async function loadAbstractBookAdmin() {
+        setAbstractBookLoading(true);
         setAbstractBookError('');
-        setAbstractBookUploading(true);
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            localStorage.setItem(abstractBookKey, ev.target.result);
-            localStorage.setItem(abstractBookKey + '-name', file.name);
-            setAbstractBookDataUrl(ev.target.result);
-            setAbstractBookFileName(file.name);
-            setAbstractBookUploading(false);
-        };
-        reader.readAsDataURL(file);
+        try {
+            const res = await fetch('/api/admin/abstract-book');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load abstract book.');
+            setAbstractBook(data.book || null);
+        } catch (err) {
+            setAbstractBookError(err.message);
+        } finally {
+            setAbstractBookLoading(false);
+        }
     }
 
-    function removeAbstractBook() {
-        localStorage.removeItem(abstractBookKey);
-        localStorage.removeItem(abstractBookKey + '-name');
-        setAbstractBookDataUrl('');
-        setAbstractBookFileName('');
+    async function handleAbstractBookUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+            if (file.type !== 'application/pdf') throw new Error('Only PDF files are accepted.');
+            if (file.size > 10 * 1024 * 1024) throw new Error('File exceeds 10 MB. Please use a smaller PDF.');
+            setAbstractBookError('');
+            setAbstractBookUploading(true);
+            const fileData = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (ev) => resolve(ev.target.result);
+                reader.onerror = () => reject(new Error('Could not read the selected file.'));
+                reader.readAsDataURL(file);
+            });
+            const res = await fetch('/api/admin/abstract-book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fileName: file.name,
+                    fileType: file.type,
+                    fileSize: file.size,
+                    fileData,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to upload abstract book.');
+            setAbstractBook(data.book || null);
+        } catch (err) {
+            setAbstractBookError(err.message);
+        } finally {
+            setAbstractBookUploading(false);
+            e.target.value = '';
+        }
+    }
+
+    async function removeAbstractBook() {
+        try {
+            setAbstractBookError('');
+            const res = await fetch('/api/admin/abstract-book', { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to remove abstract book.');
+            setAbstractBook(data.book || null);
+        } catch (err) {
+            setAbstractBookError(err.message);
+        }
     }
 
     const [adminAbstracts, setAdminAbstracts] = useState([]);
@@ -3553,6 +3664,8 @@ function AdminPage() {
     const [adminAbstractsError, setAdminAbstractsError] = useState('');
     const [abstractReviewing, setAbstractReviewing] = useState(null);
     const [abstractRemarksDraft, setAbstractRemarksDraft] = useState('');
+    const [videoReviewing, setVideoReviewing] = useState(null);
+    const [videoReviewRemarksDraft, setVideoReviewRemarksDraft] = useState('');
 
     useEffect(() => {
         if (window.location.pathname === '/admin') {
@@ -3575,6 +3688,15 @@ function AdminPage() {
         }
     }
 
+    useEffect(() => {
+        if (activeModule === 'abstracts' && activeAbstractsSection === 'student-abstracts' && session) {
+            loadAdminAbstracts();
+        }
+        if (activeModule === 'abstracts' && activeAbstractsSection === 'abstract-book' && session) {
+            loadAbstractBookAdmin();
+        }
+    }, [activeModule, activeAbstractsSection, session]);
+
     async function reviewAbstract(id, status) {
         try {
             const res = await fetch(`/api/admin/abstracts/${id}`, {
@@ -3587,6 +3709,23 @@ function AdminPage() {
             setAdminAbstracts((prev) => prev.map((a) => (a.id === id ? data.submission : a)));
             setAbstractReviewing(null);
             setAbstractRemarksDraft('');
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function reviewAbstractVideo(id, videoReviewStatus) {
+        try {
+            const res = await fetch(`/api/admin/abstracts/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ videoReviewStatus, videoReviewRemarks: videoReviewRemarksDraft }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to update video review.');
+            setAdminAbstracts((prev) => prev.map((a) => (a.id === id ? data.submission : a)));
+            setVideoReviewing(null);
+            setVideoReviewRemarksDraft('');
         } catch (err) {
             alert(err.message);
         }
@@ -3674,6 +3813,26 @@ function AdminPage() {
             setPaymentUpdateError(error.message);
         } finally {
             setPaymentUpdating(false);
+        }
+    }
+
+    async function updatePaymentStatusInline(registration, paymentStatus) {
+        setPaymentUpdatingId(registration.id);
+        setPaymentUpdateError('');
+        try {
+            const { registration: updated } = await apiRequest(`admin/registrations/${registration.id}/payment`, {
+                method: 'PATCH',
+                body: JSON.stringify({ paymentStatus }),
+            });
+            setRegistrations((current) => current.map((item) => item.id === updated.id ? updated : item));
+            if (selectedRegistration?.id === updated.id) {
+                setSelectedRegistration(updated);
+                setPaymentStatusDraft(updated.paymentStatus);
+            }
+        } catch (error) {
+            setPaymentUpdateError(error.message);
+        } finally {
+            setPaymentUpdatingId(null);
         }
     }
 
@@ -3889,7 +4048,7 @@ function AdminPage() {
     }
 
     useEffect(() => {
-        if (['dashboard', 'registrations'].includes(activeModule) && session) {
+        if (['dashboard', 'registrations', 'students', 'payments'].includes(activeModule) && session) {
             loadRegistrations();
         }
     }, [activeModule, session]);
@@ -3935,6 +4094,81 @@ function AdminPage() {
         ].join(' ').toLowerCase();
         return haystack.includes(registrationSearch.trim().toLowerCase());
     });
+    const approvedPaidStudents = registrations
+        .filter((registration) =>
+            registration.registrationStatus === 'submitted' &&
+            registration.paymentStatus === 'success' &&
+            registration.approvalStatus === 'approved'
+        )
+        .flatMap((registration) => {
+            if (registration.registrationMode === 'group' && registration.groupMembers.length) {
+                return registration.groupMembers.map((member, index) => ({
+                    id: `${registration.id}-${index}`,
+                    registrationNumber: registration.registrationNumber,
+                    registrationMode: 'group',
+                    name: member.name,
+                    email: member.email || registration.groupCoordinatorEmail,
+                    whatsapp: member.whatsapp || registration.groupCoordinatorWhatsapp,
+                    category: member.category || registration.category,
+                    course: member.course,
+                    college: member.college,
+                    state: member.state,
+                    foodPreference: member.foodPreference,
+                    coordinator: registration.groupCoordinatorName,
+                    paymentStatus: registration.paymentStatus,
+                    approvalStatus: registration.approvalStatus,
+                }));
+            }
+
+            return [{
+                id: `${registration.id}-individual`,
+                registrationNumber: registration.registrationNumber,
+                registrationMode: registration.registrationMode,
+                name: registration.participantName,
+                email: registration.email,
+                whatsapp: registration.whatsappNumber,
+                category: registration.category,
+                course: registration.courseOfStudy,
+                college: registration.institutionName || registration.collegeWithState,
+                state: registration.stateOfResidence,
+                foodPreference: registration.foodPreference,
+                coordinator: '',
+                paymentStatus: registration.paymentStatus,
+                approvalStatus: registration.approvalStatus,
+            }];
+        });
+    const filteredStudents = approvedPaidStudents.filter((student) => {
+        const haystack = [
+            student.registrationNumber,
+            student.name,
+            student.email,
+            student.whatsapp,
+            student.category,
+            student.course,
+            student.college,
+            student.state,
+        ].join(' ').toLowerCase();
+        return haystack.includes(studentSearch.trim().toLowerCase());
+    });
+    const paymentRows = registrations
+        .filter((registration) => registration.registrationStatus === 'submitted' || registration.transactionDetails || registration.totalPayableAmount > 0)
+        .sort((a, b) => new Date(b.submittedAt || b.updatedAt || b.createdAt).getTime() - new Date(a.submittedAt || a.updatedAt || a.createdAt).getTime());
+    const filteredPaymentRows = paymentRows.filter((registration) => {
+        const haystack = [
+            registration.registrationNumber,
+            registration.participantName,
+            registration.groupCoordinatorName,
+            registration.email,
+            registration.groupCoordinatorEmail,
+            registration.whatsappNumber,
+            registration.groupCoordinatorWhatsapp,
+            registration.transactionDetails,
+            registration.paymentStatus,
+            registration.approvalStatus,
+            registration.category,
+        ].join(' ').toLowerCase();
+        return haystack.includes(paymentSearch.trim().toLowerCase());
+    });
     const submittedRegistrations = registrations.filter((registration) => registration.registrationStatus === 'submitted').length;
     const draftRegistrations = registrations.filter((registration) => registration.registrationStatus === 'draft').length;
     const pendingRegistrationPayments = registrations.filter((registration) => registration.paymentStatus === 'pending').length;
@@ -3942,8 +4176,19 @@ function AdminPage() {
     const approvedRegistrations = registrations.filter((registration) => registration.approvalStatus === 'approved').length;
 
     const activeModuleMeta = adminModules.find((module) => module.id === activeModule) || adminModules[0];
+    const activeAccommodationSection = activeModule === 'accommodation' ? getAccommodationAdminSectionFromPath() : 'settings';
+    const activeAccommodationSectionMeta = accommodationAdminSections.find((section) => section.id === activeAccommodationSection) || accommodationAdminSections[3];
+    const activeAbstractsSectionMeta = abstractsAdminSections.find((section) => section.id === activeAbstractsSection) || abstractsAdminSections[0];
+    const activePageLabel = activeModule === 'abstracts' ? activeAbstractsSectionMeta.label : activeModuleMeta.label;
+    const activePageDescription = activeModule === 'abstracts' ? activeAbstractsSectionMeta.description : activeModuleMeta.description;
     const paymentCollected = registrations
         .filter((registration) => registration.paymentStatus === 'success')
+        .reduce((total, registration) => total + registration.totalPayableAmount, 0);
+    const paymentPendingAmount = registrations
+        .filter((registration) => registration.paymentStatus === 'pending' || registration.paymentStatus === 'manual_verification_required')
+        .reduce((total, registration) => total + registration.totalPayableAmount, 0);
+    const paymentFailedAmount = registrations
+        .filter((registration) => registration.paymentStatus === 'failed')
         .reduce((total, registration) => total + registration.totalPayableAmount, 0);
     const dashboardStats = [
         ['Total Registrations', registrations.length.toLocaleString('en-IN'), `${submittedRegistrations} submitted`, 'emerald'],
@@ -3960,10 +4205,10 @@ function AdminPage() {
     ];
     const maxFunnelValue = Math.max(...registrationFunnel.map((item) => item[1]));
     const paymentBreakdown = [
-        ['Success', 1124, 'bg-emerald-600'],
-        ['Pending', 186, 'bg-amber-500'],
-        ['Failed', 54, 'bg-rose-600'],
-        ['Manual Review', 36, 'bg-sky-600'],
+        ['Success', registrations.filter((registration) => registration.paymentStatus === 'success').length, 'bg-emerald-600'],
+        ['Pending', registrations.filter((registration) => registration.paymentStatus === 'pending').length, 'bg-amber-500'],
+        ['Failed', registrations.filter((registration) => registration.paymentStatus === 'failed').length, 'bg-rose-600'],
+        ['Manual Review', registrations.filter((registration) => registration.paymentStatus === 'manual_verification_required').length, 'bg-sky-600'],
     ];
     const totalPaymentCount = paymentBreakdown.reduce((total, item) => total + item[1], 0);
     const programRegistrations = [
@@ -4073,18 +4318,286 @@ function AdminPage() {
         setAccommodationCmsNotice('');
     }
 
-    function updateAccommodationSection(index, name, value) {
-        setAccommodationCms((current) => {
-            const nextSections = normalizeAccommodationCms(current).sections.map((section, sectionIndex) =>
-                sectionIndex === index ? { ...section, [name]: value } : section
-            );
-
-            return normalizeAccommodationCms({ ...current, sections: nextSections });
-        });
+    function beginAccommodationRowCreate(sectionKey, fields) {
+        setAccommodationEditing({ section: sectionKey, index: null });
+        setAccommodationRowDraft(fields.reduce((draft, field) => ({ ...draft, [field]: '' }), {}));
         setAccommodationCmsNotice('');
     }
 
-    function uploadTouristAttractionPhoto(index, file) {
+    function beginAccommodationRowEdit(sectionKey, row, index) {
+        setAccommodationEditing({ section: sectionKey, index });
+        setAccommodationRowDraft({ ...row });
+        setAccommodationCmsNotice('');
+    }
+
+    function cancelAccommodationRowEdit() {
+        setAccommodationEditing({ section: '', index: null });
+        setAccommodationRowDraft({});
+    }
+
+    function updateAccommodationRowDraft(name, value) {
+        setAccommodationRowDraft((current) => ({ ...current, [name]: value }));
+        setAccommodationCmsNotice('');
+    }
+
+    function commitAccommodationRow(sectionKey, fields) {
+        if (!String(accommodationRowDraft.name || '').trim()) {
+            setAccommodationCmsNotice('Name is required.');
+            return;
+        }
+
+        const cleanedRow = fields.reduce((row, field) => ({ ...row, [field]: accommodationRowDraft[field] || '' }), {});
+        setAccommodationCms((current) => {
+            const cms = normalizeAccommodationCms(current);
+            const rows = [...cms[sectionKey]];
+            if (accommodationEditing.index === null) {
+                rows.push(cleanedRow);
+            } else {
+                rows[accommodationEditing.index] = cleanedRow;
+            }
+
+            return normalizeAccommodationCms({ ...cms, [sectionKey]: rows });
+        });
+        setAccommodationCmsNotice('Draft updated. Save this section to publish changes.');
+        cancelAccommodationRowEdit();
+    }
+
+    function isVercelBlobUrl(url) {
+        try {
+            const parsedUrl = new URL(url);
+            return parsedUrl.hostname.includes('vercel-storage.com');
+        } catch {
+            return false;
+        }
+    }
+
+    async function deleteTouristAttractionBlob(url) {
+        if (!isVercelBlobUrl(url)) {
+            return;
+        }
+
+        await apiRequest('admin/accommodation-travel/tourist-attraction-photo', {
+            method: 'DELETE',
+            body: JSON.stringify({ url }),
+        });
+    }
+
+    async function deleteAccommodationRow(sectionKey, index) {
+        const cms = normalizeAccommodationCms(accommodationCms);
+        const row = cms[sectionKey]?.[index];
+        if (sectionKey === 'touristAttractions' && row?.image) {
+            setAccommodationCmsNotice('Deleting photo from Vercel Blob...');
+            try {
+                await deleteTouristAttractionBlob(row.image);
+            } catch (error) {
+                setAccommodationCmsNotice(error.message);
+                return;
+            }
+        }
+
+        setAccommodationCms((current) => {
+            const cms = normalizeAccommodationCms(current);
+            return normalizeAccommodationCms({
+                ...cms,
+                [sectionKey]: cms[sectionKey].filter((_, rowIndex) => rowIndex !== index),
+            });
+        });
+        if (accommodationEditing.section === sectionKey && accommodationEditing.index === index) {
+            cancelAccommodationRowEdit();
+        }
+        setAccommodationCmsNotice('Row removed. Save this section to publish changes.');
+    }
+
+    function renderAccommodationCrudTable({ sectionKey, title, fields, columns, emptyText }) {
+        const cms = normalizeAccommodationCms(accommodationCms);
+        const rows = cms[sectionKey] || [];
+        const isEditingThisSection = accommodationEditing.section === sectionKey;
+        const formTitle = accommodationEditing.index === null ? `Add ${title}` : `Edit ${title}`;
+
+        return (
+            <div className="space-y-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h3 className="text-lg font-bold text-zinc-950">{title}</h3>
+                        <p className="mt-1 text-sm text-zinc-500">{rows.length} records in this section.</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => beginAccommodationRowCreate(sectionKey, fields)}
+                        className="admin-button rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900"
+                    >
+                        Add New
+                    </button>
+                </div>
+
+                <div className="overflow-x-auto rounded-lg border border-zinc-200">
+                    <table className="w-full min-w-[900px] text-left text-sm">
+                        <thead className="bg-zinc-100 text-xs uppercase text-zinc-500">
+                            <tr>
+                                {columns.map((column) => (
+                                    <th key={column.field} className="px-4 py-3">{column.label}</th>
+                                ))}
+                                <th className="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-200 bg-white">
+                            {rows.map((row, index) => (
+                                <tr key={`${sectionKey}-${row.name}-${index}`}>
+                                    {columns.map((column) => (
+                                        <td key={column.field} className="max-w-[260px] px-4 py-3 align-top">
+                                            {column.field === 'image' && row.image ? (
+                                                <img src={row.image} alt={row.name || 'Attraction'} className="h-16 w-24 rounded-lg object-cover" />
+                                            ) : (
+                                                <span className={`${column.wrap ? 'line-clamp-3' : 'whitespace-nowrap'} text-zinc-700`}>
+                                                    {row[column.field] || '-'}
+                                                </span>
+                                            )}
+                                        </td>
+                                    ))}
+                                    <td className="px-4 py-3 text-right align-top">
+                                        <div className="flex justify-end gap-2">
+                                            {sectionKey === 'touristAttractions' && (
+                                                <>
+                                                    <label className="cursor-pointer rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-100">
+                                                        {touristAttractionPhotoUploading === index ? 'Uploading...' : 'Photo'}
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="sr-only"
+                                                            disabled={touristAttractionPhotoUploading === index}
+                                                            onChange={(event) => uploadTouristAttractionPhoto(index, event.target.files?.[0])}
+                                                        />
+                                                    </label>
+                                                    {row.image && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeTouristAttractionPhoto(index)}
+                                                            disabled={touristAttractionPhotoUploading === index}
+                                                            className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                                                        >
+                                                            Remove Photo
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => beginAccommodationRowEdit(sectionKey, row, index)}
+                                                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-100"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => deleteAccommodationRow(sectionKey, index)}
+                                                className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            {!rows.length && (
+                                <tr>
+                                    <td colSpan={columns.length + 1} className="px-4 py-8 text-center text-sm font-semibold text-zinc-500">
+                                        {emptyText}
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {isEditingThisSection && (
+                    <div className="rounded-lg border border-emerald-100 bg-emerald-50/40 p-4">
+                        <div className="flex flex-col gap-2 border-b border-emerald-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h4 className="font-bold text-zinc-950">{formTitle}</h4>
+                                <p className="mt-1 text-xs font-medium text-zinc-500">Changes stay as draft until you use the save button below.</p>
+                            </div>
+                            <button type="button" onClick={cancelAccommodationRowEdit} className="rounded-lg border border-zinc-300 px-3 py-2 text-xs font-bold text-zinc-700 hover:bg-white">
+                                Cancel
+                            </button>
+                        </div>
+                        <div className="mt-4 grid gap-4 md:grid-cols-2">
+                            {columns.map((column) => (
+                                <label key={column.field} className={`block text-sm font-semibold text-zinc-800 ${column.wide ? 'md:col-span-2' : ''}`}>
+                                    {column.label}
+                                    {sectionKey === 'touristAttractions' && column.field === 'image' ? (
+                                        <div className="mt-2 rounded-lg border border-zinc-200 bg-white p-3">
+                                            {accommodationRowDraft.image ? (
+                                                <img
+                                                    src={accommodationRowDraft.image}
+                                                    alt={accommodationRowDraft.name || 'Tourist attraction'}
+                                                    className="h-32 w-full rounded-lg object-cover"
+                                                />
+                                            ) : (
+                                                <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50 text-xs font-semibold text-zinc-400">
+                                                    No photo uploaded
+                                                </div>
+                                            )}
+                                            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                                                <label className="cursor-pointer rounded-lg border border-zinc-300 px-3 py-2 text-center text-xs font-bold text-zinc-700 hover:bg-zinc-100">
+                                                    {touristAttractionDraftPhotoUploading ? 'Uploading...' : 'Upload Photo'}
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="sr-only"
+                                                        disabled={touristAttractionDraftPhotoUploading}
+                                                        onChange={(event) => uploadTouristAttractionDraftPhoto(event.target.files?.[0])}
+                                                    />
+                                                </label>
+                                                {accommodationRowDraft.image && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={removeTouristAttractionDraftPhoto}
+                                                        disabled={touristAttractionDraftPhotoUploading}
+                                                        className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                                                    >
+                                                        Remove Photo
+                                                    </button>
+                                                )}
+                                                <input
+                                                    className="admin-input min-w-0 flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-xs outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                    value={accommodationRowDraft.image || ''}
+                                                    onChange={(event) => updateAccommodationRowDraft('image', event.target.value)}
+                                                    placeholder="Or paste image URL"
+                                                />
+                                            </div>
+                                        </div>
+                                    ) : column.multiline ? (
+                                        <textarea
+                                            className="admin-input mt-2 min-h-24 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                            value={accommodationRowDraft[column.field] || ''}
+                                            onChange={(event) => updateAccommodationRowDraft(column.field, event.target.value)}
+                                        />
+                                    ) : (
+                                        <input
+                                            className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                            value={accommodationRowDraft[column.field] || ''}
+                                            onChange={(event) => updateAccommodationRowDraft(column.field, event.target.value)}
+                                        />
+                                    )}
+                                </label>
+                            ))}
+                        </div>
+                        <div className="mt-4 flex justify-end">
+                            <button
+                                type="button"
+                                onClick={() => commitAccommodationRow(sectionKey, fields)}
+                                className="admin-button rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900"
+                            >
+                                {accommodationEditing.index === null ? 'Add Row' : 'Update Row'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    async function uploadTouristAttractionPhoto(index, file) {
         if (!file) {
             return;
         }
@@ -4094,19 +4607,135 @@ function AdminPage() {
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
+        if (file.size > 4 * 1024 * 1024) {
+            setAccommodationCmsNotice('Image must be 4 MB or smaller.');
+            return;
+        }
+
+        setTouristAttractionPhotoUploading(index);
+        setAccommodationCmsNotice('Uploading photo...');
+
+        try {
+            const oldImage = normalizeAccommodationCms(accommodationCms).touristAttractions[index]?.image || '';
+            const fileData = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => resolve(event.target.result);
+                reader.onerror = () => reject(new Error('Could not read the selected image.'));
+                reader.readAsDataURL(file);
+            });
+            const cms = normalizeAccommodationCms(accommodationCms);
+            const attractionName = cms.touristAttractions[index]?.name || `Attraction ${index + 1}`;
+            const { url } = await apiRequest('admin/accommodation-travel/tourist-attraction-photo', {
+                method: 'POST',
+                body: JSON.stringify({ fileData, fileName: file.name, attractionName }),
+            });
             setAccommodationCms((current) => {
                 const cms = normalizeAccommodationCms(current);
                 const nextAttractions = cms.touristAttractions.map((place, placeIndex) =>
-                    placeIndex === index ? { ...place, image: event.target.result } : place
+                    placeIndex === index ? { ...place, image: url } : place
                 );
 
                 return normalizeAccommodationCms({ ...cms, touristAttractions: nextAttractions });
             });
-            setAccommodationCmsNotice('Photo added. Save the page to publish it.');
-        };
-        reader.readAsDataURL(file);
+            if (oldImage && oldImage !== url) {
+                await deleteTouristAttractionBlob(oldImage).catch(() => {});
+            }
+            setAccommodationCmsNotice('Photo uploaded to Vercel Blob. Save this section to publish it.');
+        } catch (error) {
+            setAccommodationCmsNotice(error.message);
+        } finally {
+            setTouristAttractionPhotoUploading(null);
+        }
+    }
+
+    async function removeTouristAttractionPhoto(index) {
+        const image = normalizeAccommodationCms(accommodationCms).touristAttractions[index]?.image || '';
+        if (!image) {
+            return;
+        }
+
+        setTouristAttractionPhotoUploading(index);
+        setAccommodationCmsNotice('Deleting photo from Vercel Blob...');
+
+        try {
+            await deleteTouristAttractionBlob(image);
+            setAccommodationCms((current) => {
+                const cms = normalizeAccommodationCms(current);
+                const nextAttractions = cms.touristAttractions.map((place, placeIndex) =>
+                    placeIndex === index ? { ...place, image: '' } : place
+                );
+
+                return normalizeAccommodationCms({ ...cms, touristAttractions: nextAttractions });
+            });
+            setAccommodationCmsNotice('Photo removed. Save this section to publish changes.');
+        } catch (error) {
+            setAccommodationCmsNotice(error.message);
+        } finally {
+            setTouristAttractionPhotoUploading(null);
+        }
+    }
+
+    async function uploadTouristAttractionDraftPhoto(file) {
+        if (!file) {
+            return;
+        }
+
+        if (!file.type.startsWith('image/')) {
+            setAccommodationCmsNotice('Please upload an image file.');
+            return;
+        }
+
+        if (file.size > 4 * 1024 * 1024) {
+            setAccommodationCmsNotice('Image must be 4 MB or smaller.');
+            return;
+        }
+
+        setTouristAttractionDraftPhotoUploading(true);
+        setAccommodationCmsNotice('Uploading photo...');
+
+        try {
+            const oldImage = accommodationRowDraft.image || '';
+            const fileData = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => resolve(event.target.result);
+                reader.onerror = () => reject(new Error('Could not read the selected image.'));
+                reader.readAsDataURL(file);
+            });
+            const attractionName = accommodationRowDraft.name || 'Tourist Attraction';
+            const { url } = await apiRequest('admin/accommodation-travel/tourist-attraction-photo', {
+                method: 'POST',
+                body: JSON.stringify({ fileData, fileName: file.name, attractionName }),
+            });
+            setAccommodationRowDraft((current) => ({ ...current, image: url }));
+            if (oldImage && oldImage !== url) {
+                await deleteTouristAttractionBlob(oldImage).catch(() => {});
+            }
+            setAccommodationCmsNotice('Photo uploaded to Vercel Blob. Add or update the row, then save this section.');
+        } catch (error) {
+            setAccommodationCmsNotice(error.message);
+        } finally {
+            setTouristAttractionDraftPhotoUploading(false);
+        }
+    }
+
+    async function removeTouristAttractionDraftPhoto() {
+        const image = accommodationRowDraft.image || '';
+        if (!image) {
+            return;
+        }
+
+        setTouristAttractionDraftPhotoUploading(true);
+        setAccommodationCmsNotice('Deleting photo from Vercel Blob...');
+
+        try {
+            await deleteTouristAttractionBlob(image);
+            setAccommodationRowDraft((current) => ({ ...current, image: '' }));
+            setAccommodationCmsNotice('Photo removed from the draft.');
+        } catch (error) {
+            setAccommodationCmsNotice(error.message);
+        } finally {
+            setTouristAttractionDraftPhotoUploading(false);
+        }
     }
 
     async function saveAccommodationCms() {
@@ -4170,20 +4799,75 @@ function AdminPage() {
                                     {group.modules.map((moduleId) => {
                                         const module = adminModules.find((item) => item.id === moduleId);
                                         if (!module) return null;
+                                        if (module.id === 'accommodation' || module.id === 'abstracts') {
+                                            const isAccommodationMenu = module.id === 'accommodation';
+                                            const submenuOpen = openAdminDropdown === module.id;
+                                            const submenuId = `admin-${module.id}-submenu`;
+                                            const sections = isAccommodationMenu ? accommodationAdminSections : abstractsAdminSections;
+                                            return (
+                                                <div key={module.id} className="relative shrink-0 lg:mb-2">
+                                                    <button
+                                                        type="button"
+                                                        aria-expanded={submenuOpen}
+                                                        aria-controls={submenuId}
+                                                        onClick={() => setOpenAdminDropdown((current) => current === module.id ? '' : module.id)}
+                                                        className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors lg:w-full ${
+                                                            activeModule === module.id
+                                                                ? 'admin-nav-active bg-zinc-900 text-white shadow-sm'
+                                                                : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950'
+                                                        }`}
+                                                    >
+                                                        <AdminSidebarIcon name={module.id} />
+                                                        <span className="min-w-0 flex-1">{module.label}</span>
+                                                        <span className={`text-xs transition-transform ${submenuOpen ? 'rotate-180' : ''}`}>⌄</span>
+                                                    </button>
+                                                    <div
+                                                        id={submenuId}
+                                                        className={`absolute left-0 top-full z-40 mt-2 min-w-64 rounded-lg border border-zinc-200 bg-white p-2 shadow-lg lg:static lg:mt-2 lg:min-w-0 lg:border-0 lg:bg-transparent lg:py-0 lg:pl-9 lg:pr-0 lg:shadow-none ${
+                                                            submenuOpen ? 'block' : 'hidden'
+                                                        }`}
+                                                    >
+                                                        {sections.map((section) => {
+                                                            const isActiveSection = isAccommodationMenu
+                                                                ? activeAccommodationSection === section.id
+                                                                : activeAbstractsSection === section.id;
+                                                            const href = isAccommodationMenu
+                                                                ? `/admin/accommodation/${section.id}`
+                                                                : `/admin/abstracts/${section.id}`;
+                                                            return (
+                                                            <a
+                                                                key={section.id}
+                                                                href={href}
+                                                                aria-current={isActiveSection ? 'page' : undefined}
+                                                                className={`block rounded-md px-3 py-2 text-xs font-semibold transition-colors lg:mb-1.5 ${
+                                                                    isActiveSection
+                                                                        ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100'
+                                                                        : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
+                                                                }`}
+                                                            >
+                                                                {section.label}
+                                                            </a>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
                                         return (
-                                            <a
-                                                key={module.id}
-                                                href={`/admin/${module.id}`}
-                                                aria-current={activeModule === module.id ? 'page' : undefined}
-                                                className={`flex shrink-0 items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors lg:mb-1 lg:w-full ${
-                                                    activeModule === module.id
-                                                        ? 'admin-nav-active bg-zinc-900 text-white shadow-sm'
-                                                        : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950'
-                                                }`}
-                                            >
-                                                <AdminSidebarIcon name={module.id} />
-                                                <span>{module.label}</span>
-                                            </a>
+                                            <div key={module.id} className="shrink-0 lg:mb-1">
+                                                <a
+                                                    href={`/admin/${module.id}`}
+                                                    aria-current={activeModule === module.id ? 'page' : undefined}
+                                                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors lg:w-full ${
+                                                        activeModule === module.id
+                                                            ? 'admin-nav-active bg-zinc-900 text-white shadow-sm'
+                                                            : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950'
+                                                    }`}
+                                                >
+                                                    <AdminSidebarIcon name={module.id} />
+                                                    <span>{module.label}</span>
+                                                </a>
+                                            </div>
                                         );
                                     })}
                                 </div>
@@ -4208,6 +4892,18 @@ function AdminPage() {
                             <a href="/admin/dashboard" className="hidden text-zinc-500 hover:text-zinc-950 sm:inline">Admin</a>
                             <span className="hidden text-zinc-300 sm:inline">/</span>
                             <span className="truncate font-medium text-zinc-950">{activeModuleMeta.label}</span>
+                            {activeModule === 'accommodation' && (
+                                <>
+                                    <span className="hidden text-zinc-300 sm:inline">/</span>
+                                    <span className="hidden truncate font-medium text-zinc-500 sm:inline">{activeAccommodationSectionMeta.label}</span>
+                                </>
+                            )}
+                            {activeModule === 'abstracts' && (
+                                <>
+                                    <span className="hidden text-zinc-300 sm:inline">/</span>
+                                    <span className="hidden truncate font-medium text-zinc-500 sm:inline">{activeAbstractsSectionMeta.label}</span>
+                                </>
+                            )}
                         </div>
                         <div className="flex items-center gap-2">
                             <a href="/" className="admin-button-secondary hidden rounded-md px-3 py-2 text-sm font-medium sm:inline-flex">View site</a>
@@ -4221,8 +4917,8 @@ function AdminPage() {
                     <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-6 lg:p-8">
                         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div>
-                                <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">{activeModuleMeta.label}</h1>
-                                <p className="mt-1.5 max-w-2xl text-sm text-zinc-500">{activeModuleMeta.description}</p>
+                                <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl">{activePageLabel}</h1>
+                                <p className="mt-1.5 max-w-2xl text-sm text-zinc-500">{activePageDescription}</p>
                             </div>
                             {notice && <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">{notice}</p>}
                         </div>
@@ -4288,13 +4984,13 @@ function AdminPage() {
 
                                 <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-5">
                                     <h2 className="text-lg font-bold">Payment Status</h2>
-                                    <p className="mt-1 text-sm text-zinc-600">Demo payment split for reconciliation.</p>
+                                    <p className="mt-1 text-sm text-zinc-600">Live payment split from registration records.</p>
                                     <div className="mt-6 flex h-5 overflow-hidden rounded-lg bg-white ring-1 ring-zinc-200">
                                         {paymentBreakdown.map(([label, value, className]) => (
                                             <div
                                                 key={label}
                                                 className={className}
-                                                style={{ width: `${(value / totalPaymentCount) * 100}%` }}
+                                                style={{ width: `${totalPaymentCount ? (value / totalPaymentCount) * 100 : 0}%` }}
                                                 title={`${label}: ${value}`}
                                             />
                                         ))}
@@ -4484,11 +5180,15 @@ function AdminPage() {
                                                     </td>
                                                     <td className="px-4 py-4 font-bold text-zinc-950">Rs. {registration.totalPayableAmount.toLocaleString('en-IN')}</td>
                                                     <td className="px-4 py-4">
-                                                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ${registration.registrationStatus === 'submitted' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                                                            {registration.registrationStatus}
+                                                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ${registrationStatusBadgeClass(registration.registrationStatus)}`}>
+                                                            {formatAdminStatus(registration.registrationStatus)}
                                                         </span>
-                                                        <p className="mt-2 text-xs capitalize text-zinc-500">Payment: {registration.paymentStatus}</p>
-                                                        <p className="mt-1 text-xs font-semibold capitalize text-zinc-600">Approval: {(registration.approvalStatus || 'not_submitted').replaceAll('_', ' ')}</p>
+                                                        <span className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ${paymentStatusBadgeClass(registration.paymentStatus)}`}>
+                                                            Payment: {formatAdminStatus(registration.paymentStatus)}
+                                                        </span>
+                                                        <span className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ${approvalStatusBadgeClass(registration.approvalStatus)}`}>
+                                                            Approval: {formatAdminStatus(registration.approvalStatus)}
+                                                        </span>
                                                     </td>
                                                     <td className="px-4 py-4 text-xs text-zinc-600">
                                                         {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(registration.submittedAt || registration.updatedAt))}
@@ -4560,8 +5260,8 @@ function AdminPage() {
                                                 <h3 className="text-sm font-semibold text-zinc-950">Registration summary</h3>
                                                 <dl className="mt-3 grid gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 sm:grid-cols-2">
                                                     {[
-                                                        ['Status', selectedRegistration.registrationStatus],
-                                                        ['Approval', selectedRegistration.approvalStatus.replaceAll('_', ' ')],
+                                                        ['Status', formatAdminStatus(selectedRegistration.registrationStatus)],
+                                                        ['Approval', formatAdminStatus(selectedRegistration.approvalStatus)],
                                                         ['Category', selectedRegistration.category],
                                                         ['Participant', selectedRegistration.participantName],
                                                         ['Institution', selectedRegistration.institutionName || selectedRegistration.collegeWithState],
@@ -4661,6 +5361,132 @@ function AdminPage() {
                                             </section>
                                         </div>
                                     </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeModule === 'payments' && (
+                        <div className="mt-6">
+                            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                {[
+                                    ['Collected', `Rs. ${paymentCollected.toLocaleString('en-IN')}`, 'Success payments', 'text-emerald-700'],
+                                    ['Pending', `Rs. ${paymentPendingAmount.toLocaleString('en-IN')}`, 'Pending and manual review', 'text-amber-700'],
+                                    ['Failed', `Rs. ${paymentFailedAmount.toLocaleString('en-IN')}`, 'Failed payments', 'text-red-700'],
+                                    ['Payment Records', paymentRows.length.toLocaleString('en-IN'), 'Submitted/payment rows', 'text-zinc-950'],
+                                ].map(([label, value, note, tone]) => (
+                                    <div key={label} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                        <p className="text-xs font-bold uppercase text-zinc-500">{label}</p>
+                                        <p className={`mt-2 text-2xl font-bold ${tone}`}>{value}</p>
+                                        <p className="mt-1 text-xs font-semibold text-zinc-500">{note}</p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h2 className="text-lg font-bold">Payment Records</h2>
+                                    <p className="mt-1 text-sm text-zinc-600">Payment status, transaction references, payable amount, and approval state from registrations.</p>
+                                </div>
+                                <div className="flex flex-col gap-2 sm:flex-row">
+                                    <input
+                                        type="search"
+                                        value={paymentSearch}
+                                        onChange={(event) => setPaymentSearch(event.target.value)}
+                                        placeholder="Search reg no, name, transaction..."
+                                        className="admin-input rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={loadRegistrations}
+                                        disabled={registrationsLoading}
+                                        className="rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {registrationsLoading ? 'Loading...' : 'Refresh'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {paymentUpdateError && (
+                                <p className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{paymentUpdateError}</p>
+                            )}
+
+                            {registrationsError && (
+                                <p className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{registrationsError}</p>
+                            )}
+
+                            {!registrationsLoading && !registrationsError && filteredPaymentRows.length === 0 && (
+                                <p className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm font-semibold text-zinc-600">
+                                    {paymentSearch ? 'No payments match your search.' : 'No payment records are available yet.'}
+                                </p>
+                            )}
+
+                            {filteredPaymentRows.length > 0 && (
+                                <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200">
+                                    <table className="min-w-[1100px] w-full text-left text-sm">
+                                        <thead className="bg-zinc-100 text-xs font-bold uppercase text-zinc-600">
+                                            <tr>
+                                                <th className="px-4 py-3">Registration</th>
+                                                <th className="px-4 py-3">Participant</th>
+                                                <th className="px-4 py-3">Contact</th>
+                                                <th className="px-4 py-3">Transaction</th>
+                                                <th className="px-4 py-3">Amount</th>
+                                                <th className="px-4 py-3">Payment</th>
+                                                <th className="px-4 py-3">Approval</th>
+                                                <th className="px-4 py-3">Submitted</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-200 bg-white">
+                                            {filteredPaymentRows.map((registration) => (
+                                                <tr key={registration.id} className="align-top hover:bg-zinc-50">
+                                                    <td className="px-4 py-4">
+                                                        <p className="font-mono text-xs font-bold text-emerald-800">{registration.registrationNumber || `Draft #${registration.id}`}</p>
+                                                        <p className="mt-1 capitalize text-xs text-zinc-500">{registration.registrationMode}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <p className="font-bold text-zinc-950">{registration.participantName || registration.groupCoordinatorName || 'Not entered'}</p>
+                                                        <p className="mt-1 max-w-[220px] truncate text-xs text-zinc-500">{registration.category || '-'}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-zinc-700">
+                                                        <p>{registration.email || registration.groupCoordinatorEmail || '-'}</p>
+                                                        <p className="mt-1">{registration.whatsappNumber || registration.groupCoordinatorWhatsapp || '-'}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <p className="max-w-[260px] whitespace-pre-wrap text-xs font-semibold text-zinc-700">{registration.transactionDetails || '-'}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <p className="font-bold text-zinc-950">Rs. {registration.totalPayableAmount.toLocaleString('en-IN')}</p>
+                                                        <p className="mt-1 text-xs text-zinc-500">Reg: Rs. {registration.registrationFee.toLocaleString('en-IN')}</p>
+                                                        {(registration.competitionFee > 0 || registration.workshopFee > 0) && (
+                                                            <p className="mt-1 text-xs text-zinc-500">Extras: Rs. {(registration.competitionFee + registration.workshopFee).toLocaleString('en-IN')}</p>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <select
+                                                            value={registration.paymentStatus || 'pending'}
+                                                            onChange={(event) => updatePaymentStatusInline(registration, event.target.value)}
+                                                            disabled={paymentUpdatingId === registration.id}
+                                                            className={`admin-input w-52 rounded-md border border-zinc-300 px-2.5 py-2 text-xs font-bold capitalize ${paymentStatusBadgeClass(registration.paymentStatus)}`}
+                                                        >
+                                                            <option value="pending">Pending</option>
+                                                            <option value="success">Success</option>
+                                                            <option value="failed">Failed</option>
+                                                            <option value="manual_verification_required">Manual verification required</option>
+                                                            <option value="refunded">Refunded</option>
+                                                        </select>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ${approvalStatusBadgeClass(registration.approvalStatus)}`}>
+                                                            {formatAdminStatus(registration.approvalStatus)}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-xs text-zinc-600">
+                                                        {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(registration.submittedAt || registration.updatedAt || registration.createdAt))}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
                             )}
                         </div>
@@ -4939,6 +5765,110 @@ function AdminPage() {
                         </div>
                     )}
 
+                    {activeModule === 'students' && (
+                        <div className="mt-6">
+                            <div className="grid gap-4 md:grid-cols-3">
+                                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                    <p className="text-xs font-bold uppercase text-zinc-500">Eligible Students</p>
+                                    <p className="mt-2 text-2xl font-bold text-zinc-950">{approvedPaidStudents.length.toLocaleString('en-IN')}</p>
+                                </div>
+                                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                    <p className="text-xs font-bold uppercase text-zinc-500">Approved Registrations</p>
+                                    <p className="mt-2 text-2xl font-bold text-zinc-950">{registrations.filter((registration) => registration.approvalStatus === 'approved').length.toLocaleString('en-IN')}</p>
+                                </div>
+                                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                    <p className="text-xs font-bold uppercase text-zinc-500">Payment Success</p>
+                                    <p className="mt-2 text-2xl font-bold text-zinc-950">{registrations.filter((registration) => registration.paymentStatus === 'success').length.toLocaleString('en-IN')}</p>
+                                </div>
+                            </div>
+
+                            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h2 className="text-lg font-bold">Approved &amp; Paid Students</h2>
+                                    <p className="mt-1 text-sm text-zinc-600">Only submitted registrations with payment success and admin approval are listed here.</p>
+                                </div>
+                                <div className="flex flex-col gap-2 sm:flex-row">
+                                    <input
+                                        type="search"
+                                        value={studentSearch}
+                                        onChange={(event) => setStudentSearch(event.target.value)}
+                                        placeholder="Search student, college, number..."
+                                        className="admin-input rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={loadRegistrations}
+                                        disabled={registrationsLoading}
+                                        className="rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        {registrationsLoading ? 'Loading...' : 'Refresh'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {registrationsError && (
+                                <p className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{registrationsError}</p>
+                            )}
+
+                            {!registrationsLoading && !registrationsError && filteredStudents.length === 0 && (
+                                <p className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm font-semibold text-zinc-600">
+                                    {studentSearch ? 'No eligible students match your search.' : 'No approved and paid students yet.'}
+                                </p>
+                            )}
+
+                            {filteredStudents.length > 0 && (
+                                <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-200">
+                                    <table className="min-w-[1000px] w-full text-left text-sm">
+                                        <thead className="bg-zinc-100 text-xs font-bold uppercase text-zinc-600">
+                                            <tr>
+                                                <th className="px-4 py-3">Reg. No.</th>
+                                                <th className="px-4 py-3">Student</th>
+                                                <th className="px-4 py-3">Contact</th>
+                                                <th className="px-4 py-3">Course / Category</th>
+                                                <th className="px-4 py-3">College / State</th>
+                                                <th className="px-4 py-3">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-200 bg-white">
+                                            {filteredStudents.map((student) => (
+                                                <tr key={student.id} className="align-top hover:bg-zinc-50">
+                                                    <td className="px-4 py-4">
+                                                        <p className="font-mono text-xs font-bold text-emerald-800">{student.registrationNumber}</p>
+                                                        <p className="mt-1 text-xs capitalize text-zinc-500">{student.registrationMode}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <p className="font-bold text-zinc-950">{student.name || '-'}</p>
+                                                        {student.coordinator && <p className="mt-1 text-xs text-zinc-500">Coordinator: {student.coordinator}</p>}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-zinc-700">
+                                                        <p>{student.email || '-'}</p>
+                                                        <p className="mt-1">{student.whatsapp || '-'}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <p className="font-semibold text-zinc-800">{student.course || '-'}</p>
+                                                        <p className="mt-1 text-xs text-zinc-500">{student.category || '-'}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <p className="max-w-xs text-zinc-700">{student.college || '-'}</p>
+                                                        <p className="mt-1 text-xs text-zinc-500">{student.state || '-'}</p>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ${paymentStatusBadgeClass(student.paymentStatus)}`}>
+                                                            Payment: {formatAdminStatus(student.paymentStatus)}
+                                                        </span>
+                                                        <span className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ${approvalStatusBadgeClass(student.approvalStatus)}`}>
+                                                            Approval: {formatAdminStatus(student.approvalStatus)}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {activeModule === 'users' && (
                         <div className="mt-6">
                             <div className="grid gap-4 md:grid-cols-4">
@@ -5205,162 +6135,139 @@ function AdminPage() {
                     )}
 
                     {activeModule === 'accommodation' && (
-                        <div className="admin-card mt-6 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-                            <div className="flex flex-col gap-3 border-b border-zinc-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
-                                <div>
-                                    <p className="text-sm font-bold uppercase text-emerald-700">CMS</p>
-                                    <h2 className="mt-2 text-xl font-bold text-zinc-950">Accommodation &amp; Travel Page</h2>
-                                    <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
-                                        Update the public Accommodation &amp; Travel page content. The sample text can be replaced once hotel, tariff, route, pickup, and attraction details are finalized.
-                                    </p>
-                                </div>
-                                <a
-                                    href="/accommodation-travel"
-                                    className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-700 hover:bg-zinc-100"
-                                >
-                                    View Page
-                                </a>
-                            </div>
-
-                            {accommodationCmsLoading ? (
-                                <p className="mt-6 text-sm font-semibold text-zinc-500">Loading content...</p>
-                            ) : (
-                                <div className="mt-6 space-y-6">
-                                    <div className="grid gap-4 md:grid-cols-2">
-                                        {[
-                                            ['pageTitle', 'Page Title'],
-                                            ['heading', 'Main Heading'],
-                                            ['assistanceTitle', 'Assistance Box Title'],
-                                            ['contactPerson', 'Contact Person'],
-                                        ].map(([name, label]) => (
-                                            <label key={name} className="block text-sm font-semibold text-zinc-800">
-                                                {label}
-                                                <input
-                                                    className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                                                    value={accommodationCms[name]}
-                                                    onChange={(event) => updateAccommodationField(name, event.target.value)}
-                                                />
-                                            </label>
-                                        ))}
-                                        <label className="block text-sm font-semibold text-zinc-800 md:col-span-2">
-                                            Tariff Notes
-                                            <textarea
-                                                className="admin-input mt-2 min-h-20 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                                                value={accommodationCms.tariffNotes}
-                                                onChange={(event) => updateAccommodationField('tariffNotes', event.target.value)}
-                                            />
-                                        </label>
-                                        <label className="block text-sm font-semibold text-zinc-800 md:col-span-2">
-                                            Route Notes
-                                            <textarea
-                                                className="admin-input mt-2 min-h-20 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                                                value={accommodationCms.routeNotes}
-                                                onChange={(event) => updateAccommodationField('routeNotes', event.target.value)}
-                                            />
-                                        </label>
-                                        <label className="block text-sm font-semibold text-zinc-800 md:col-span-2">
-                                            Intro Copy
-                                            <textarea
-                                                className="admin-input mt-2 min-h-24 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                                                value={accommodationCms.intro}
-                                                onChange={(event) => updateAccommodationField('intro', event.target.value)}
-                                            />
-                                        </label>
-                                        <label className="block text-sm font-semibold text-zinc-800 md:col-span-2">
-                                            Assistance Box Copy
-                                            <textarea
-                                                className="admin-input mt-2 min-h-20 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                                                value={accommodationCms.assistanceCopy}
-                                                onChange={(event) => updateAccommodationField('assistanceCopy', event.target.value)}
-                                            />
-                                        </label>
-                                    </div>
-
-                                    <div className="grid gap-4">
-                                        <label className="block text-sm font-semibold text-zinc-800">
-                                            Accommodation Spaces
-                                            <span className="mt-1 block text-xs font-normal text-zinc-500">One row per stay: Name | Type | Distance | Tariff | Contact | Notes</span>
-                                            <textarea
-                                                className="admin-input mt-2 min-h-48 w-full rounded-lg border border-zinc-300 px-3 py-2.5 font-mono text-xs outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                                                value={formatCmsRows(normalizeAccommodationCms(accommodationCms).accommodationSpaces, ['name', 'type', 'distance', 'tariff', 'contact', 'notes'])}
-                                                onChange={(event) => updateAccommodationField('accommodationSpaces', parseCmsRows(event.target.value, ['name', 'type', 'distance', 'tariff', 'contact', 'notes']))}
-                                            />
-                                        </label>
-
-                                        <label className="block text-sm font-semibold text-zinc-800">
-                                            Pickup Points
-                                            <span className="mt-1 block text-xs font-normal text-zinc-500">One row per point: Name | Type | Distance | Estimated travel | Pickup instruction</span>
-                                            <textarea
-                                                className="admin-input mt-2 min-h-40 w-full rounded-lg border border-zinc-300 px-3 py-2.5 font-mono text-xs outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                                                value={formatCmsRows(normalizeAccommodationCms(accommodationCms).pickupPoints, ['name', 'type', 'distance', 'eta', 'instruction'])}
-                                                onChange={(event) => updateAccommodationField('pickupPoints', parseCmsRows(event.target.value, ['name', 'type', 'distance', 'eta', 'instruction']))}
-                                            />
-                                        </label>
-
-                                        <label className="block text-sm font-semibold text-zinc-800">
-                                            Tourist Attractions
-                                            <span className="mt-1 block text-xs font-normal text-zinc-500">One row per attraction: Name | Category | Distance | Photo URL | Description</span>
-                                            <textarea
-                                                className="admin-input mt-2 min-h-40 w-full rounded-lg border border-zinc-300 px-3 py-2.5 font-mono text-xs outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                                                value={formatCmsRows(normalizeAccommodationCms(accommodationCms).touristAttractions, ['name', 'category', 'distance', 'image', 'description'])}
-                                                onChange={(event) => updateAccommodationField('touristAttractions', parseCmsRows(event.target.value, ['name', 'category', 'distance', 'image', 'description']))}
-                                            />
-                                        </label>
-
-                                        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                                            <p className="text-sm font-bold text-zinc-950">Upload Attraction Photos</p>
-                                            <div className="mt-4 grid gap-4 md:grid-cols-2">
-                                                {normalizeAccommodationCms(accommodationCms).touristAttractions.map((place, index) => (
-                                                    <div key={`${place.name}-${index}`} className="rounded-lg border border-zinc-200 bg-white p-3">
-                                                        {place.image && (
-                                                            <img
-                                                                src={place.image}
-                                                                alt={place.name}
-                                                                className="h-28 w-full rounded-lg object-cover"
-                                                            />
-                                                        )}
-                                                        <div className="mt-3 flex items-center justify-between gap-3">
-                                                            <p className="min-w-0 truncate text-sm font-bold text-zinc-800">{place.name || `Attraction ${index + 1}`}</p>
-                                                            <label className="shrink-0 cursor-pointer rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-100">
-                                                                Upload Photo
-                                                                <input
-                                                                    type="file"
-                                                                    accept="image/*"
-                                                                    className="sr-only"
-                                                                    onChange={(event) => uploadTouristAttractionPhoto(index, event.target.files?.[0])}
-                                                                />
-                                                            </label>
-                                                        </div>
-                                                    </div>
+                        <div className="mt-6 space-y-5">
+                            <div className="admin-card rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+                                {accommodationCmsLoading ? (
+                                    <p className="mt-6 text-sm font-semibold text-zinc-500">Loading content...</p>
+                                ) : (
+                                    <div className="mt-6 space-y-6">
+                                        {activeAccommodationSection === 'settings' && (
+                                            <div className="grid gap-4 md:grid-cols-2">
+                                                {[
+                                                    ['pageTitle', 'Page Title'],
+                                                    ['heading', 'Main Heading'],
+                                                    ['assistanceTitle', 'Assistance Box Title'],
+                                                    ['contactPerson', 'Contact Person'],
+                                                ].map(([name, label]) => (
+                                                    <label key={name} className="block text-sm font-semibold text-zinc-800">
+                                                        {label}
+                                                        <input
+                                                            className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                            value={accommodationCms[name]}
+                                                            onChange={(event) => updateAccommodationField(name, event.target.value)}
+                                                        />
+                                                    </label>
                                                 ))}
+                                                <label className="block text-sm font-semibold text-zinc-800 md:col-span-2">
+                                                    Tariff Notes
+                                                    <textarea
+                                                        className="admin-input mt-2 min-h-20 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                        value={accommodationCms.tariffNotes}
+                                                        onChange={(event) => updateAccommodationField('tariffNotes', event.target.value)}
+                                                    />
+                                                </label>
+                                                <label className="block text-sm font-semibold text-zinc-800 md:col-span-2">
+                                                    Route Notes
+                                                    <textarea
+                                                        className="admin-input mt-2 min-h-20 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                        value={accommodationCms.routeNotes}
+                                                        onChange={(event) => updateAccommodationField('routeNotes', event.target.value)}
+                                                    />
+                                                </label>
+                                                <label className="block text-sm font-semibold text-zinc-800 md:col-span-2">
+                                                    Intro Copy
+                                                    <textarea
+                                                        className="admin-input mt-2 min-h-24 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                        value={accommodationCms.intro}
+                                                        onChange={(event) => updateAccommodationField('intro', event.target.value)}
+                                                    />
+                                                </label>
+                                                <label className="block text-sm font-semibold text-zinc-800 md:col-span-2">
+                                                    Assistance Box Copy
+                                                    <textarea
+                                                        className="admin-input mt-2 min-h-20 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                        value={accommodationCms.assistanceCopy}
+                                                        onChange={(event) => updateAccommodationField('assistanceCopy', event.target.value)}
+                                                    />
+                                                </label>
                                             </div>
+                                        )}
+
+                                        {activeAccommodationSection === 'spaces' && (
+                                            renderAccommodationCrudTable({
+                                                sectionKey: 'accommodationSpaces',
+                                                title: 'Accommodation Space',
+                                                fields: ['name', 'type', 'distance', 'tariff', 'contact', 'notes'],
+                                                emptyText: 'No accommodation spaces have been added.',
+                                                columns: [
+                                                    { field: 'name', label: 'Accommodation' },
+                                                    { field: 'type', label: 'Type' },
+                                                    { field: 'distance', label: 'Distance' },
+                                                    { field: 'tariff', label: 'Tariff' },
+                                                    { field: 'contact', label: 'Contact' },
+                                                    { field: 'notes', label: 'Notes', multiline: true, wide: true, wrap: true },
+                                                ],
+                                            })
+                                        )}
+
+                                        {activeAccommodationSection === 'pickup-points' && (
+                                            renderAccommodationCrudTable({
+                                                sectionKey: 'pickupPoints',
+                                                title: 'Pickup Point',
+                                                fields: ['name', 'type', 'distance', 'eta', 'instruction'],
+                                                emptyText: 'No pickup points have been added.',
+                                                columns: [
+                                                    { field: 'name', label: 'Point' },
+                                                    { field: 'type', label: 'Type' },
+                                                    { field: 'distance', label: 'Distance' },
+                                                    { field: 'eta', label: 'Estimated Travel' },
+                                                    { field: 'instruction', label: 'Pickup Instruction', multiline: true, wide: true, wrap: true },
+                                                ],
+                                            })
+                                        )}
+
+                                        {activeAccommodationSection === 'tourist-attractions' && (
+                                            renderAccommodationCrudTable({
+                                                sectionKey: 'touristAttractions',
+                                                title: 'Tourist Attraction',
+                                                fields: ['name', 'category', 'distance', 'image', 'description'],
+                                                emptyText: 'No tourist attractions have been added.',
+                                                columns: [
+                                                    { field: 'image', label: 'Photo' },
+                                                    { field: 'name', label: 'Attraction' },
+                                                    { field: 'category', label: 'Category' },
+                                                    { field: 'distance', label: 'Distance' },
+                                                    { field: 'description', label: 'Description', multiline: true, wide: true, wrap: true },
+                                                ],
+                                            })
+                                        )}
+
+                                        <div className="flex flex-col gap-3 border-t border-zinc-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                                            <p className="min-h-6 text-sm font-semibold text-emerald-700">{accommodationCmsNotice}</p>
+                                            <button
+                                                type="button"
+                                                onClick={saveAccommodationCms}
+                                                disabled={accommodationCmsSaving}
+                                                className="admin-button rounded-lg bg-emerald-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50"
+                                            >
+                                                {accommodationCmsSaving ? 'Saving...' : `Save ${activeAccommodationSectionMeta.label}`}
+                                            </button>
                                         </div>
                                     </div>
-
-                                    <div className="flex flex-col gap-3 border-t border-zinc-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                                        <p className="min-h-6 text-sm font-semibold text-emerald-700">{accommodationCmsNotice}</p>
-                                        <button
-                                            type="button"
-                                            onClick={saveAccommodationCms}
-                                            disabled={accommodationCmsSaving}
-                                            className="admin-button rounded-lg bg-emerald-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50"
-                                        >
-                                            {accommodationCmsSaving ? 'Saving...' : 'Save Accommodation Page'}
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     )}
 
-                    {activeModule === 'scientific' && (
+                    {activeModule === 'abstracts' && (
                         <div className="mt-6 space-y-8">
                             {/* ── Abstract Submissions ─────────────────────────────── */}
+                            {activeAbstractsSection === 'student-abstracts' && (
                             <div className="rounded-xl border border-zinc-200 bg-white p-6">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <h3 className="text-base font-bold text-zinc-900">Abstract Submissions</h3>
-                                        <p className="mt-1 text-sm text-zinc-500">Review and accept or reject submitted abstracts. Accepted participants can then submit their poster video link.</p>
+                                        <p className="mt-1 text-sm text-zinc-500">Review Vercel Blob uploaded abstracts and accept or reject submissions. Accepted participants can then submit their poster video link.</p>
                                     </div>
                                     <button
                                         type="button"
@@ -5384,6 +6291,7 @@ function AdminPage() {
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">File</th>
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Status</th>
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Video Link</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Video Review</th>
                                                     <th className="pb-3 text-xs font-bold uppercase text-zinc-500">Actions</th>
                                                 </tr>
                                             </thead>
@@ -5413,6 +6321,52 @@ function AdminPage() {
                                                             {abs.posterVideoLink ? (
                                                                 <a href={abs.posterVideoLink} target="_blank" rel="noopener noreferrer" className="block truncate text-xs text-[#0d124f] underline">{abs.posterVideoLink}</a>
                                                             ) : <span className="text-xs text-zinc-400">—</span>}
+                                                        </td>
+                                                        <td className="py-3 pr-4">
+                                                            {abs.posterVideoLink ? (
+                                                                videoReviewing === abs.id ? (
+                                                                    <div className="space-y-2">
+                                                                        <textarea
+                                                                            rows={2}
+                                                                            value={videoReviewRemarksDraft}
+                                                                            onChange={(e) => setVideoReviewRemarksDraft(e.target.value)}
+                                                                            placeholder="Video remarks (optional)"
+                                                                            className="w-48 rounded border border-zinc-300 px-2 py-1 text-xs focus:outline-none"
+                                                                        />
+                                                                        <div className="flex flex-wrap gap-1">
+                                                                            <button type="button" onClick={() => reviewAbstractVideo(abs.id, 'shortlisted')} className="rounded bg-sky-600 px-2 py-1 text-xs font-semibold text-white hover:bg-sky-700">Shortlist</button>
+                                                                            <button type="button" onClick={() => reviewAbstractVideo(abs.id, 'approved')} className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Approve</button>
+                                                                            <button type="button" onClick={() => reviewAbstractVideo(abs.id, 'rejected')} className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-700">Reject</button>
+                                                                            <button type="button" onClick={() => reviewAbstractVideo(abs.id, 'pending')} className="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100">Pending</button>
+                                                                            <button type="button" onClick={() => { setVideoReviewing(null); setVideoReviewRemarksDraft(''); }} className="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100">Cancel</button>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="space-y-2">
+                                                                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold uppercase ${
+                                                                            abs.videoReviewStatus === 'approved'
+                                                                                ? 'bg-emerald-100 text-emerald-700'
+                                                                                : abs.videoReviewStatus === 'rejected'
+                                                                                    ? 'bg-red-100 text-red-700'
+                                                                                    : abs.videoReviewStatus === 'shortlisted'
+                                                                                        ? 'bg-sky-100 text-sky-700'
+                                                                                        : 'bg-amber-100 text-amber-700'
+                                                                        }`}>
+                                                                            {formatAdminStatus(abs.videoReviewStatus || 'pending')}
+                                                                        </span>
+                                                                        {abs.videoReviewRemarks && <p className="max-w-[180px] text-xs text-zinc-500">{abs.videoReviewRemarks}</p>}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => { setVideoReviewing(abs.id); setVideoReviewRemarksDraft(abs.videoReviewRemarks || ''); }}
+                                                                            className="block rounded border border-zinc-300 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100"
+                                                                        >
+                                                                            Review Video
+                                                                        </button>
+                                                                    </div>
+                                                                )
+                                                            ) : (
+                                                                <span className="text-xs text-zinc-400">Awaiting video</span>
+                                                            )}
                                                         </td>
                                                         <td className="py-3">
                                                             {abstractReviewing === abs.id ? (
@@ -5451,43 +6405,50 @@ function AdminPage() {
                                     <p className="mt-4 text-sm text-zinc-400">No submissions yet. Click "Load Submissions" to fetch data.</p>
                                 )}
                             </div>
+                            )}
 
                             {/* ── Abstract Book PDF ──────────────────────────────── */}
+                            {activeAbstractsSection === 'abstract-book' && (
                             <div className="rounded-xl border border-zinc-200 bg-white p-6">
                                 <h3 className="text-base font-bold text-zinc-900">Abstract Book PDF</h3>
                                 <p className="mt-1 text-sm text-zinc-500">Upload the final abstract book PDF. It will be displayed as an embedded viewer on the Scientific Service public page.</p>
 
-                                {abstractBookDataUrl ? (
+                                {abstractBookLoading ? (
+                                    <div className="mt-5 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm font-medium text-zinc-500">
+                                        Loading abstract book...
+                                    </div>
+                                ) : abstractBook?.fileUrl ? (
                                     <div className="mt-5 space-y-4">
                                         <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
                                             <div className="flex items-center gap-2 min-w-0">
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="size-5 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                                                 </svg>
-                                                <span className="truncate text-sm font-medium text-emerald-800">{abstractBookFileName}</span>
+                                                <span className="truncate text-sm font-medium text-emerald-800">{abstractBook.fileName}</span>
                                             </div>
                                             <span className="ml-2 shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">Active</span>
                                         </div>
                                         <iframe
-                                            src={abstractBookDataUrl}
+                                            src={abstractBook.fileUrl}
                                             title="Abstract Book Preview"
                                             className="h-[500px] w-full rounded-lg border border-zinc-200"
                                         />
                                         <div className="flex gap-3">
                                             <label className="cursor-pointer rounded-lg border border-zinc-300 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100">
-                                                Replace PDF
-                                                <input type="file" accept="application/pdf" className="sr-only" onChange={handleAbstractBookUpload} />
+                                                {abstractBookUploading ? 'Uploading...' : 'Replace PDF'}
+                                                <input type="file" accept="application/pdf" className="sr-only" onChange={handleAbstractBookUpload} disabled={abstractBookUploading} />
                                             </label>
                                             <button type="button" onClick={removeAbstractBook} className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100">
                                                 Remove
                                             </button>
                                         </div>
+                                        {abstractBookError && <p className="text-xs font-medium text-red-600">{abstractBookError}</p>}
                                     </div>
                                 ) : (
                                     <div className="mt-5">
                                         <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 px-6 py-12 text-center transition hover:border-emerald-500 hover:bg-emerald-50/30">
                                             {abstractBookUploading ? (
-                                                <span className="text-sm font-medium text-zinc-500">Reading file…</span>
+                                                <span className="text-sm font-medium text-zinc-500">Uploading PDF...</span>
                                             ) : (
                                                 <>
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="size-10 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -5503,6 +6464,7 @@ function AdminPage() {
                                     </div>
                                 )}
                             </div>
+                            )}
                         </div>
                     )}
 
@@ -5583,6 +6545,7 @@ const presentationGuidelines = [
 
 function ScientificServicePage() {
     const [openPanel, setOpenPanel] = useState(null);
+    const [publicAbstractBook, setPublicAbstractBook] = useState(null);
 
     // ── Abstract submission state ──────────────────────────────
     const [absRegNum, setAbsRegNum] = useState('');
@@ -5599,6 +6562,21 @@ function ScientificServicePage() {
     const [vidSubmitting, setVidSubmitting] = useState(false);
     const [vidSubmitError, setVidSubmitError] = useState('');
 
+    useEffect(() => {
+        let cancelled = false;
+        fetch('/api/abstract-book')
+            .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+            .then(({ ok, data }) => {
+                if (!cancelled && ok) setPublicAbstractBook(data.book || null);
+            })
+            .catch(() => {
+                if (!cancelled) setPublicAbstractBook(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     async function checkAbstractReg() {
         const num = absRegNum.trim().toUpperCase();
         if (!num) return;
@@ -5610,9 +6588,10 @@ function ScientificServicePage() {
         try {
             const res = await fetch(`/api/abstracts/check?registrationNumber=${encodeURIComponent(num)}`);
             const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to verify. Please try again.');
             setAbsRegInfo(data);
-        } catch {
-            setAbsRegInfo({ checkError: 'Failed to verify. Please try again.' });
+        } catch (error) {
+            setAbsRegInfo({ checkError: error.message || 'Failed to verify. Please try again.' });
         } finally {
             setAbsChecking(false);
         }
@@ -5623,6 +6602,21 @@ function ScientificServicePage() {
         setAbsSubmitting(true);
         setAbsSubmitError('');
         try {
+            const extension = absFile.name.split('.').pop()?.toLowerCase();
+            if (!['pdf', 'docx'].includes(extension)) {
+                throw new Error('Upload a text-only PDF or DOCX file.');
+            }
+            if (absFile.size > 1 * 1024 * 1024) {
+                throw new Error('File exceeds 1 MB. Please choose a smaller text-only file.');
+            }
+            const filePreview = await absFile.arrayBuffer();
+            const searchableContent = new TextDecoder('latin1').decode(filePreview);
+            if (extension === 'pdf' && /\/Subtype\s*\/Image\b|\/Filter\s*\/(?:DCTDecode|JPXDecode|JBIG2Decode|CCITTFaxDecode)\b/i.test(searchableContent)) {
+                throw new Error('Abstract files must contain text only. Remove images, scanned pages, logos, charts, and embedded media before uploading.');
+            }
+            if (extension === 'docx' && /word\/media\/|word\/embeddings\//i.test(searchableContent)) {
+                throw new Error('Abstract files must contain text only. Remove images, charts, and embedded media before uploading.');
+            }
             const base64 = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result.split(',')[1]);
@@ -5878,8 +6872,20 @@ function ScientificServicePage() {
                             </div>
                         )}
 
+                        {absRegInfo && absRegInfo.valid && !absRegInfo.canSubmitAbstract && (
+                            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                                <p className="text-sm font-semibold text-amber-900">{absRegInfo.participantName}</p>
+                                <p className="mt-1 text-xs text-amber-800">{absRegInfo.eligibilityReason || 'Your registration is not yet eligible for abstract submission.'}</p>
+                                <p className="mt-2 text-xs text-amber-700">
+                                    Payment: <span className="font-bold capitalize">{(absRegInfo.paymentStatus || '-').replaceAll('_', ' ')}</span>
+                                    <span className="mx-2">•</span>
+                                    Approval: <span className="font-bold capitalize">{(absRegInfo.approvalStatus || '-').replaceAll('_', ' ')}</span>
+                                </p>
+                            </div>
+                        )}
+
                         {/* Valid + no abstract yet → upload form */}
-                        {absRegInfo && absRegInfo.valid && !absRegInfo.alreadySubmitted && (
+                        {absRegInfo && absRegInfo.valid && absRegInfo.canSubmitAbstract && !absRegInfo.alreadySubmitted && (
                             <>
                                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
                                     <p className="text-sm font-semibold text-emerald-800">{absRegInfo.participantName}</p>
@@ -5895,21 +6901,23 @@ function ScientificServicePage() {
                                 </div>
 
                                 <div>
-                                    <p className="text-xs text-zinc-500">Accepted formats: PDF, DOC, DOCX · Max 5 MB</p>
+                                    <p className="text-xs text-zinc-500">Accepted formats: text-only PDF or DOCX · Max 1 MB. Do not include images, scanned pages, logos, charts, or embedded media.</p>
                                     <label className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 text-center transition hover:border-[#df0867] hover:bg-red-50/30">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="size-9 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m6.75 12-3-3m0 0-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                                         </svg>
                                         <span className="text-sm font-medium text-zinc-600">{absFile ? absFile.name : 'Click to choose file or drag and drop'}</span>
-                                        <span className="text-xs text-zinc-400">PDF / DOC / DOCX · Max 5 MB</span>
+                                        <span className="text-xs text-zinc-400">Text-only PDF / DOCX · Max 1 MB</span>
                                         <input
                                             type="file"
-                                            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                                             className="sr-only"
                                             onChange={(e) => {
                                                 const f = e.target.files[0];
                                                 if (!f) return;
-                                                if (f.size > 5 * 1024 * 1024) { setAbsFileErr('File exceeds 5 MB. Please choose a smaller file.'); setAbsFile(null); e.target.value = ''; return; }
+                                                const extension = f.name.split('.').pop()?.toLowerCase();
+                                                if (!['pdf', 'docx'].includes(extension)) { setAbsFileErr('Upload a text-only PDF or DOCX file. Legacy DOC files are not accepted.'); setAbsFile(null); e.target.value = ''; return; }
+                                                if (f.size > 1 * 1024 * 1024) { setAbsFileErr('File exceeds 1 MB. Please choose a smaller text-only file.'); setAbsFile(null); e.target.value = ''; return; }
                                                 setAbsFileErr('');
                                                 setAbsFile(f);
                                             }}
@@ -6103,11 +7111,7 @@ function ScientificServicePage() {
             </section>
 
             {/* Abstract Book viewer */}
-            {(() => {
-                const pdfUrl = localStorage.getItem('ipa-nsc-2026-abstract-book');
-                const pdfName = localStorage.getItem('ipa-nsc-2026-abstract-book-name');
-                return (
-                    <section id="abstract-book" className="py-10 sm:py-12">
+            <section id="abstract-book" className="py-10 sm:py-12">
                         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                             <div className="flex items-center gap-3 border-b border-zinc-200 pb-5">
                                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#00652f] text-white">
@@ -6118,16 +7122,16 @@ function ScientificServicePage() {
                                 <h2 className="text-xl font-bold text-zinc-900">Abstract Book</h2>
                             </div>
 
-                            {pdfUrl ? (
+                            {publicAbstractBook?.fileUrl ? (
                                 <div className="mt-6">
                                     <div className="mb-3 flex items-center gap-2 text-sm text-zinc-600">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="size-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                                         </svg>
-                                        <span className="font-medium text-zinc-700">{pdfName}</span>
+                                        <span className="font-medium text-zinc-700">{publicAbstractBook.fileName}</span>
                                     </div>
                                     <iframe
-                                        src={pdfUrl}
+                                        src={publicAbstractBook.fileUrl}
                                         title="Abstract Book"
                                         className="h-[700px] w-full rounded-xl border border-zinc-200 shadow-sm"
                                     />
@@ -6145,9 +7149,7 @@ function ScientificServicePage() {
                                 </div>
                             )}
                         </div>
-                    </section>
-                );
-            })()}
+            </section>
             <Contact />
         </div>
     );

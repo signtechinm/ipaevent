@@ -27,7 +27,7 @@ body {
         radial-gradient(circle at 50% 42%, rgb(17 20 95 / 0.94), transparent 30rem),
         #090d42;
     opacity: 1;
-    transition: opacity 500ms ease, visibility 500ms ease;
+    transition: opacity 220ms ease, visibility 220ms ease;
 }
 
 .site-loader-leaving {

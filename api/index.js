@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { neon } from '@neondatabase/serverless';
+import { del, put } from '@vercel/blob';
 
 const sessionCookie = 'ipa_admin_session';
 const sessionDurationSeconds = 60 * 60 * 12;
@@ -198,6 +199,7 @@ function getSql() {
 
 function send(response, status, payload) {
     response.status(status).json(payload);
+    return true;
 }
 
 function getPath(request) {
@@ -266,6 +268,187 @@ async function ensureAccommodationTravelContent(sql) {
     `;
 
     return existing[0] || { content: defaultAccommodationTravelContent, updated_at: null };
+}
+
+function slugifyFilePart(value, fallback = 'photo') {
+    const slug = String(value || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 80);
+    return slug || fallback;
+}
+
+function parseDataUrl(dataUrl) {
+    const match = String(dataUrl || '').match(/^data:([^;,]+);base64,(.+)$/);
+    if (!match) {
+        return null;
+    }
+    return {
+        contentType: match[1],
+        buffer: Buffer.from(match[2], 'base64'),
+    };
+}
+
+async function ensureAbstractSubmissions(sql) {
+    await sql`
+        CREATE TABLE IF NOT EXISTS abstract_submissions (
+            id BIGSERIAL PRIMARY KEY,
+            registration_number VARCHAR(30) NOT NULL UNIQUE,
+            participant_name TEXT,
+            institution_name TEXT,
+            file_name TEXT NOT NULL,
+            file_size BIGINT NOT NULL DEFAULT 0,
+            file_type VARCHAR(120),
+            file_data TEXT,
+            file_url TEXT,
+            blob_path TEXT,
+            status VARCHAR(30) NOT NULL DEFAULT 'pending',
+            admin_remarks TEXT,
+            reviewed_at TIMESTAMPTZ,
+            poster_video_link TEXT,
+            video_link_submitted_at TIMESTAMPTZ,
+            video_review_status VARCHAR(30) NOT NULL DEFAULT 'pending',
+            video_review_remarks TEXT,
+            video_reviewed_at TIMESTAMPTZ,
+            submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `;
+    await sql`ALTER TABLE abstract_submissions ALTER COLUMN file_data DROP NOT NULL`;
+    await sql`ALTER TABLE abstract_submissions ADD COLUMN IF NOT EXISTS file_url TEXT`;
+    await sql`ALTER TABLE abstract_submissions ADD COLUMN IF NOT EXISTS blob_path TEXT`;
+    await sql`ALTER TABLE abstract_submissions ADD COLUMN IF NOT EXISTS video_review_status VARCHAR(30) NOT NULL DEFAULT 'pending'`;
+    await sql`ALTER TABLE abstract_submissions ADD COLUMN IF NOT EXISTS video_review_remarks TEXT`;
+    await sql`ALTER TABLE abstract_submissions ADD COLUMN IF NOT EXISTS video_reviewed_at TIMESTAMPTZ`;
+    await sql`CREATE INDEX IF NOT EXISTS abstract_submissions_status_idx ON abstract_submissions (status)`;
+    await sql`CREATE INDEX IF NOT EXISTS abstract_submissions_registration_idx ON abstract_submissions (registration_number)`;
+}
+
+async function ensureAbstractBookContent(sql) {
+    await sql`
+        CREATE TABLE IF NOT EXISTS abstract_book_content (
+            id TEXT PRIMARY KEY DEFAULT 'main',
+            file_name TEXT,
+            file_url TEXT,
+            blob_path TEXT,
+            file_size BIGINT NOT NULL DEFAULT 0,
+            file_type VARCHAR(120),
+            updated_by BIGINT REFERENCES admin_users(id),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `;
+    const rows = await sql`
+        INSERT INTO abstract_book_content (id)
+        VALUES ('main')
+        ON CONFLICT (id) DO NOTHING
+        RETURNING *
+    `;
+    if (rows.length) return rows[0];
+    const existing = await sql`SELECT * FROM abstract_book_content WHERE id = 'main' LIMIT 1`;
+    return existing[0] || null;
+}
+
+const abstractMaxFileBytes = 1 * 1024 * 1024;
+
+function validateAbstractUpload({ fileName, fileType, fileData, fileSize }) {
+    if (fileSize > abstractMaxFileBytes) {
+        throw inputError('File exceeds the 1 MB limit.');
+    }
+
+    const extension = String(fileName || '').split('.').pop()?.toLowerCase() || '';
+    if (!['pdf', 'docx'].includes(extension)) {
+        throw inputError('Upload a text-only PDF or DOCX file. Legacy DOC files are not accepted because they cannot be validated as text-only.');
+    }
+
+    const buffer = Buffer.from(fileData, 'base64');
+    const searchableContent = buffer.toString('latin1');
+
+    if (extension === 'pdf') {
+        const hasEmbeddedImage = /\/Subtype\s*\/Image\b|\/Filter\s*\/(?:DCTDecode|JPXDecode|JBIG2Decode|CCITTFaxDecode)\b/i.test(searchableContent);
+        if (hasEmbeddedImage) {
+            throw inputError('Abstract files must contain text only. Remove images, scanned pages, logos, charts, and embedded media before uploading.');
+        }
+    }
+
+    if (extension === 'docx') {
+        const hasEmbeddedMedia = /word\/media\/|word\/embeddings\//i.test(searchableContent);
+        if (hasEmbeddedMedia) {
+            throw inputError('Abstract files must contain text only. Remove images, charts, and embedded media before uploading.');
+        }
+    }
+
+    const allowedTypes = new Set([
+        '',
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ]);
+    if (fileType && !allowedTypes.has(fileType)) {
+        throw inputError('Upload a text-only PDF or DOCX file.');
+    }
+
+    return { buffer, extension };
+}
+
+async function uploadAbstractToBlob({ registrationNumber, fileName, fileType, buffer, extension }) {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+        throw inputError('Vercel Blob is not configured. Add BLOB_READ_WRITE_TOKEN to the environment.');
+    }
+
+    const contentType = fileType || (extension === 'pdf'
+        ? 'application/pdf'
+        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    const safeRegistration = slugifyFilePart(registrationNumber, 'registration');
+    const safeName = slugifyFilePart(fileName.replace(/\.[^.]+$/, ''), 'abstract');
+    const pathname = `abstract-submissions/${safeRegistration}-${safeName}-${Date.now()}.${extension}`;
+
+    try {
+        return await put(pathname, buffer, {
+            access: 'public',
+            contentType,
+        });
+    } catch (error) {
+        if (String(error.message || '').includes('private store')) {
+            throw inputError('This Vercel Blob store is private. Change the Blob store access to public or create a public Blob store for abstract uploads.');
+        }
+        throw error;
+    }
+}
+
+async function uploadAbstractBookToBlob({ fileName, fileType, buffer }) {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+        throw inputError('Vercel Blob is not configured. Add BLOB_READ_WRITE_TOKEN to the environment.');
+    }
+
+    const safeName = slugifyFilePart(fileName.replace(/\.[^.]+$/, ''), 'abstract-book');
+    const pathname = `abstract-book/${safeName}-${Date.now()}.pdf`;
+
+    try {
+        return await put(pathname, buffer, {
+            access: 'public',
+            contentType: fileType || 'application/pdf',
+        });
+    } catch (error) {
+        if (String(error.message || '').includes('private store')) {
+            throw inputError('This Vercel Blob store is private. Change the Blob store access to public so the abstract book can be shown on the public website.');
+        }
+        throw error;
+    }
+}
+
+function mapAbstractBook(row) {
+    if (!row || !row.file_url) {
+        return null;
+    }
+    return {
+        fileName: row.file_name || '',
+        fileUrl: row.file_url,
+        blobPath: row.blob_path || '',
+        fileSize: Number(row.file_size) || 0,
+        fileType: row.file_type || 'application/pdf',
+        updatedAt: row.updated_at,
+    };
 }
 
 function calculateFees(data, programs = [], categories = [], pricing = []) {
@@ -1033,7 +1216,7 @@ async function ensureSeedAdmin(sql) {
 export const config = {
     api: {
         bodyParser: {
-            sizeLimit: '10mb',
+            sizeLimit: '15mb',
         },
     },
 };
@@ -1047,13 +1230,167 @@ function mapAbstractSubmission(row) {
         fileName: row.file_name,
         fileSize: Number(row.file_size),
         fileType: row.file_type || '',
+        fileUrl: row.file_url || '',
+        blobPath: row.blob_path || '',
         status: row.status,
         adminRemarks: row.admin_remarks || '',
         reviewedAt: row.reviewed_at || null,
         posterVideoLink: row.poster_video_link || '',
         videoLinkSubmittedAt: row.video_link_submitted_at || null,
+        videoReviewStatus: row.video_review_status || 'pending',
+        videoReviewRemarks: row.video_review_remarks || '',
+        videoReviewedAt: row.video_reviewed_at || null,
         submittedAt: row.submitted_at,
     };
+}
+
+async function handlePublicAbstractRoute(path, request, response, sql) {
+    if (path === 'abstracts/check' && request.method === 'GET') {
+        await ensureAbstractSubmissions(sql);
+        const regNum = String(request.query.registrationNumber || '').trim().toUpperCase();
+        if (!regNum) {
+            return send(response, 400, { error: 'Registration number is required.' });
+        }
+        const regRows = await sql`
+            SELECT id, registration_number, participant_name, institution_name,
+                   payment_status, approval_status, registration_status
+            FROM event_registrations
+            WHERE UPPER(REPLACE(registration_number, ' ', '')) = ${regNum.replace(/\s+/g, '')}
+            LIMIT 1
+        `;
+        if (!regRows.length) {
+            return send(response, 200, { valid: false });
+        }
+
+        const reg = regRows[0];
+        const canonicalRegNum = reg.registration_number || regNum;
+        const absRows = await sql`
+            SELECT status, file_name, poster_video_link, video_link_submitted_at
+            FROM abstract_submissions
+            WHERE registration_number = ${canonicalRegNum}
+            LIMIT 1
+        `;
+        const paymentReady = reg.payment_status === 'success';
+        const approvalReady = reg.approval_status === 'approved';
+        const registrationReady = reg.registration_status === 'submitted';
+        const canSubmitAbstract = paymentReady && approvalReady && registrationReady;
+        const eligibilityReason = !registrationReady
+            ? 'Registration must be submitted before abstract submission.'
+            : !paymentReady
+                ? 'Payment must be marked success before abstract submission.'
+                : !approvalReady
+                    ? 'Registration must be approved before abstract submission.'
+                    : '';
+        return send(response, 200, {
+            valid: true,
+            participantName: reg.participant_name || '',
+            institutionName: reg.institution_name || '',
+            paymentStatus: reg.payment_status || '',
+            approvalStatus: reg.approval_status || '',
+            registrationStatus: reg.registration_status || '',
+            canSubmitAbstract,
+            eligibilityReason,
+            alreadySubmitted: absRows.length > 0,
+            abstractStatus: absRows.length > 0 ? absRows[0].status : null,
+            fileName: absRows.length > 0 ? absRows[0].file_name : null,
+            posterVideoLink: absRows.length > 0 ? (absRows[0].poster_video_link || null) : null,
+        });
+    }
+
+    if (path === 'abstracts/submit' && request.method === 'POST') {
+        await ensureAbstractSubmissions(sql);
+        const regNum = String(request.body?.registrationNumber || '').trim().toUpperCase();
+        if (!regNum) throw inputError('Registration number is required.');
+        const fileName = String(request.body?.fileName || '').trim();
+        const fileData = String(request.body?.fileData || '').trim();
+        if (!fileName || !fileData) throw inputError('File is required.');
+        const fileSize = Number(request.body?.fileSize) || 0;
+        const fileType = String(request.body?.fileType || '').trim();
+        const validatedFile = validateAbstractUpload({ fileName, fileType, fileData, fileSize });
+
+        const regRows = await sql`
+            SELECT id, registration_number, participant_name, institution_name,
+                   payment_status, approval_status, registration_status
+            FROM event_registrations
+            WHERE UPPER(REPLACE(registration_number, ' ', '')) = ${regNum.replace(/\s+/g, '')}
+            LIMIT 1
+        `;
+        if (!regRows.length) throw inputError('Registration number not found.');
+        if (regRows[0].registration_status !== 'submitted') {
+            throw inputError('Registration must be submitted before abstract submission.');
+        }
+        if (regRows[0].payment_status !== 'success') {
+            throw inputError('Payment must be marked success before abstract submission.');
+        }
+        if (regRows[0].approval_status !== 'approved') {
+            throw inputError('Registration must be approved before abstract submission.');
+        }
+        const canonicalRegNum = regRows[0].registration_number || regNum;
+
+        const existing = await sql`
+            SELECT id FROM abstract_submissions WHERE registration_number = ${canonicalRegNum} LIMIT 1
+        `;
+        if (existing.length) throw inputError('An abstract has already been submitted for this registration number. Only one submission is allowed and it cannot be replaced.');
+
+        const blob = await uploadAbstractToBlob({
+            registrationNumber: canonicalRegNum,
+            fileName,
+            fileType,
+            buffer: validatedFile.buffer,
+            extension: validatedFile.extension,
+        });
+
+        const rows = await sql`
+            INSERT INTO abstract_submissions
+                (registration_number, participant_name, institution_name, file_name, file_size, file_type, file_url, blob_path, status)
+            VALUES (
+                ${canonicalRegNum},
+                ${regRows[0].participant_name || null},
+                ${regRows[0].institution_name || null},
+                ${fileName},
+                ${fileSize},
+                ${fileType || null},
+                ${blob.url},
+                ${blob.pathname},
+                'pending'
+            )
+            RETURNING *
+        `;
+        return send(response, 201, { submission: mapAbstractSubmission(rows[0]) });
+    }
+
+    if (path === 'abstracts/video-link' && request.method === 'POST') {
+        await ensureAbstractSubmissions(sql);
+        const regNum = String(request.body?.registrationNumber || '').trim().toUpperCase();
+        if (!regNum) throw inputError('Registration number is required.');
+        const videoLink = String(request.body?.videoLink || '').trim();
+        if (!videoLink) throw inputError('Video link is required.');
+
+        const rows = await sql`
+            SELECT id, status, poster_video_link
+            FROM abstract_submissions
+            WHERE UPPER(REPLACE(registration_number, ' ', '')) = ${regNum.replace(/\s+/g, '')}
+            LIMIT 1
+        `;
+        if (!rows.length) throw inputError('No abstract submission found for this registration number.');
+        if (rows[0].status !== 'accepted') throw inputError('Video link can only be submitted once your abstract has been accepted.');
+        if (rows[0].poster_video_link) throw inputError('A video link has already been submitted for this registration number.');
+
+        const updated = await sql`
+            UPDATE abstract_submissions
+            SET poster_video_link = ${videoLink},
+                video_link_submitted_at = NOW(),
+                video_review_status = 'pending',
+                video_review_remarks = NULL,
+                video_reviewed_at = NULL,
+                updated_at = NOW()
+            WHERE id = ${rows[0].id}
+            RETURNING *
+        `;
+        return send(response, 200, { submission: mapAbstractSubmission(updated[0]) });
+    }
+
+    return null;
 }
 
 export default async function handler(request, response) {
@@ -1145,6 +1482,16 @@ export default async function handler(request, response) {
         if (path === 'accommodation-travel' && request.method === 'GET') {
             const row = await ensureAccommodationTravelContent(sql);
             return send(response, 200, { content: row.content, updatedAt: row.updated_at });
+        }
+
+        if (path === 'abstract-book' && request.method === 'GET') {
+            const row = await ensureAbstractBookContent(sql);
+            return send(response, 200, { book: mapAbstractBook(row) });
+        }
+
+        const publicAbstractResponse = await handlePublicAbstractRoute(path, request, response, sql);
+        if (publicAbstractResponse) {
+            return publicAbstractResponse;
         }
 
         if (path === 'admin/auth/login' && request.method === 'POST') {
@@ -1563,6 +1910,73 @@ export default async function handler(request, response) {
             return send(response, 200, { content: row.content, updatedAt: row.updated_at });
         }
 
+        if (path === 'admin/accommodation-travel/tourist-attraction-photo' && request.method === 'POST') {
+            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+
+            if (!process.env.BLOB_READ_WRITE_TOKEN) {
+                return send(response, 500, { error: 'Vercel Blob is not configured. Add BLOB_READ_WRITE_TOKEN to the environment.' });
+            }
+
+            const parsedFile = parseDataUrl(request.body?.fileData);
+            if (!parsedFile) {
+                return send(response, 400, { error: 'Upload a valid image file.' });
+            }
+
+            const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+            if (!allowedTypes.has(parsedFile.contentType)) {
+                return send(response, 400, { error: 'Only JPG, PNG, and WebP images are allowed.' });
+            }
+
+            const maxUploadBytes = 4 * 1024 * 1024;
+            if (parsedFile.buffer.byteLength > maxUploadBytes) {
+                return send(response, 400, { error: 'Image must be 4 MB or smaller.' });
+            }
+
+            const extensionByType = {
+                'image/jpeg': 'jpg',
+                'image/png': 'png',
+                'image/webp': 'webp',
+            };
+            const attractionName = slugifyFilePart(request.body?.attractionName, 'tourist-attraction');
+            const pathname = `accommodation-tourist-attractions/${attractionName}-${Date.now()}.${extensionByType[parsedFile.contentType]}`;
+            let blob;
+            try {
+                blob = await put(pathname, parsedFile.buffer, {
+                    access: 'public',
+                    contentType: parsedFile.contentType,
+                });
+            } catch (error) {
+                if (String(error.message || '').includes('private store')) {
+                    return send(response, 400, {
+                        error: 'This Vercel Blob store is private. Change the Blob store access to public so attraction photos can be shown on the public website.',
+                    });
+                }
+                throw error;
+            }
+
+            return send(response, 200, { url: blob.url, pathname: blob.pathname, contentType: parsedFile.contentType });
+        }
+
+        if (path === 'admin/accommodation-travel/tourist-attraction-photo' && request.method === 'DELETE') {
+            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+
+            if (!process.env.BLOB_READ_WRITE_TOKEN) {
+                return send(response, 500, { error: 'Vercel Blob is not configured. Add BLOB_READ_WRITE_TOKEN to the environment.' });
+            }
+
+            const url = String(request.body?.url || '').trim();
+            if (!url) {
+                return send(response, 400, { error: 'Photo URL is required.' });
+            }
+
+            await del(url);
+            return send(response, 200, { deleted: true });
+        }
+
         if (path === 'admin/accommodation-travel' && request.method === 'PUT') {
             if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
                 return send(response, 403, { error: 'Permission denied.' });
@@ -1581,117 +1995,95 @@ export default async function handler(request, response) {
             return send(response, 200, { content: rows[0].content, updatedAt: rows[0].updated_at });
         }
 
-        // ── Abstract check (public) ──────────────────────────────────
-        if (path === 'abstracts/check' && request.method === 'GET') {
-            const regNum = String(request.query.registrationNumber || '').trim().toUpperCase();
-            if (!regNum) {
-                return send(response, 400, { error: 'Registration number is required.' });
+        if (path === 'admin/abstract-book' && request.method === 'GET') {
+            if (!requirePermission(session, 'registration.view') && !requirePermission(session, 'content.view')) {
+                return send(response, 403, { error: 'Permission denied.' });
             }
-            const regRows = await sql`
-                SELECT id, participant_name, institution_name
-                FROM event_registrations
-                WHERE registration_number = ${regNum}
-                LIMIT 1
-            `;
-            if (!regRows.length) {
-                return send(response, 200, { valid: false });
-            }
-            const reg = regRows[0];
-            const absRows = await sql`
-                SELECT status, file_name, poster_video_link, video_link_submitted_at
-                FROM abstract_submissions
-                WHERE registration_number = ${regNum}
-                LIMIT 1
-            `;
-            return send(response, 200, {
-                valid: true,
-                participantName: reg.participant_name || '',
-                institutionName: reg.institution_name || '',
-                alreadySubmitted: absRows.length > 0,
-                abstractStatus: absRows.length > 0 ? absRows[0].status : null,
-                fileName: absRows.length > 0 ? absRows[0].file_name : null,
-                posterVideoLink: absRows.length > 0 ? (absRows[0].poster_video_link || null) : null,
-            });
+            const row = await ensureAbstractBookContent(sql);
+            return send(response, 200, { book: mapAbstractBook(row) });
         }
 
-        // ── Abstract submit (public) ─────────────────────────────────
-        if (path === 'abstracts/submit' && request.method === 'POST') {
-            const regNum = String(request.body?.registrationNumber || '').trim().toUpperCase();
-            if (!regNum) throw inputError('Registration number is required.');
+        if (path === 'admin/abstract-book' && request.method === 'POST') {
+            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+
             const fileName = String(request.body?.fileName || '').trim();
-            const fileData = String(request.body?.fileData || '').trim();
-            if (!fileName || !fileData) throw inputError('File is required.');
             const fileSize = Number(request.body?.fileSize) || 0;
-            if (fileSize > 5 * 1024 * 1024) throw inputError('File exceeds the 5 MB limit.');
+            const parsedFile = parseDataUrl(request.body?.fileData);
+            if (!fileName || !parsedFile) {
+                throw inputError('Upload a valid PDF file.');
+            }
+            if (!fileName.toLowerCase().endsWith('.pdf') || parsedFile.contentType !== 'application/pdf') {
+                throw inputError('Only PDF files are accepted.');
+            }
+            if (fileSize > 10 * 1024 * 1024 || parsedFile.buffer.byteLength > 10 * 1024 * 1024) {
+                throw inputError('File exceeds 10 MB. Please use a smaller PDF.');
+            }
 
-            const regRows = await sql`
-                SELECT id, participant_name, institution_name
-                FROM event_registrations
-                WHERE registration_number = ${regNum}
-                LIMIT 1
-            `;
-            if (!regRows.length) throw inputError('Registration number not found.');
-
-            const existing = await sql`
-                SELECT id FROM abstract_submissions WHERE registration_number = ${regNum} LIMIT 1
-            `;
-            if (existing.length) throw inputError('An abstract has already been submitted for this registration number. Only one submission is allowed and it cannot be replaced.');
-
+            const previous = await ensureAbstractBookContent(sql);
+            const blob = await uploadAbstractBookToBlob({
+                fileName,
+                fileType: parsedFile.contentType,
+                buffer: parsedFile.buffer,
+            });
             const rows = await sql`
-                INSERT INTO abstract_submissions
-                    (registration_number, participant_name, institution_name, file_name, file_size, file_type, file_data, status)
-                VALUES (
-                    ${regNum},
-                    ${regRows[0].participant_name || null},
-                    ${regRows[0].institution_name || null},
-                    ${fileName},
-                    ${fileSize},
-                    ${String(request.body?.fileType || '').trim() || null},
-                    ${fileData},
-                    'pending'
-                )
+                UPDATE abstract_book_content
+                SET file_name = ${fileName},
+                    file_url = ${blob.url},
+                    blob_path = ${blob.pathname},
+                    file_size = ${parsedFile.buffer.byteLength},
+                    file_type = ${parsedFile.contentType},
+                    updated_by = ${session.id},
+                    updated_at = NOW()
+                WHERE id = 'main'
                 RETURNING *
             `;
-            return send(response, 201, { submission: mapAbstractSubmission(rows[0]) });
+            if (previous?.file_url && previous.file_url !== blob.url) {
+                try {
+                    await del(previous.file_url);
+                } catch (error) {
+                    console.warn('Failed to delete previous abstract book blob', error);
+                }
+            }
+            return send(response, 200, { book: mapAbstractBook(rows[0]) });
         }
 
-        // ── Poster video link submit (public) ────────────────────────
-        if (path === 'abstracts/video-link' && request.method === 'POST') {
-            const regNum = String(request.body?.registrationNumber || '').trim().toUpperCase();
-            if (!regNum) throw inputError('Registration number is required.');
-            const videoLink = String(request.body?.videoLink || '').trim();
-            if (!videoLink) throw inputError('Video link is required.');
+        if (path === 'admin/abstract-book' && request.method === 'DELETE') {
+            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
 
+            const previous = await ensureAbstractBookContent(sql);
+            if (previous?.file_url) {
+                await del(previous.file_url);
+            }
             const rows = await sql`
-                SELECT id, status, poster_video_link
-                FROM abstract_submissions
-                WHERE registration_number = ${regNum}
-                LIMIT 1
-            `;
-            if (!rows.length) throw inputError('No abstract submission found for this registration number.');
-            if (rows[0].status !== 'accepted') throw inputError('Video link can only be submitted once your abstract has been accepted.');
-            if (rows[0].poster_video_link) throw inputError('A video link has already been submitted for this registration number.');
-
-            const updated = await sql`
-                UPDATE abstract_submissions
-                SET poster_video_link = ${videoLink},
-                    video_link_submitted_at = NOW(),
+                UPDATE abstract_book_content
+                SET file_name = NULL,
+                    file_url = NULL,
+                    blob_path = NULL,
+                    file_size = 0,
+                    file_type = NULL,
+                    updated_by = ${session.id},
                     updated_at = NOW()
-                WHERE registration_number = ${regNum}
+                WHERE id = 'main'
                 RETURNING *
             `;
-            return send(response, 200, { submission: mapAbstractSubmission(updated[0]) });
+            return send(response, 200, { book: mapAbstractBook(rows[0]) });
         }
 
         // ── Admin: list abstracts ────────────────────────────────────
         if (path === 'admin/abstracts' && request.method === 'GET') {
+            await ensureAbstractSubmissions(sql);
             if (!requirePermission(session, 'registration.view')) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
             const rows = await sql`
                 SELECT id, registration_number, participant_name, institution_name,
-                       file_name, file_size, file_type, status, admin_remarks,
-                       reviewed_at, poster_video_link, video_link_submitted_at, submitted_at
+                       file_name, file_size, file_type, file_url, blob_path, status, admin_remarks,
+                       reviewed_at, poster_video_link, video_link_submitted_at,
+                       video_review_status, video_review_remarks, video_reviewed_at, submitted_at
                 FROM abstract_submissions
                 ORDER BY submitted_at DESC
             `;
@@ -1701,18 +2093,30 @@ export default async function handler(request, response) {
         // ── Admin: download abstract file ────────────────────────────
         const absDownloadMatch = path.match(/^admin\/abstracts\/(\d+)\/download$/);
         if (absDownloadMatch && request.method === 'GET') {
+            await ensureAbstractSubmissions(sql);
             if (!requirePermission(session, 'registration.view')) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
             const rows = await sql`
-                SELECT file_name, file_type, file_data
+                SELECT file_name, file_type, file_data, file_url
                 FROM abstract_submissions
                 WHERE id = ${absDownloadMatch[1]}
                 LIMIT 1
             `;
             if (!rows.length) return send(response, 404, { error: 'Submission not found.' });
-            const { file_name, file_type, file_data } = rows[0];
-            const buffer = Buffer.from(file_data, 'base64');
+            const { file_name, file_type, file_data, file_url } = rows[0];
+            let buffer;
+            if (file_url) {
+                const blobResponse = await fetch(file_url);
+                if (!blobResponse.ok) {
+                    return send(response, 502, { error: 'Could not download file from Vercel Blob.' });
+                }
+                buffer = Buffer.from(await blobResponse.arrayBuffer());
+            } else if (file_data) {
+                buffer = Buffer.from(file_data, 'base64');
+            } else {
+                return send(response, 404, { error: 'Abstract file is missing.' });
+            }
             response.setHeader('Content-Type', file_type || 'application/octet-stream');
             response.setHeader('Content-Disposition', `attachment; filename="${file_name}"`);
             response.setHeader('Content-Length', buffer.length);
@@ -1722,12 +2126,30 @@ export default async function handler(request, response) {
         // ── Admin: review abstract ───────────────────────────────────
         const absReviewMatch = path.match(/^admin\/abstracts\/(\d+)$/);
         if (absReviewMatch && request.method === 'PATCH') {
+            await ensureAbstractSubmissions(sql);
             if (!requirePermission(session, 'registration.update')) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
-            const { status, adminRemarks } = request.body || {};
+            const { status, adminRemarks, videoReviewStatus, videoReviewRemarks } = request.body || {};
+            if (videoReviewStatus !== undefined) {
+                if (!['pending', 'shortlisted', 'approved', 'rejected'].includes(videoReviewStatus)) {
+                    throw inputError('Invalid video review status. Must be pending, shortlisted, approved, or rejected.');
+                }
+                const rows = await sql`
+                    UPDATE abstract_submissions
+                    SET video_review_status = ${videoReviewStatus},
+                        video_review_remarks = ${videoReviewRemarks ? String(videoReviewRemarks).trim() : null},
+                        video_reviewed_at = NOW(),
+                        updated_at = NOW()
+                    WHERE id = ${absReviewMatch[1]}
+                    RETURNING *
+                `;
+                if (!rows.length) return send(response, 404, { error: 'Submission not found.' });
+                return send(response, 200, { submission: mapAbstractSubmission(rows[0]) });
+            }
+
             if (!['accepted', 'rejected', 'pending'].includes(status)) {
-                throw inputError('Invalid status. Must be accepted, rejected, or pending.');
+                throw inputError('Invalid abstract status. Must be accepted, rejected, or pending.');
             }
             const rows = await sql`
                 UPDATE abstract_submissions
