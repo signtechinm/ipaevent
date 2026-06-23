@@ -1752,33 +1752,7 @@ export default async function handler(request, response) {
             return send(response, 200, { session: publicSession(session) });
         }
 
-        if (path === 'debug/mailer' && request.method === 'GET') {
-            const host = process.env.SMTP_HOST;
-            const port = process.env.SMTP_PORT;
-            const user = process.env.SMTP_USER;
-            const pass = process.env.SMTP_PASS;
-            const config = { host, port, user, passSet: !!pass, mailFrom: process.env.MAIL_FROM };
-            try {
-                const transporter = nodemailer.createTransport({
-                    host,
-                    port: Number(port),
-                    secure: String(process.env.SMTP_SECURE || '').toLowerCase() === 'true',
-                    auth: { user, pass },
-                });
-                await transporter.verify();
-                const info = await transporter.sendMail({
-                    from: process.env.MAIL_FROM,
-                    to: request.query.to || 'shafeekes999@gmail.com',
-                    subject: 'Vercel Mailer Debug Test',
-                    text: 'If you see this, Vercel SMTP is working.',
-                });
-                return send(response, 200, { ok: true, config, messageId: info.messageId });
-            } catch (error) {
-                return send(response, 500, { ok: false, config, error: error.message, code: error.code });
-            }
-        }
-
-        if (path === 'admin/mailer/test' && request.method === 'POST') {
+if (path === 'admin/mailer/test' && request.method === 'POST') {
             if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'user.update')) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
