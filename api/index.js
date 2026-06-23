@@ -397,9 +397,9 @@ async function getRegistrationContactForMail(sql, registrationNumber) {
     };
 }
 
-function notifyRegistrationSubmitted(registration) {
+async function notifyRegistrationSubmitted(registration) {
     const to = getRegistrationMailRecipient(registration);
-    queueStudentMail({
+    await sendStudentMail({
         to,
         subject: `Registration received - ${registration.registrationNumber || 'NSC 2026'}`,
         preview: 'Your NSC 2026 registration has been received.',
@@ -409,12 +409,12 @@ function notifyRegistrationSubmitted(registration) {
             `Payment status: ${formatStatusLabel(registration.paymentStatus || 'pending')}. Approval status: ${formatStatusLabel(registration.approvalStatus || 'pending_review')}.`,
             'Please keep this registration number for payment verification, abstract submission, and future updates.',
         ],
-    });
+    }).catch((error) => console.error('notifyRegistrationSubmitted failed:', error));
 }
 
-function notifyPaymentUpdated(registration) {
+async function notifyPaymentUpdated(registration) {
     const to = getRegistrationMailRecipient(registration);
-    queueStudentMail({
+    await sendStudentMail({
         to,
         subject: `Payment status updated - ${registration.registrationNumber || 'NSC 2026'}`,
         preview: `Your payment status is now ${formatStatusLabel(registration.paymentStatus)}.`,
@@ -424,12 +424,12 @@ function notifyPaymentUpdated(registration) {
             `Total payable amount: Rs. ${(Number(registration.totalPayableAmount) || 0).toLocaleString('en-IN')}.`,
             'If you believe this status is incorrect, please contact the NSC 2026 secretariat with your transaction reference.',
         ],
-    });
+    }).catch((error) => console.error('notifyPaymentUpdated failed:', error));
 }
 
-function notifyApprovalUpdated(registration) {
+async function notifyApprovalUpdated(registration) {
     const to = getRegistrationMailRecipient(registration);
-    queueStudentMail({
+    await sendStudentMail({
         to,
         subject: `Registration approval updated - ${registration.registrationNumber || 'NSC 2026'}`,
         preview: `Your registration approval status is now ${formatStatusLabel(registration.approvalStatus)}.`,
@@ -440,12 +440,12 @@ function notifyApprovalUpdated(registration) {
                 ? 'If your payment status is also success, you may proceed with eligible scientific submissions from the portal.'
                 : 'Please watch your email and the portal for further updates.',
         ],
-    });
+    }).catch((error) => console.error('notifyApprovalUpdated failed:', error));
 }
 
-function notifyAbstractReviewed(contact, submission) {
+async function notifyAbstractReviewed(contact, submission) {
     if (!contact) return;
-    queueStudentMail({
+    await sendStudentMail({
         to: contact.email,
         subject: `Abstract review update - ${submission.registrationNumber || contact.registrationNumber}`,
         preview: `Your abstract status is now ${formatStatusLabel(submission.status)}.`,
@@ -457,12 +457,12 @@ function notifyAbstractReviewed(contact, submission) {
                 ? 'You may submit your poster video link from the Scientific Service page when ready.'
                 : 'Please watch the portal and your registered email for further instructions.',
         ],
-    });
+    }).catch((error) => console.error('notifyAbstractReviewed failed:', error));
 }
 
-function notifyVideoReviewed(contact, submission) {
+async function notifyVideoReviewed(contact, submission) {
     if (!contact) return;
-    queueStudentMail({
+    await sendStudentMail({
         to: contact.email,
         subject: `Video review update - ${submission.registrationNumber || contact.registrationNumber}`,
         preview: `Your video review status is now ${formatStatusLabel(submission.videoReviewStatus)}.`,
@@ -471,7 +471,7 @@ function notifyVideoReviewed(contact, submission) {
             `Your poster video review status for registration ${submission.registrationNumber || contact.registrationNumber || '-'} has been updated to ${formatStatusLabel(submission.videoReviewStatus)}.`,
             submission.videoReviewRemarks ? `Remarks: ${submission.videoReviewRemarks}` : 'No additional remarks were added.',
         ],
-    });
+    }).catch((error) => console.error('notifyVideoReviewed failed:', error));
 }
 
 async function ensureAbstractSubmissions(sql) {
@@ -1663,7 +1663,7 @@ export default async function handler(request, response) {
 
         if (path === 'registrations/submit' && request.method === 'POST') {
             const registration = await saveRegistration(sql, request.body || {}, true);
-            notifyRegistrationSubmitted(registration);
+            await notifyRegistrationSubmitted(registration);
             return send(response, 200, { registration });
         }
 
@@ -2031,7 +2031,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             `;
             rows[0].student_competitions = competitions.map((item) => item.competition_name);
             const registration = mapAdminRegistration(rows[0]);
-            notifyPaymentUpdated(registration);
+            await notifyPaymentUpdated(registration);
             return send(response, 200, { registration });
         }
 
@@ -2063,7 +2063,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             `;
             rows[0].student_competitions = competitions.map((item) => item.competition_name);
             const registration = mapAdminRegistration(rows[0]);
-            notifyApprovalUpdated(registration);
+            await notifyApprovalUpdated(registration);
             return send(response, 200, { registration });
         }
 
@@ -2381,7 +2381,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
                 if (!rows.length) return send(response, 404, { error: 'Submission not found.' });
                 const submission = mapAbstractSubmission(rows[0]);
                 const contact = await getRegistrationContactForMail(sql, rows[0].registration_number);
-                notifyVideoReviewed(contact, submission);
+                await notifyVideoReviewed(contact, submission);
                 return send(response, 200, { submission });
             }
 
@@ -2400,7 +2400,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             if (!rows.length) return send(response, 404, { error: 'Submission not found.' });
             const submission = mapAbstractSubmission(rows[0]);
             const contact = await getRegistrationContactForMail(sql, rows[0].registration_number);
-            notifyAbstractReviewed(contact, submission);
+            await notifyAbstractReviewed(contact, submission);
             return send(response, 200, { submission });
         }
 
