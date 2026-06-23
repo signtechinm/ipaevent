@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { neon } from '@neondatabase/serverless';
 import { del, put } from '@vercel/blob';
+import nodemailer from 'nodemailer';
 
 const sessionCookie = 'ipa_admin_session';
 const sessionDurationSeconds = 60 * 60 * 12;
@@ -288,6 +289,189 @@ function parseDataUrl(dataUrl) {
         contentType: match[1],
         buffer: Buffer.from(match[2], 'base64'),
     };
+}
+
+function formatStatusLabel(status) {
+    return String(status || '-').replaceAll('_', ' ');
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+let mailTransporter;
+
+function getMailConfig() {
+    const host = process.env.SMTP_HOST;
+    const port = Number(process.env.SMTP_PORT || 587);
+    const user = process.env.SMTP_USER || process.env.MAIL_USER;
+    const pass = process.env.SMTP_PASS || process.env.MAIL_PASS;
+    const fromAddress = process.env.MAIL_FROM || 'nsc2026@ipakerala.org';
+    const fromName = process.env.MAIL_FROM_NAME || '14th IPA NSC 2026';
+
+    if (!host || !user || !pass) {
+        return null;
+    }
+
+    return {
+        transport: {
+            host,
+            port,
+            secure: String(process.env.SMTP_SECURE || '').toLowerCase() === 'true' || port === 465,
+            auth: { user, pass },
+        },
+        from: `"${fromName}" <${fromAddress}>`,
+    };
+}
+
+function getMailTransporter() {
+    const config = getMailConfig();
+    if (!config) return null;
+    if (!mailTransporter) {
+        mailTransporter = nodemailer.createTransport(config.transport);
+    }
+    return { transporter: mailTransporter, from: config.from };
+}
+
+async function sendStudentMail({ to, subject, preview, body }) {
+    const recipient = String(to || '').trim();
+    if (!recipient || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+        return { skipped: true, reason: 'missing-recipient' };
+    }
+
+    const mailer = getMailTransporter();
+    if (!mailer) {
+        console.warn('Mailer is not configured. Add SMTP_HOST, SMTP_USER, and SMTP_PASS to enable student emails.');
+        return { skipped: true, reason: 'mailer-not-configured' };
+    }
+
+    const safePreview = escapeHtml(preview || '');
+    const safeBody = Array.isArray(body) ? body.map((line) => `<p>${escapeHtml(line)}</p>`).join('\n') : String(body || '');
+    return mailer.transporter.sendMail({
+        from: mailer.from,
+        to: recipient,
+        replyTo: process.env.MAIL_REPLY_TO || process.env.MAIL_FROM || 'nsc2026@ipakerala.org',
+        subject,
+        text: Array.isArray(body) ? body.join('\n\n') : String(body || ''),
+        html: `
+            <div style="display:none;max-height:0;overflow:hidden">${safePreview}</div>
+            <div style="font-family:Arial,sans-serif;line-height:1.6;color:#18181b">
+                <h2 style="margin:0 0 12px;color:#0d124f">14th IPA National Students Congress 2026</h2>
+                ${safeBody}
+                <p style="margin-top:24px;color:#52525b">Regards,<br>NSC 2026 Secretariat<br>IPA Kerala State Branch</p>
+            </div>
+        `,
+    });
+}
+
+function queueStudentMail(message) {
+    sendStudentMail(message).catch((error) => {
+        console.error('Student mail failed:', error);
+    });
+}
+
+function getRegistrationMailRecipient(registration = {}) {
+    return registration.email || registration.groupCoordinatorEmail || registration.hrEmail || '';
+}
+
+async function getRegistrationContactForMail(sql, registrationNumber) {
+    const rows = await sql`
+        SELECT registration_number, participant_name, group_coordinator_name, email,
+               group_coordinator_email, hr_email, payment_status, approval_status
+        FROM event_registrations
+        WHERE registration_number = ${registrationNumber}
+        LIMIT 1
+    `;
+    if (!rows.length) return null;
+    return {
+        registrationNumber: rows[0].registration_number || '',
+        name: rows[0].participant_name || rows[0].group_coordinator_name || 'Delegate',
+        email: rows[0].email || rows[0].group_coordinator_email || rows[0].hr_email || '',
+        paymentStatus: rows[0].payment_status || '',
+        approvalStatus: rows[0].approval_status || '',
+    };
+}
+
+function notifyRegistrationSubmitted(registration) {
+    const to = getRegistrationMailRecipient(registration);
+    queueStudentMail({
+        to,
+        subject: `Registration received - ${registration.registrationNumber || 'NSC 2026'}`,
+        preview: 'Your NSC 2026 registration has been received.',
+        body: [
+            `Dear ${registration.participantName || registration.groupCoordinatorName || 'Delegate'},`,
+            `Your registration has been received successfully. Registration number: ${registration.registrationNumber || '-'}.`,
+            `Payment status: ${formatStatusLabel(registration.paymentStatus || 'pending')}. Approval status: ${formatStatusLabel(registration.approvalStatus || 'pending_review')}.`,
+            'Please keep this registration number for payment verification, abstract submission, and future updates.',
+        ],
+    });
+}
+
+function notifyPaymentUpdated(registration) {
+    const to = getRegistrationMailRecipient(registration);
+    queueStudentMail({
+        to,
+        subject: `Payment status updated - ${registration.registrationNumber || 'NSC 2026'}`,
+        preview: `Your payment status is now ${formatStatusLabel(registration.paymentStatus)}.`,
+        body: [
+            `Dear ${registration.participantName || registration.groupCoordinatorName || 'Delegate'},`,
+            `Your payment status for registration ${registration.registrationNumber || '-'} has been updated to ${formatStatusLabel(registration.paymentStatus)}.`,
+            `Total payable amount: Rs. ${(Number(registration.totalPayableAmount) || 0).toLocaleString('en-IN')}.`,
+            'If you believe this status is incorrect, please contact the NSC 2026 secretariat with your transaction reference.',
+        ],
+    });
+}
+
+function notifyApprovalUpdated(registration) {
+    const to = getRegistrationMailRecipient(registration);
+    queueStudentMail({
+        to,
+        subject: `Registration approval updated - ${registration.registrationNumber || 'NSC 2026'}`,
+        preview: `Your registration approval status is now ${formatStatusLabel(registration.approvalStatus)}.`,
+        body: [
+            `Dear ${registration.participantName || registration.groupCoordinatorName || 'Delegate'},`,
+            `Your registration ${registration.registrationNumber || '-'} approval status has been updated to ${formatStatusLabel(registration.approvalStatus)}.`,
+            registration.approvalStatus === 'approved'
+                ? 'If your payment status is also success, you may proceed with eligible scientific submissions from the portal.'
+                : 'Please watch your email and the portal for further updates.',
+        ],
+    });
+}
+
+function notifyAbstractReviewed(contact, submission) {
+    if (!contact) return;
+    queueStudentMail({
+        to: contact.email,
+        subject: `Abstract review update - ${submission.registrationNumber || contact.registrationNumber}`,
+        preview: `Your abstract status is now ${formatStatusLabel(submission.status)}.`,
+        body: [
+            `Dear ${contact.name || 'Delegate'},`,
+            `Your abstract submitted under registration ${submission.registrationNumber || contact.registrationNumber || '-'} has been marked ${formatStatusLabel(submission.status)}.`,
+            submission.adminRemarks ? `Remarks: ${submission.adminRemarks}` : 'No additional remarks were added.',
+            submission.status === 'accepted'
+                ? 'You may submit your poster video link from the Scientific Service page when ready.'
+                : 'Please watch the portal and your registered email for further instructions.',
+        ],
+    });
+}
+
+function notifyVideoReviewed(contact, submission) {
+    if (!contact) return;
+    queueStudentMail({
+        to: contact.email,
+        subject: `Video review update - ${submission.registrationNumber || contact.registrationNumber}`,
+        preview: `Your video review status is now ${formatStatusLabel(submission.videoReviewStatus)}.`,
+        body: [
+            `Dear ${contact.name || 'Delegate'},`,
+            `Your poster video review status for registration ${submission.registrationNumber || contact.registrationNumber || '-'} has been updated to ${formatStatusLabel(submission.videoReviewStatus)}.`,
+            submission.videoReviewRemarks ? `Remarks: ${submission.videoReviewRemarks}` : 'No additional remarks were added.',
+        ],
+    });
 }
 
 async function ensureAbstractSubmissions(sql) {
@@ -692,6 +876,7 @@ function mapRegistration(row, competitions = []) {
         transactionDetails: row.transaction_details || '',
         registrationNumber: row.registration_number || '',
         submittedAt: row.submitted_at || '',
+        paymentStatus: row.payment_status || 'pending',
         approvalStatus: row.approval_status || 'not_submitted',
     };
 }
@@ -1356,7 +1541,19 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
             )
             RETURNING *
         `;
-        return send(response, 201, { submission: mapAbstractSubmission(rows[0]) });
+        const submission = mapAbstractSubmission(rows[0]);
+        const contact = await getRegistrationContactForMail(sql, canonicalRegNum);
+        queueStudentMail({
+            to: contact?.email,
+            subject: `Abstract received - ${canonicalRegNum}`,
+            preview: 'Your abstract has been received and is pending review.',
+            body: [
+                `Dear ${contact?.name || regRows[0].participant_name || 'Delegate'},`,
+                `Your abstract file "${fileName}" has been received for registration ${canonicalRegNum}.`,
+                'The scientific committee will review it and notify you by email when the status is updated.',
+            ],
+        });
+        return send(response, 201, { submission });
     }
 
     if (path === 'abstracts/video-link' && request.method === 'POST') {
@@ -1387,7 +1584,19 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
             WHERE id = ${rows[0].id}
             RETURNING *
         `;
-        return send(response, 200, { submission: mapAbstractSubmission(updated[0]) });
+        const submission = mapAbstractSubmission(updated[0]);
+        const contact = await getRegistrationContactForMail(sql, submission.registrationNumber);
+        queueStudentMail({
+            to: contact?.email,
+            subject: `Poster video link received - ${submission.registrationNumber}`,
+            preview: 'Your poster video link has been received and is pending review.',
+            body: [
+                `Dear ${contact?.name || 'Delegate'},`,
+                `Your poster video link for registration ${submission.registrationNumber || '-'} has been received.`,
+                'The scientific committee will review it and notify you when the video review status is updated.',
+            ],
+        });
+        return send(response, 200, { submission });
     }
 
     return null;
@@ -1454,6 +1663,7 @@ export default async function handler(request, response) {
 
         if (path === 'registrations/submit' && request.method === 'POST') {
             const registration = await saveRegistration(sql, request.body || {}, true);
+            notifyRegistrationSubmitted(registration);
             return send(response, 200, { registration });
         }
 
@@ -1540,6 +1750,26 @@ export default async function handler(request, response) {
 
         if (path === 'admin/me' && request.method === 'GET') {
             return send(response, 200, { session: publicSession(session) });
+        }
+
+        if (path === 'admin/mailer/test' && request.method === 'POST') {
+            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'user.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const result = await sendStudentMail({
+                to: String(request.body?.to || session.email || '').trim(),
+                subject: 'NSC 2026 mailer test',
+                preview: 'This is a test email from the NSC 2026 portal.',
+                body: [
+                    `Dear ${session.name || 'Admin'},`,
+                    'This is a test email from the 14th IPA National Students Congress 2026 portal.',
+                    'If you received this, SMTP is configured correctly.',
+                ],
+            });
+            if (result?.skipped) {
+                return send(response, 400, { error: `Mailer skipped: ${result.reason}` });
+            }
+            return send(response, 200, { ok: true });
         }
 
         if (path === 'admin/bootstrap' && request.method === 'GET') {
@@ -1800,7 +2030,9 @@ export default async function handler(request, response) {
                 ORDER BY id
             `;
             rows[0].student_competitions = competitions.map((item) => item.competition_name);
-            return send(response, 200, { registration: mapAdminRegistration(rows[0]) });
+            const registration = mapAdminRegistration(rows[0]);
+            notifyPaymentUpdated(registration);
+            return send(response, 200, { registration });
         }
 
         const registrationApprovalMatch = path.match(/^admin\/registrations\/(\d+)\/approval$/);
@@ -1830,7 +2062,9 @@ export default async function handler(request, response) {
                 ORDER BY id
             `;
             rows[0].student_competitions = competitions.map((item) => item.competition_name);
-            return send(response, 200, { registration: mapAdminRegistration(rows[0]) });
+            const registration = mapAdminRegistration(rows[0]);
+            notifyApprovalUpdated(registration);
+            return send(response, 200, { registration });
         }
 
         if (path === 'admin/roles' && request.method === 'POST') {
@@ -2145,7 +2379,10 @@ export default async function handler(request, response) {
                     RETURNING *
                 `;
                 if (!rows.length) return send(response, 404, { error: 'Submission not found.' });
-                return send(response, 200, { submission: mapAbstractSubmission(rows[0]) });
+                const submission = mapAbstractSubmission(rows[0]);
+                const contact = await getRegistrationContactForMail(sql, rows[0].registration_number);
+                notifyVideoReviewed(contact, submission);
+                return send(response, 200, { submission });
             }
 
             if (!['accepted', 'rejected', 'pending'].includes(status)) {
@@ -2161,7 +2398,10 @@ export default async function handler(request, response) {
                 RETURNING *
             `;
             if (!rows.length) return send(response, 404, { error: 'Submission not found.' });
-            return send(response, 200, { submission: mapAbstractSubmission(rows[0]) });
+            const submission = mapAbstractSubmission(rows[0]);
+            const contact = await getRegistrationContactForMail(sql, rows[0].registration_number);
+            notifyAbstractReviewed(contact, submission);
+            return send(response, 200, { submission });
         }
 
         return send(response, 404, { error: 'API route not found.' });
