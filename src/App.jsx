@@ -1333,22 +1333,19 @@ function RegistrationPage() {
     }
 
     async function submitRegistration() {
-        if (!formData.hrCollegeWithState.trim() || !formData.hrCourseOrQualification.trim()
-            || !formData.hrWhatsappNumber.trim() || !formData.hrWhatsappConfirmation.trim()
-            || !formData.hrEmail.trim() || !formData.hrEmailConfirmation.trim() || !formData.hrCoreArea) {
-            setActiveTab('hr-drive');
-            setNotice('Complete all HR Drive fields before submitting.');
-            return;
-        }
-        if (formData.hrWhatsappNumber.trim() !== formData.hrWhatsappConfirmation.trim()) {
-            setActiveTab('hr-drive');
-            setNotice('The HR Drive WhatsApp numbers do not match.');
-            return;
-        }
-        if (formData.hrEmail.trim().toLowerCase() !== formData.hrEmailConfirmation.trim().toLowerCase()) {
-            setActiveTab('hr-drive');
-            setNotice('The HR Drive email addresses do not match.');
-            return;
+        const hrPartiallyFilled = formData.hrCollegeWithState.trim() || formData.hrCourseOrQualification.trim()
+            || formData.hrWhatsappNumber.trim() || formData.hrEmail.trim() || formData.hrCoreArea;
+        if (hrPartiallyFilled) {
+            if (formData.hrWhatsappNumber.trim() !== formData.hrWhatsappConfirmation.trim()) {
+                setActiveTab('hr-drive');
+                setNotice('The HR Drive WhatsApp numbers do not match.');
+                return;
+            }
+            if (formData.hrEmail.trim().toLowerCase() !== formData.hrEmailConfirmation.trim().toLowerCase()) {
+                setActiveTab('hr-drive');
+                setNotice('The HR Drive email addresses do not match.');
+                return;
+            }
         }
 
         setIsSaving(true);
