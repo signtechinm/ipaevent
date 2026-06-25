@@ -88,25 +88,35 @@ const updates = [
 
 const preCongressWorkshops = [
     {
-        title: '3D Printing and Scientific Writing',
+        title: '3D Printing and AI in Scientific Writing & Publications',
         events: [
             { number: 1, name: '3D Printing' },
-            { number: 2, name: 'Scientific Writing' },
+            { number: 2, name: 'AI in Scientific Writing & Publications' },
         ],
-        date: '17-18 September 2026',
+        date: '18 September 2026',
         venue: 'Lisie College of Pharmacy, Ernakulam',
     },
     {
-        title: 'FIP Vaccination, NDDS and CADD',
+        title: 'Molecular Docking & Molecular Dynamics Simulation, NDDS and Advanced in Neurological Screening Models',
         events: [
-            { number: 3, name: 'FIP Vaccination' },
+            { number: 3, name: 'Molecular Docking & Molecular Dynamics Simulation' },
             { number: 4, name: 'NDDS' },
-            { number: 5, name: 'CADD' },
+            { number: 5, name: 'Advanced in Neurological Screening Models' },
         ],
-        date: '17-18 September 2026',
+        date: '18 September 2026',
         venue: 'Amrita School of Pharmacy, Ernakulam',
     },
 ];
+
+const postCongressWorkshop = {
+    number: 7,
+    title: 'FIP Vaccination Training (2 days)',
+    copy: 'Post-congress hands-on vaccination training workshop.',
+    date: '21-22 September 2026',
+    venue: 'Amrita School of Pharmacy, Ernakulam',
+    host: 'IPA Kerala Branch',
+    association: 'IPA Education Division & IPA SF NEC',
+};
 
 const sponsorShowcase = [
     { tier: 'Title Sponsor', slots: 1, accent: 'from-[#df0867] to-[#f4a21b]' },
@@ -281,10 +291,7 @@ const groupMemberColumns = [
     ['name', 'Name'],
     ['email', 'Email'],
     ['whatsapp', 'WhatsApp Number'],
-    ['category', 'Category'],
     ['course', 'Course'],
-    ['college', 'College'],
-    ['state', 'State'],
     ['foodPreference', 'Food Preference'],
 ];
 
@@ -348,11 +355,11 @@ const competitionOptions = [
     'Clinical Skill Sets',
 ];
 
-const workshopOptions = ['AI', 'Vaccination', '3D Printing'];
+const workshopOptions = ['AI', 'FIP Vaccination Training (2 days)', '3D Printing'];
 
 const workshopFees = {
     AI: 0,
-    Vaccination: 0,
+    'FIP Vaccination Training (2 days)': 0,
     '3D Printing': 0,
 };
 
@@ -763,10 +770,10 @@ function QuickFacts() {
                     <div className="max-w-3xl">
                         <p className="text-sm font-bold uppercase tracking-[0.16em] text-[#ffd36a]">Event Snapshot</p>
                         <h2 className="mt-3 text-3xl font-bold leading-tight text-white sm:text-4xl">
-                            Congress and pre-congress workshop schedule
+                            Congress and workshop schedule
                         </h2>
                         <p className="mt-3 text-base font-medium leading-7 text-white/75">
-                            Pre-congress workshops begin on 17 September, followed by the National Students Congress on {eventDate}.
+                            Pre-congress workshops begin on 17 September, followed by the National Students Congress on {eventDate} and post-congress training on 21 September.
                         </p>
                     </div>
                     <div className="snapshot-logo-panel grid grid-cols-[1.15fr_0.85fr] items-center gap-5 rounded-2xl border border-white/15 bg-white/8 p-5 backdrop-blur-md">
@@ -787,7 +794,7 @@ function QuickFacts() {
                 <div>
                     <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">17-18 September 2026</p>
+                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">18 September 2026</p>
                             <h3 className="mt-1 text-2xl font-bold text-white">Pre-Congress Workshops</h3>
                         </div>
                         <p className="text-sm text-white/70">Two workshop venues in Ernakulam</p>
@@ -858,6 +865,44 @@ function QuickFacts() {
                                 <div>
                                     <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">In Association With</dt>
                                     <dd className="mt-1 text-sm font-semibold text-zinc-900">IPA Education Division &amp; IPA SF NEC</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </article>
+
+                    <div className="mb-4 mt-8 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">21-22 September 2026</p>
+                            <h3 className="mt-1 text-2xl font-bold text-white">Post-Congress Workshop</h3>
+                        </div>
+                        <p className="text-sm text-white/70">FIP Vaccination Training</p>
+                    </div>
+                    <article className="snapshot-workshop-card snapshot-main-event relative overflow-hidden rounded-xl border border-white/20 bg-white p-5 text-zinc-950 shadow-2xl sm:p-6">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="flex items-start gap-4">
+                                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-[#00652f] text-sm font-black text-white shadow-lg">{String(postCongressWorkshop.number).padStart(2, '0')}</span>
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#00652f]">Post-Congress Workshop</p>
+                                    <h3 className="mt-2 text-2xl font-bold leading-snug text-[#11145f]">{postCongressWorkshop.title}</h3>
+                                    <p className="mt-2 text-sm text-zinc-600">{postCongressWorkshop.copy}</p>
+                                </div>
+                            </div>
+                            <dl className="grid shrink-0 gap-4 border-t border-dashed border-zinc-200 pt-4 sm:grid-cols-2 lg:min-w-[520px] lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                                <div>
+                                    <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">Date</dt>
+                                    <dd className="mt-1 text-sm font-semibold text-zinc-900">{postCongressWorkshop.date}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">Venue</dt>
+                                    <dd className="mt-1 text-sm font-semibold leading-5 text-zinc-900">{postCongressWorkshop.venue}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">Host</dt>
+                                    <dd className="mt-1 text-sm font-semibold text-zinc-900">{postCongressWorkshop.host}</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">In Association With</dt>
+                                    <dd className="mt-1 text-sm font-semibold text-zinc-900">{postCongressWorkshop.association}</dd>
                                 </div>
                             </dl>
                         </div>
@@ -1199,25 +1244,50 @@ function RegistrationPage() {
             ? programCatalog.filter((program) => program.type === 'workshop').map(priceProgramForCategory).filter(Boolean)
             : workshopOptions.map((name) => ({ name, price: workshopFees[name] || 0, description: '' })))
         : [];
+    const isGroupRegistration = formData.registrationMode === 'group';
+    const groupParticipantCount = isGroupRegistration ? formData.groupMembers.length : 0;
+    const groupSelectionsForProgram = (type, programName) => formData.groupMembers.filter((member) => {
+        const selections = type === 'competition' ? member.competitions : member.workshops;
+        return Array.isArray(selections) && selections.includes(programName);
+    });
+    const formatStudentLabel = (member, index) => `${index + 1}. ${member.name}${member.course ? ` (${member.course})` : ''}`;
 
     const totals = useMemo(() => {
-        const registrationFee = selectedCategory?.registrationFee || 0;
-        const competitionFee = formData.studentCompetitions.reduce(
-            (total, name) => total + (competitionPrograms.find((program) => program.name === name)?.price || 0),
-            0
-        );
-        const workshopFee = formData.selectedWorkshops.reduce(
-            (total, name) => total + (workshopPrograms.find((program) => program.name === name)?.price || 0),
-            0
-        );
+        const perStudentRegistrationFee = selectedCategory?.registrationFee || 0;
+        const participantCount = isGroupRegistration ? formData.groupMembers.length : 1;
+        const registrationSubtotal = perStudentRegistrationFee * participantCount;
+        const registrationDiscount = isGroupRegistration && participantCount > 20 ? registrationSubtotal * 0.2 : 0;
+        const registrationFee = Math.max(registrationSubtotal - registrationDiscount, 0);
+        const competitionFee = isGroupRegistration
+            ? formData.groupMembers.reduce((memberTotal, member) => memberTotal + (Array.isArray(member.competitions) ? member.competitions : []).reduce(
+                (total, name) => total + (competitionPrograms.find((program) => program.name === name)?.price || 0),
+                0
+            ), 0)
+            : formData.studentCompetitions.reduce(
+                (total, name) => total + (competitionPrograms.find((program) => program.name === name)?.price || 0),
+                0
+            );
+        const workshopFee = isGroupRegistration
+            ? formData.groupMembers.reduce((memberTotal, member) => memberTotal + (Array.isArray(member.workshops) ? member.workshops : []).reduce(
+                (total, name) => total + (workshopPrograms.find((program) => program.name === name)?.price || 0),
+                0
+            ), 0)
+            : formData.selectedWorkshops.reduce(
+                (total, name) => total + (workshopPrograms.find((program) => program.name === name)?.price || 0),
+                0
+            );
 
         return {
+            perStudentRegistrationFee,
+            participantCount,
+            registrationSubtotal,
+            registrationDiscount,
             registrationFee,
             competitionFee,
             workshopFee,
             total: registrationFee + competitionFee + workshopFee,
         };
-    }, [formData.category, formData.studentCompetitions, formData.selectedWorkshops, programCatalog, categoryCatalog]);
+    }, [formData.category, formData.registrationMode, formData.groupMembers, formData.studentCompetitions, formData.selectedWorkshops, programCatalog, categoryCatalog]);
 
     function updateField(name, value) {
         setFormData((current) => ({ ...current, [name]: value }));
@@ -1228,6 +1298,7 @@ function RegistrationPage() {
         setFormData((current) => ({
             ...current,
             category: value,
+            groupMembers: current.groupMembers.map((member) => ({ ...member, competitions: [], workshops: [] })),
             studentCompetitions: [],
             selectedWorkshops: [],
             preConferenceWorkshop: '',
@@ -1267,7 +1338,11 @@ function RegistrationPage() {
 
             setFormData((current) => ({
                 ...current,
-                groupMembers,
+                groupMembers: groupMembers.map((member) => ({
+                    ...member,
+                    competitions: [],
+                    workshops: [],
+                })),
                 expectedParticipants: String(groupMembers.length),
             }));
             setNotice(`${groupMembers.length} students imported from the group sheet.`);
@@ -1316,6 +1391,35 @@ function RegistrationPage() {
                 ? current.selectedWorkshops.filter((workshop) => workshop !== name)
                 : [...current.selectedWorkshops, name];
             return { ...current, selectedWorkshops, preConferenceWorkshop: selectedWorkshops[0] || '' };
+        });
+        setNotice('');
+    }
+
+    function toggleGroupMemberProgram(memberIndex, type, programName) {
+        setFormData((current) => {
+            const groupMembers = current.groupMembers.map((member, index) => {
+                if (index !== memberIndex) return member;
+                const field = type === 'competition' ? 'competitions' : 'workshops';
+                const currentSelections = Array.isArray(member[field]) ? member[field] : [];
+                const hasProgram = currentSelections.includes(programName);
+                const nextSelections = hasProgram
+                    ? currentSelections.filter((name) => name !== programName)
+                    : field === 'competitions' && currentSelections.length >= 2
+                        ? currentSelections
+                        : [...currentSelections, programName];
+
+                return { ...member, [field]: nextSelections };
+            });
+            const studentCompetitions = [...new Set(groupMembers.flatMap((member) => Array.isArray(member.competitions) ? member.competitions : []))];
+            const selectedWorkshops = [...new Set(groupMembers.flatMap((member) => Array.isArray(member.workshops) ? member.workshops : []))];
+
+            return {
+                ...current,
+                groupMembers,
+                studentCompetitions,
+                selectedWorkshops,
+                preConferenceWorkshop: selectedWorkshops[0] || '',
+            };
         });
         setNotice('');
     }
@@ -1380,7 +1484,6 @@ function RegistrationPage() {
         'mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-950 outline-none transition focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100';
     const labelClass = 'text-sm font-semibold text-zinc-800';
     const sectionSaved = savedSections[activeTab];
-    const isGroupRegistration = formData.registrationMode === 'group';
 
     return (
         <>
@@ -1468,7 +1571,7 @@ function RegistrationPage() {
                                 </h3>
                             </div>
                             <div className="rounded-lg bg-zinc-100 px-3 py-2 text-sm font-bold text-zinc-800">
-                                Total: Rs. {totals.total}
+                                Total: Rs. {totals.total.toLocaleString('en-IN')}
                             </div>
                         </div>
 
@@ -1635,7 +1738,20 @@ function RegistrationPage() {
                                         <div className="mt-4 overflow-hidden rounded-lg border border-emerald-200 bg-white">
                                             <div className="flex items-center justify-between px-3 py-2 text-sm">
                                                 <span className="font-bold text-zinc-900">{formData.groupMembers.length} students imported</span>
-                                                <button type="button" onClick={() => updateField('groupMembers', [])} className="font-semibold text-rose-700">Remove sheet</button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData((current) => ({
+                                                        ...current,
+                                                        groupMembers: [],
+                                                        expectedParticipants: '',
+                                                        studentCompetitions: [],
+                                                        selectedWorkshops: [],
+                                                        preConferenceWorkshop: '',
+                                                    }))}
+                                                    className="font-semibold text-rose-700"
+                                                >
+                                                    Remove sheet
+                                                </button>
                                             </div>
                                             <div className="max-h-40 overflow-auto border-t border-emerald-100">
                                                 {formData.groupMembers.slice(0, 10).map((member, index) => (
@@ -1653,42 +1769,86 @@ function RegistrationPage() {
 
                         {activeTab === 'competitions' && (
                             <div className="mt-6 grid gap-6">
-                                <div className="grid gap-5 md:grid-cols-2">
-                                    <label className={labelClass}>
-                                        Course of Study
-                                        <select
-                                            className={fieldClass}
-                                            value={formData.courseOfStudy}
-                                            onChange={(event) => updateField('courseOfStudy', event.target.value)}
-                                        >
-                                            <option value="B.Pharm">B.Pharm</option>
-                                            <option value="Pharm.D">Pharm.D</option>
-                                            <option value="M.Pharm">M.Pharm</option>
-                                            <option value="D.Pharm">D.Pharm</option>
-                                        </select>
-                                    </label>
-                                    <label className={labelClass}>
-                                        Name of College with State
-                                        <input
-                                            className={fieldClass}
-                                            value={formData.collegeWithState}
-                                            onChange={(event) => updateField('collegeWithState', event.target.value)}
-                                            placeholder="ABC College of Pharmacy, Kerala"
-                                        />
-                                    </label>
-                                </div>
+                                {!isGroupRegistration && (
+                                    <div className="grid gap-5 md:grid-cols-2">
+                                        <label className={labelClass}>
+                                            Course of Study
+                                            <select
+                                                className={fieldClass}
+                                                value={formData.courseOfStudy}
+                                                onChange={(event) => updateField('courseOfStudy', event.target.value)}
+                                            >
+                                                <option value="B.Pharm">B.Pharm</option>
+                                                <option value="Pharm.D">Pharm.D</option>
+                                                <option value="M.Pharm">M.Pharm</option>
+                                                <option value="D.Pharm">D.Pharm</option>
+                                            </select>
+                                        </label>
+                                        <label className={labelClass}>
+                                            Name of College with State
+                                            <input
+                                                className={fieldClass}
+                                                value={formData.collegeWithState}
+                                                onChange={(event) => updateField('collegeWithState', event.target.value)}
+                                                placeholder="ABC College of Pharmacy, Kerala"
+                                            />
+                                        </label>
+                                    </div>
+                                )}
                                 <div>
                                     <p className={labelClass}>Student Competitions</p>
-                                    <p className="mt-1 text-sm text-zinc-500">Select a maximum of 2 events. Pricing is configured by the event administrator.</p>
+                                    <p className="mt-1 text-sm text-zinc-500">
+                                        {isGroupRegistration
+                                            ? 'Select eligible students under each competition. Each student can join a maximum of 2 competitions.'
+                                            : 'Select a maximum of 2 events. Pricing is configured by the event administrator.'}
+                                    </p>
                                     {!formData.category ? (
                                         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Select a category in the General step to view available competitions and prices.</p>
+                                    ) : isGroupRegistration && !formData.groupMembers.length ? (
+                                        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Upload the student roster in the General step to assign competitions.</p>
                                     ) : competitionPrograms.length ? (
                                         <div className="mt-3 grid gap-3 md:grid-cols-2">
                                         {competitionPrograms.map((program) => {
                                             const checked = formData.studentCompetitions.includes(program.name);
                                             const disabled = !checked && formData.studentCompetitions.length >= 2;
 
-                                            return (
+                                            return isGroupRegistration ? (
+                                                <article key={program.name} className="rounded-lg border border-zinc-200 bg-white p-4">
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div>
+                                                            <h4 className="text-sm font-bold text-zinc-950">{program.name}</h4>
+                                                            {program.description && <p className="mt-1 text-xs text-zinc-500">{program.description}</p>}
+                                                        </div>
+                                                        <span className="shrink-0 text-xs font-bold text-emerald-700">{program.price ? `Rs. ${program.price.toLocaleString('en-IN')} / student` : 'Free'}</span>
+                                                    </div>
+                                                    <div className="mt-3 max-h-56 space-y-2 overflow-auto rounded-lg border border-zinc-100 bg-zinc-50 p-2">
+                                                        {formData.groupMembers.map((member, index) => {
+                                                            const competitions = Array.isArray(member.competitions) ? member.competitions : [];
+                                                            const memberChecked = competitions.includes(program.name);
+                                                            const memberDisabled = !memberChecked && competitions.length >= 2;
+
+                                                            return (
+                                                                <label key={`${program.name}-${member.email || member.name}-${index}`} className={`flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold ${
+                                                                    memberChecked
+                                                                        ? 'border-emerald-500 bg-emerald-50 text-emerald-950'
+                                                                        : memberDisabled
+                                                                            ? 'border-zinc-200 bg-zinc-100 text-zinc-400'
+                                                                            : 'border-zinc-200 bg-white text-zinc-700'
+                                                                }`}>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={memberChecked}
+                                                                        disabled={memberDisabled}
+                                                                        onChange={() => toggleGroupMemberProgram(index, 'competition', program.name)}
+                                                                    />
+                                                                    <span>{formatStudentLabel(member, index)}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <p className="mt-2 text-xs font-semibold text-zinc-500">{groupSelectionsForProgram('competition', program.name).length} students selected</p>
+                                                </article>
+                                            ) : (
                                                 <label
                                                     key={program.name}
                                                     className={`rounded-lg border p-3 text-sm font-semibold ${
@@ -1738,9 +1898,44 @@ function RegistrationPage() {
                                     <p className={labelClass}>Pre-Conference Workshop Area</p>
                                     {!formData.category ? (
                                         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Select a category in the General step to view available workshops and prices.</p>
+                                    ) : isGroupRegistration && !formData.groupMembers.length ? (
+                                        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Upload the student roster in the General step to assign workshops.</p>
                                     ) : workshopPrograms.length ? (
                                         <div className="mt-3 grid gap-3 md:grid-cols-3">
                                         {workshopPrograms.map((program) => (
+                                            isGroupRegistration ? (
+                                                <article key={program.name} className="rounded-lg border border-zinc-200 bg-white p-4">
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div>
+                                                            <h4 className="text-sm font-bold text-zinc-950">{program.name}</h4>
+                                                            {program.description && <p className="mt-1 text-xs text-zinc-500">{program.description}</p>}
+                                                        </div>
+                                                        <span className="shrink-0 text-xs font-bold text-emerald-700">{program.price ? `Rs. ${program.price.toLocaleString('en-IN')} / student` : 'Free'}</span>
+                                                    </div>
+                                                    <div className="mt-3 max-h-56 space-y-2 overflow-auto rounded-lg border border-zinc-100 bg-zinc-50 p-2">
+                                                        {formData.groupMembers.map((member, index) => {
+                                                            const workshops = Array.isArray(member.workshops) ? member.workshops : [];
+                                                            const memberChecked = workshops.includes(program.name);
+
+                                                            return (
+                                                                <label key={`${program.name}-${member.email || member.name}-${index}`} className={`flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold ${
+                                                                    memberChecked
+                                                                        ? 'border-emerald-500 bg-emerald-50 text-emerald-950'
+                                                                        : 'border-zinc-200 bg-white text-zinc-700'
+                                                                }`}>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={memberChecked}
+                                                                        onChange={() => toggleGroupMemberProgram(index, 'workshop', program.name)}
+                                                                    />
+                                                                    <span>{formatStudentLabel(member, index)}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <p className="mt-2 text-xs font-semibold text-zinc-500">{groupSelectionsForProgram('workshop', program.name).length} students selected</p>
+                                                </article>
+                                            ) : (
                                             <label
                                                 key={program.name}
                                                 className={`rounded-lg border p-4 text-sm font-bold ${
@@ -1759,6 +1954,7 @@ function RegistrationPage() {
                                                 <span className="ml-2 text-xs font-bold text-emerald-700">{program.price ? `Rs. ${program.price.toLocaleString('en-IN')}` : 'Free'}</span>
                                                 {program.description && <span className="mt-1 block pl-6 text-xs font-normal text-zinc-500">{program.description}</span>}
                                             </label>
+                                            )
                                         ))}
                                         </div>
                                     ) : (
@@ -1887,9 +2083,19 @@ function RegistrationPage() {
 
                         {activeTab === 'payment' && (
                             <div className="mt-6 grid gap-5 md:grid-cols-2">
+                                {isGroupRegistration && (
+                                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950 md:col-span-2">
+                                        <p className="font-bold">Group fee summary</p>
+                                        <p>{totals.participantCount} students x Rs. {totals.perStudentRegistrationFee.toLocaleString('en-IN')} registration fee = Rs. {totals.registrationSubtotal.toLocaleString('en-IN')}</p>
+                                        {totals.registrationDiscount > 0 && (
+                                            <p>20% group discount on registration fee: -Rs. {totals.registrationDiscount.toLocaleString('en-IN')}</p>
+                                        )}
+                                        <p>Competition and workshop fees are accumulated per selected student.</p>
+                                    </div>
+                                )}
                                 <label className={labelClass}>
                                     Pay Fee
-                                    <input className={`${fieldClass} bg-zinc-100 font-bold`} value={`Rs. ${totals.total}`} readOnly />
+                                    <input className={`${fieldClass} bg-zinc-100 font-bold`} value={`Rs. ${totals.total.toLocaleString('en-IN')}`} readOnly />
                                 </label>
                                 <label className={labelClass}>
                                     Transaction Details
@@ -1920,19 +2126,20 @@ function RegistrationPage() {
                                         ['Expected Participants', formData.expectedParticipants || 'Not entered'],
                                         ['Uploaded Student Roster', `${formData.groupMembers.length} students`],
                                         ['Primary Category', formData.category || 'Not selected'],
-                                        ['College Detail', formData.collegeWithState || 'Not entered'],
-                                        ['Competitions', formData.studentCompetitions.join(', ') || 'None'],
-                                        ['Workshops', formData.selectedWorkshops.join(', ') || 'Not selected'],
+                                        ['Competition Selections', `${formData.groupMembers.reduce((total, member) => total + (Array.isArray(member.competitions) ? member.competitions.length : 0), 0)} student entries`],
+                                        ['Workshop Selections', `${formData.groupMembers.reduce((total, member) => total + (Array.isArray(member.workshops) ? member.workshops.length : 0), 0)} student entries`],
                                         ['Presentation', formData.presentationType || 'Not selected'],
                                         ['HR College', formData.hrCollegeWithState || 'Not entered'],
                                         ['HR Course / Qualification', formData.hrCourseOrQualification || 'Not entered'],
                                         ['HR WhatsApp', formData.hrWhatsappNumber || 'Not entered'],
                                         ['HR Email', formData.hrEmail || 'Not entered'],
                                         ['Preferred Core Area', formData.hrCoreArea || 'Not selected'],
-                                        ['Registration Fee', `Rs. ${totals.registrationFee}`],
-                                        ['Competition Fee', `Rs. ${totals.competitionFee}`],
-                                        ['Workshop Fee', `Rs. ${totals.workshopFee}`],
-                                        ['Total Payable', `Rs. ${totals.total}`],
+                                        ['Registration Subtotal', `Rs. ${totals.registrationSubtotal.toLocaleString('en-IN')}`],
+                                        ['Group Discount', totals.registrationDiscount ? `Rs. ${totals.registrationDiscount.toLocaleString('en-IN')}` : 'Not applicable'],
+                                        ['Registration Fee', `Rs. ${totals.registrationFee.toLocaleString('en-IN')}`],
+                                        ['Competition Fee', `Rs. ${totals.competitionFee.toLocaleString('en-IN')}`],
+                                        ['Workshop Fee', `Rs. ${totals.workshopFee.toLocaleString('en-IN')}`],
+                                        ['Total Payable', `Rs. ${totals.total.toLocaleString('en-IN')}`],
                                     ]
                                     : [
                                         ['Registration Type', 'Individual Registration'],
@@ -1949,10 +2156,10 @@ function RegistrationPage() {
                                         ['HR WhatsApp', formData.hrWhatsappNumber || 'Not entered'],
                                         ['HR Email', formData.hrEmail || 'Not entered'],
                                         ['Preferred Core Area', formData.hrCoreArea || 'Not selected'],
-                                        ['Registration Fee', `Rs. ${totals.registrationFee}`],
-                                        ['Competition Fee', `Rs. ${totals.competitionFee}`],
-                                        ['Workshop Fee', `Rs. ${totals.workshopFee}`],
-                                        ['Total Payable', `Rs. ${totals.total}`],
+                                        ['Registration Fee', `Rs. ${totals.registrationFee.toLocaleString('en-IN')}`],
+                                        ['Competition Fee', `Rs. ${totals.competitionFee.toLocaleString('en-IN')}`],
+                                        ['Workshop Fee', `Rs. ${totals.workshopFee.toLocaleString('en-IN')}`],
+                                        ['Total Payable', `Rs. ${totals.total.toLocaleString('en-IN')}`],
                                     ]
                                 ).map(([label, value]) => (
                                     <div key={label} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">

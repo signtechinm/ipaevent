@@ -48,7 +48,7 @@ const defaultPrograms = [
     ['Elocution', 'competition', 100, 50],
     ['Clinical Skill Sets', 'competition', 100, 60],
     ['AI', 'workshop', 0, 10],
-    ['Vaccination', 'workshop', 0, 20],
+    ['FIP Vaccination Training (2 days)', 'workshop', 0, 20],
     ['3D Printing', 'workshop', 0, 30],
     ['NDDS Formulation and Characterization', 'workshop', 0, 40],
 ];
@@ -637,7 +637,7 @@ function mapAbstractBook(row) {
 
 function calculateFees(data, programs = [], categories = [], pricing = []) {
     const category = categories.find((item) => item.name === data.category);
-    const registrationFee = Number(category?.registration_fee) || 0;
+    const perStudentRegistrationFee = Number(category?.registration_fee) || 0;
     const programByKey = new Map(programs.map((program) => [`${program.program_type}:${program.name}`, program]));
     const categoryPricing = new Map(
         pricing
@@ -648,12 +648,25 @@ function calculateFees(data, programs = [], categories = [], pricing = []) {
         const program = programByKey.get(`${type}:${name}`);
         return program ? categoryPricing.get(String(program.id)) || 0 : 0;
     };
-    const competitions = (Array.isArray(data.studentCompetitions) ? data.studentCompetitions : []).slice(0, 2);
-    const competitionFee = competitions.reduce((total, name) => total + getPrice('competition', name), 0);
-    const selectedWorkshops = Array.isArray(data.selectedWorkshops) && data.selectedWorkshops.length
-        ? [...new Set(data.selectedWorkshops.map((name) => String(name).trim()).filter(Boolean))]
-        : data.preConferenceWorkshop ? [data.preConferenceWorkshop] : [];
-    const workshopFee = selectedWorkshops.reduce((total, name) => total + getPrice('workshop', name), 0);
+    const groupMembers = data.registrationMode === 'group' ? normalizeGroupMembers(data.groupMembers) : [];
+    const participantCount = data.registrationMode === 'group' ? groupMembers.length : 1;
+    const registrationSubtotal = perStudentRegistrationFee * participantCount;
+    const registrationDiscount = data.registrationMode === 'group' && participantCount > 20 ? registrationSubtotal * 0.2 : 0;
+    const registrationFee = Math.max(registrationSubtotal - registrationDiscount, 0);
+    const competitions = data.registrationMode === 'group'
+        ? groupMembers.flatMap((member) => member.competitions)
+        : (Array.isArray(data.studentCompetitions) ? data.studentCompetitions : []).slice(0, 2);
+    const competitionFee = data.registrationMode === 'group'
+        ? groupMembers.reduce((memberTotal, member) => memberTotal + member.competitions.slice(0, 2).reduce((total, name) => total + getPrice('competition', name), 0), 0)
+        : competitions.reduce((total, name) => total + getPrice('competition', name), 0);
+    const selectedWorkshops = data.registrationMode === 'group'
+        ? groupMembers.flatMap((member) => member.workshops)
+        : Array.isArray(data.selectedWorkshops) && data.selectedWorkshops.length
+            ? [...new Set(data.selectedWorkshops.map((name) => String(name).trim()).filter(Boolean))]
+            : data.preConferenceWorkshop ? [data.preConferenceWorkshop] : [];
+    const workshopFee = data.registrationMode === 'group'
+        ? groupMembers.reduce((memberTotal, member) => memberTotal + member.workshops.reduce((total, name) => total + getPrice('workshop', name), 0), 0)
+        : selectedWorkshops.reduce((total, name) => total + getPrice('workshop', name), 0);
 
     return {
         registrationFee,
@@ -693,6 +706,38 @@ async function ensureProgramCatalog(sql) {
         INSERT INTO event_programs (name, program_type, description, price, sort_order)
         VALUES ('NDDS Formulation and Characterization', 'workshop', 'Workshop session', 0, 40)
         ON CONFLICT (program_type, name) DO NOTHING
+    `;
+    await sql`
+        UPDATE event_programs
+        SET name = 'FIP Vaccination Training (2 days)',
+            description = 'Post-congress workshop, 21-22 September 2026',
+            sort_order = 20,
+            is_active = TRUE,
+            updated_at = NOW()
+        WHERE program_type = 'workshop'
+            AND name = 'Vaccination'
+            AND NOT EXISTS (
+                SELECT 1
+                FROM event_programs existing
+                WHERE existing.program_type = 'workshop'
+                    AND existing.name = 'FIP Vaccination Training (2 days)'
+            )
+    `;
+    await sql`
+        INSERT INTO event_programs (name, program_type, description, price, sort_order)
+        VALUES ('FIP Vaccination Training (2 days)', 'workshop', 'Post-congress workshop, 21-22 September 2026', 0, 20)
+        ON CONFLICT (program_type, name) DO UPDATE
+        SET description = EXCLUDED.description,
+            sort_order = EXCLUDED.sort_order,
+            is_active = TRUE,
+            updated_at = NOW()
+    `;
+    await sql`
+        UPDATE event_programs
+        SET is_active = FALSE,
+            updated_at = NOW()
+        WHERE program_type = 'workshop'
+            AND name = 'Vaccination'
     `;
 }
 
@@ -834,6 +879,12 @@ function normalizeGroupMembers(value) {
         college: String(member?.college || '').trim(),
         state: String(member?.state || '').trim(),
         foodPreference: String(member?.foodPreference || '').trim(),
+        competitions: Array.isArray(member?.competitions)
+            ? [...new Set(member.competitions.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 2)
+            : [],
+        workshops: Array.isArray(member?.workshops)
+            ? [...new Set(member.workshops.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 20)
+            : [],
     })).filter((member) => member.name);
 }
 
@@ -937,11 +988,20 @@ async function saveRegistration(sql, data, submit = false) {
     const draftToken = data.draftToken || crypto.randomUUID();
     const expectedParticipants = data.expectedParticipants ? Number.parseInt(data.expectedParticipants, 10) : null;
     const groupMembers = data.registrationMode === 'group' ? normalizeGroupMembers(data.groupMembers) : [];
-    const selectedWorkshops = normalizeSelectedWorkshops(data.selectedWorkshops, data.preConferenceWorkshop);
+    const groupCompetitions = [...new Set(groupMembers.flatMap((member) => member.competitions))];
+    const selectedWorkshops = data.registrationMode === 'group'
+        ? [...new Set(groupMembers.flatMap((member) => member.workshops))].slice(0, 20)
+        : normalizeSelectedWorkshops(data.selectedWorkshops, data.preConferenceWorkshop);
+    const competitions = data.registrationMode === 'group'
+        ? groupCompetitions
+        : (Array.isArray(data.studentCompetitions) ? data.studentCompetitions : []).slice(0, 2);
     if (submit) {
         const selectedCategory = categories.find((category) => category.name === data.category && category.is_active);
         if (!selectedCategory) {
             throw inputError('Select an active registration category.');
+        }
+        if (data.registrationMode === 'group' && !groupMembers.length) {
+            throw inputError('Upload the student roster before submitting a group registration.');
         }
         const availableProgramIds = new Set(
             pricing
@@ -949,7 +1009,7 @@ async function saveRegistration(sql, data, submit = false) {
                 .map((item) => String(item.program_id))
         );
         const selectedProgramNames = [
-            ...(Array.isArray(data.studentCompetitions) ? data.studentCompetitions.slice(0, 2) : []),
+            ...competitions,
             ...selectedWorkshops,
         ];
         if (selectedProgramNames.some((name) => {
@@ -1060,7 +1120,6 @@ async function saveRegistration(sql, data, submit = false) {
     }
 
     await sql`DELETE FROM registration_competitions WHERE registration_id = ${row.id}`;
-    const competitions = (Array.isArray(data.studentCompetitions) ? data.studentCompetitions : []).slice(0, 2);
     const selectedCategory = categories.find((category) => category.name === data.category);
     for (const competition of competitions) {
         const program = programs.find((item) => item.program_type === 'competition' && item.name === competition);

@@ -97,7 +97,7 @@ SELECT * FROM (VALUES
     ('Elocution', 'competition', 100, 50),
     ('Clinical Skill Sets', 'competition', 100, 60),
     ('AI', 'workshop', 0, 10),
-    ('Vaccination', 'workshop', 0, 20),
+    ('FIP Vaccination Training (2 days)', 'workshop', 0, 20),
     ('3D Printing', 'workshop', 0, 30),
     ('NDDS Formulation and Characterization', 'workshop', 0, 40)
 ) AS seed(name, program_type, price, sort_order)
@@ -107,6 +107,35 @@ ON CONFLICT (program_type, name) DO NOTHING;
 INSERT INTO event_programs (name, program_type, description, price, sort_order)
 VALUES ('NDDS Formulation and Characterization', 'workshop', 'Workshop session', 0, 40)
 ON CONFLICT (program_type, name) DO NOTHING;
+
+UPDATE event_programs
+SET name = 'FIP Vaccination Training (2 days)',
+    description = 'Post-congress workshop, 21-22 September 2026',
+    sort_order = 20,
+    is_active = TRUE,
+    updated_at = NOW()
+WHERE program_type = 'workshop'
+    AND name = 'Vaccination'
+    AND NOT EXISTS (
+        SELECT 1
+        FROM event_programs existing
+        WHERE existing.program_type = 'workshop'
+            AND existing.name = 'FIP Vaccination Training (2 days)'
+    );
+
+INSERT INTO event_programs (name, program_type, description, price, sort_order)
+VALUES ('FIP Vaccination Training (2 days)', 'workshop', 'Post-congress workshop, 21-22 September 2026', 0, 20)
+ON CONFLICT (program_type, name) DO UPDATE
+SET description = EXCLUDED.description,
+    sort_order = EXCLUDED.sort_order,
+    is_active = TRUE,
+    updated_at = NOW();
+
+UPDATE event_programs
+SET is_active = FALSE,
+    updated_at = NOW()
+WHERE program_type = 'workshop'
+    AND name = 'Vaccination';
 
 CREATE TABLE IF NOT EXISTS registration_categories (
     id BIGSERIAL PRIMARY KEY,
