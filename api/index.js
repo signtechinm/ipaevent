@@ -653,18 +653,26 @@ function calculateFees(data, programs = [], categories = [], pricing = []) {
     const registrationSubtotal = perStudentRegistrationFee * participantCount;
     const registrationDiscount = data.registrationMode === 'group' && participantCount > 20 ? registrationSubtotal * 0.2 : 0;
     const registrationFee = Math.max(registrationSubtotal - registrationDiscount, 0);
-    const competitions = data.registrationMode === 'group'
+    const competitions = data.competitionParticipation === 'not_participating'
+        ? []
+        : data.registrationMode === 'group'
         ? groupMembers.flatMap((member) => member.competitions)
         : (Array.isArray(data.studentCompetitions) ? data.studentCompetitions : []).slice(0, 2);
-    const competitionFee = data.registrationMode === 'group'
+    const competitionFee = data.competitionParticipation === 'not_participating'
+        ? 0
+        : data.registrationMode === 'group'
         ? groupMembers.reduce((memberTotal, member) => memberTotal + member.competitions.slice(0, 2).reduce((total, name) => total + getPrice('competition', name), 0), 0)
         : competitions.reduce((total, name) => total + getPrice('competition', name), 0);
-    const selectedWorkshops = data.registrationMode === 'group'
+    const selectedWorkshops = data.workshopParticipation === 'not_participating'
+        ? []
+        : data.registrationMode === 'group'
         ? groupMembers.flatMap((member) => member.workshops)
         : Array.isArray(data.selectedWorkshops) && data.selectedWorkshops.length
             ? [...new Set(data.selectedWorkshops.map((name) => String(name).trim()).filter(Boolean))]
             : data.preConferenceWorkshop ? [data.preConferenceWorkshop] : [];
-    const workshopFee = data.registrationMode === 'group'
+    const workshopFee = data.workshopParticipation === 'not_participating'
+        ? 0
+        : data.registrationMode === 'group'
         ? groupMembers.reduce((memberTotal, member) => memberTotal + member.workshops.reduce((total, name) => total + getPrice('workshop', name), 0), 0)
         : selectedWorkshops.reduce((total, name) => total + getPrice('workshop', name), 0);
 
@@ -883,14 +891,14 @@ function normalizeGroupMembers(value) {
             ? [...new Set(member.competitions.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 2)
             : [],
         workshops: Array.isArray(member?.workshops)
-            ? [...new Set(member.workshops.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 20)
+            ? [...new Set(member.workshops.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 1)
             : [],
     })).filter((member) => member.name);
 }
 
 function normalizeSelectedWorkshops(value, fallback = '') {
     const workshops = Array.isArray(value) ? value : fallback ? [fallback] : [];
-    return [...new Set(workshops.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 20);
+    return [...new Set(workshops.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 1);
 }
 
 function mapRegistration(row, competitions = []) {
@@ -989,13 +997,39 @@ async function saveRegistration(sql, data, submit = false) {
     const expectedParticipants = data.expectedParticipants ? Number.parseInt(data.expectedParticipants, 10) : null;
     const groupMembers = data.registrationMode === 'group' ? normalizeGroupMembers(data.groupMembers) : [];
     const groupCompetitions = [...new Set(groupMembers.flatMap((member) => member.competitions))];
-    const selectedWorkshops = data.registrationMode === 'group'
+    const selectedWorkshops = data.workshopParticipation === 'not_participating'
+        ? []
+        : data.registrationMode === 'group'
         ? [...new Set(groupMembers.flatMap((member) => member.workshops))].slice(0, 20)
         : normalizeSelectedWorkshops(data.selectedWorkshops, data.preConferenceWorkshop);
-    const competitions = data.registrationMode === 'group'
+    const competitions = data.competitionParticipation === 'not_participating'
+        ? []
+        : data.registrationMode === 'group'
         ? groupCompetitions
         : (Array.isArray(data.studentCompetitions) ? data.studentCompetitions : []).slice(0, 2);
     if (submit) {
+        const generalRequiredFields = data.registrationMode === 'group'
+            ? [
+                ['Institution / College Name', data.institutionName],
+                ['Group Coordinator Name', data.groupCoordinatorName],
+                ['Coordinator WhatsApp Number', data.groupCoordinatorWhatsapp],
+                ['Coordinator Email ID', data.groupCoordinatorEmail],
+                ['State', data.stateOfResidence],
+                ['Expected Number of Participants', data.expectedParticipants],
+                ['Primary Delegate Category', data.category],
+            ]
+            : [
+                ['Name of Participant', data.participantName],
+                ['Category', data.category],
+                ['State of Residence', data.stateOfResidence],
+                ['WhatsApp Number', data.whatsappNumber],
+                ['Email ID', data.email],
+                ['Food Preference', data.foodPreference],
+            ];
+        const missingGeneralField = generalRequiredFields.find(([, value]) => !String(value || '').trim());
+        if (missingGeneralField) {
+            throw inputError(`${missingGeneralField[0]} is required.`);
+        }
         const selectedCategory = categories.find((category) => category.name === data.category && category.is_active);
         if (!selectedCategory) {
             throw inputError('Select an active registration category.');
@@ -1018,18 +1052,20 @@ async function saveRegistration(sql, data, submit = false) {
         })) {
             throw inputError('One or more selected programs are not available for this category. Review your selections.');
         }
-        if (!String(data.hrCollegeWithState || '').trim() || !String(data.hrCourseOrQualification || '').trim()
-            || !String(data.hrWhatsappNumber || '').trim() || !String(data.hrCoreArea || '').trim()) {
-            throw inputError('Complete all HR Drive fields before submitting.');
-        }
-        if (!String(data.hrEmail || '').trim() || !String(data.hrEmailConfirmation || '').trim()) {
-            throw inputError('Enter and confirm your HR Drive email address.');
-        }
-        if (String(data.hrEmail).trim().toLowerCase() !== String(data.hrEmailConfirmation).trim().toLowerCase()) {
-            throw inputError('The HR Drive email addresses do not match.');
-        }
-        if (String(data.hrWhatsappNumber || '').trim() !== String(data.hrWhatsappConfirmation || '').trim()) {
-            throw inputError('The HR Drive WhatsApp numbers do not match.');
+        if (data.hrDriveParticipation !== 'not_participating') {
+            if (!String(data.hrCollegeWithState || '').trim() || !String(data.hrCourseOrQualification || '').trim()
+                || !String(data.hrWhatsappNumber || '').trim() || !String(data.hrCoreArea || '').trim()) {
+                throw inputError('Complete all HR Drive fields before submitting.');
+            }
+            if (!String(data.hrEmail || '').trim() || !String(data.hrEmailConfirmation || '').trim()) {
+                throw inputError('Enter and confirm your HR Drive email address.');
+            }
+            if (String(data.hrEmail).trim().toLowerCase() !== String(data.hrEmailConfirmation).trim().toLowerCase()) {
+                throw inputError('The HR Drive email addresses do not match.');
+            }
+            if (String(data.hrWhatsappNumber || '').trim() !== String(data.hrWhatsappConfirmation || '').trim()) {
+                throw inputError('The HR Drive WhatsApp numbers do not match.');
+            }
         }
     }
 

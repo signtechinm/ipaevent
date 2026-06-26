@@ -390,12 +390,15 @@ const initialRegistration = {
     foodPreference: '',
     courseOfStudy: 'B.Pharm',
     collegeWithState: '',
+    competitionParticipation: 'participating',
     studentCompetitions: [],
     competitionFeeAcknowledged: '',
+    workshopParticipation: 'participating',
     preConferenceWorkshop: '',
     selectedWorkshops: [],
     workshopFeeAcknowledged: '',
-    presentationType: '',
+    presentationType: 'Not Participating',
+    hrDriveParticipation: 'not_participating',
     hrCollegeWithState: '',
     hrCourseOrQualification: '',
     hrWhatsappNumber: '',
@@ -1244,6 +1247,9 @@ function RegistrationPage() {
             ? programCatalog.filter((program) => program.type === 'workshop').map(priceProgramForCategory).filter(Boolean)
             : workshopOptions.map((name) => ({ name, price: workshopFees[name] || 0, description: '' })))
         : [];
+    const postCongressWorkshopNames = ['FIP Vaccination Training (2 days)'];
+    const preCongressWorkshopPrograms = workshopPrograms.filter((program) => !postCongressWorkshopNames.includes(program.name));
+    const postCongressWorkshopPrograms = workshopPrograms.filter((program) => postCongressWorkshopNames.includes(program.name));
     const isGroupRegistration = formData.registrationMode === 'group';
     const groupParticipantCount = isGroupRegistration ? formData.groupMembers.length : 0;
     const groupSelectionsForProgram = (type, programName) => formData.groupMembers.filter((member) => {
@@ -1258,7 +1264,9 @@ function RegistrationPage() {
         const registrationSubtotal = perStudentRegistrationFee * participantCount;
         const registrationDiscount = isGroupRegistration && participantCount > 20 ? registrationSubtotal * 0.2 : 0;
         const registrationFee = Math.max(registrationSubtotal - registrationDiscount, 0);
-        const competitionFee = isGroupRegistration
+        const competitionFee = formData.competitionParticipation === 'not_participating'
+            ? 0
+            : isGroupRegistration
             ? formData.groupMembers.reduce((memberTotal, member) => memberTotal + (Array.isArray(member.competitions) ? member.competitions : []).reduce(
                 (total, name) => total + (competitionPrograms.find((program) => program.name === name)?.price || 0),
                 0
@@ -1267,7 +1275,9 @@ function RegistrationPage() {
                 (total, name) => total + (competitionPrograms.find((program) => program.name === name)?.price || 0),
                 0
             );
-        const workshopFee = isGroupRegistration
+        const workshopFee = formData.workshopParticipation === 'not_participating'
+            ? 0
+            : isGroupRegistration
             ? formData.groupMembers.reduce((memberTotal, member) => memberTotal + (Array.isArray(member.workshops) ? member.workshops : []).reduce(
                 (total, name) => total + (workshopPrograms.find((program) => program.name === name)?.price || 0),
                 0
@@ -1287,7 +1297,7 @@ function RegistrationPage() {
             workshopFee,
             total: registrationFee + competitionFee + workshopFee,
         };
-    }, [formData.category, formData.registrationMode, formData.groupMembers, formData.studentCompetitions, formData.selectedWorkshops, programCatalog, categoryCatalog]);
+    }, [formData.category, formData.registrationMode, formData.groupMembers, formData.competitionParticipation, formData.studentCompetitions, formData.workshopParticipation, formData.selectedWorkshops, programCatalog, categoryCatalog]);
 
     function updateField(name, value) {
         setFormData((current) => ({ ...current, [name]: value }));
@@ -1352,6 +1362,9 @@ function RegistrationPage() {
     }
 
     async function saveSection(sectionId) {
+        if (sectionId === 'general' && !validateGeneralFields()) {
+            return;
+        }
         setIsSaving(true);
         setNotice('Saving...');
 
@@ -1388,8 +1401,8 @@ function RegistrationPage() {
     function toggleWorkshop(name) {
         setFormData((current) => {
             const selectedWorkshops = current.selectedWorkshops.includes(name)
-                ? current.selectedWorkshops.filter((workshop) => workshop !== name)
-                : [...current.selectedWorkshops, name];
+                ? []
+                : [name];
             return { ...current, selectedWorkshops, preConferenceWorkshop: selectedWorkshops[0] || '' };
         });
         setNotice('');
@@ -1404,6 +1417,8 @@ function RegistrationPage() {
                 const hasProgram = currentSelections.includes(programName);
                 const nextSelections = hasProgram
                     ? currentSelections.filter((name) => name !== programName)
+                    : field === 'workshops'
+                        ? [programName]
                     : field === 'competitions' && currentSelections.length >= 2
                         ? currentSelections
                         : [...currentSelections, programName];
@@ -1424,7 +1439,82 @@ function RegistrationPage() {
         setNotice('');
     }
 
+    function updateParticipation(field, value) {
+        setFormData((current) => {
+            if (field === 'competitionParticipation' && value === 'not_participating') {
+                return {
+                    ...current,
+                    competitionParticipation: value,
+                    studentCompetitions: [],
+                    groupMembers: current.groupMembers.map((member) => ({ ...member, competitions: [] })),
+                    competitionFeeAcknowledged: 'No',
+                };
+            }
+            if (field === 'workshopParticipation' && value === 'not_participating') {
+                return {
+                    ...current,
+                    workshopParticipation: value,
+                    selectedWorkshops: [],
+                    preConferenceWorkshop: '',
+                    groupMembers: current.groupMembers.map((member) => ({ ...member, workshops: [] })),
+                    workshopFeeAcknowledged: 'No',
+                };
+            }
+            if (field === 'hrDriveParticipation' && value === 'not_participating') {
+                return {
+                    ...current,
+                    hrDriveParticipation: value,
+                    hrCollegeWithState: '',
+                    hrCourseOrQualification: '',
+                    hrWhatsappNumber: '',
+                    hrWhatsappConfirmation: '',
+                    hrEmail: '',
+                    hrEmailConfirmation: '',
+                    hrCoreArea: '',
+                };
+            }
+            return { ...current, [field]: value };
+        });
+        setNotice('');
+    }
+
+    function validateGeneralFields() {
+        const requiredFields = isGroupRegistration
+            ? [
+                ['Institution / College Name', formData.institutionName],
+                ['Group Coordinator Name', formData.groupCoordinatorName],
+                ['Coordinator WhatsApp Number', formData.groupCoordinatorWhatsapp],
+                ['Coordinator Email ID', formData.groupCoordinatorEmail],
+                ['State', formData.stateOfResidence],
+                ['Expected Number of Participants', formData.expectedParticipants],
+                ['Primary Delegate Category', formData.category],
+            ]
+            : [
+                ['Name of Participant', formData.participantName],
+                ['Category', formData.category],
+                ['State of Residence', formData.stateOfResidence],
+                ['WhatsApp Number', formData.whatsappNumber],
+                ['Email ID', formData.email],
+                ['Food Preference', formData.foodPreference],
+            ];
+        const missing = requiredFields.find(([, value]) => !String(value || '').trim());
+        if (missing) {
+            setActiveTab('general');
+            setNotice(`${missing[0]} is required.`);
+            return false;
+        }
+        if (isGroupRegistration && !formData.groupMembers.length) {
+            setActiveTab('general');
+            setNotice('Upload the student roster before submitting a group registration.');
+            return false;
+        }
+        return true;
+    }
+
     function goNext() {
+        if (activeTab === 'general' && !validateGeneralFields()) {
+            return;
+        }
         const currentIndex = registrationTabs.findIndex((tab) => tab.id === activeTab);
         const nextTab = registrationTabs[Math.min(currentIndex + 1, registrationTabs.length - 1)];
         setActiveTab(nextTab.id);
@@ -1437,9 +1527,12 @@ function RegistrationPage() {
     }
 
     async function submitRegistration() {
+        if (!validateGeneralFields()) {
+            return;
+        }
         const hrPartiallyFilled = formData.hrCollegeWithState.trim() || formData.hrCourseOrQualification.trim()
             || formData.hrWhatsappNumber.trim() || formData.hrEmail.trim() || formData.hrCoreArea;
-        if (hrPartiallyFilled) {
+        if (formData.hrDriveParticipation !== 'not_participating' || hrPartiallyFilled) {
             if (formData.hrWhatsappNumber.trim() !== formData.hrWhatsappConfirmation.trim()) {
                 setActiveTab('hr-drive');
                 setNotice('The HR Drive WhatsApp numbers do not match.');
@@ -1581,6 +1674,7 @@ function RegistrationPage() {
                                     Name of Participant
                                     <input
                                         className={fieldClass}
+                                        required
                                         value={formData.participantName}
                                         onChange={(event) => updateField('participantName', event.target.value.toUpperCase())}
                                         placeholder="Dr. ANJALI MENON"
@@ -1590,6 +1684,7 @@ function RegistrationPage() {
                                     Select Category
                                     <select
                                         className={fieldClass}
+                                        required
                                         value={formData.category}
                                         onChange={(event) => updateRegistrationCategory(event.target.value)}
                                     >
@@ -1605,6 +1700,7 @@ function RegistrationPage() {
                                     State of Residence
                                     <input
                                         className={fieldClass}
+                                        required
                                         value={formData.stateOfResidence}
                                         onChange={(event) => updateField('stateOfResidence', event.target.value)}
                                         placeholder="Kerala"
@@ -1614,6 +1710,7 @@ function RegistrationPage() {
                                     WhatsApp Number
                                     <input
                                         className={fieldClass}
+                                        required
                                         value={formData.whatsappNumber}
                                         onChange={(event) => updateField('whatsappNumber', event.target.value)}
                                         placeholder="+91 9876543210"
@@ -1624,6 +1721,7 @@ function RegistrationPage() {
                                     <input
                                         className={fieldClass}
                                         type="email"
+                                        required
                                         value={formData.email}
                                         onChange={(event) => updateField('email', event.target.value.toLowerCase())}
                                         placeholder="participant@example.com"
@@ -1633,6 +1731,7 @@ function RegistrationPage() {
                                     Food Preference
                                     <select
                                         className={fieldClass}
+                                        required
                                         value={formData.foodPreference}
                                         onChange={(event) => updateField('foodPreference', event.target.value)}
                                     >
@@ -1650,6 +1749,7 @@ function RegistrationPage() {
                                     Institution / College Name
                                     <input
                                         className={fieldClass}
+                                        required
                                         value={formData.institutionName}
                                         onChange={(event) => updateField('institutionName', event.target.value)}
                                         placeholder="ABC College of Pharmacy, Kerala"
@@ -1659,6 +1759,7 @@ function RegistrationPage() {
                                     Group Coordinator Name
                                     <input
                                         className={fieldClass}
+                                        required
                                         value={formData.groupCoordinatorName}
                                         onChange={(event) => updateField('groupCoordinatorName', event.target.value.toUpperCase())}
                                         placeholder="Dr. ANJALI MENON"
@@ -1668,6 +1769,7 @@ function RegistrationPage() {
                                     Coordinator WhatsApp Number
                                     <input
                                         className={fieldClass}
+                                        required
                                         value={formData.groupCoordinatorWhatsapp}
                                         onChange={(event) => updateField('groupCoordinatorWhatsapp', event.target.value)}
                                         placeholder="+91 9876543210"
@@ -1678,6 +1780,7 @@ function RegistrationPage() {
                                     <input
                                         className={fieldClass}
                                         type="email"
+                                        required
                                         value={formData.groupCoordinatorEmail}
                                         onChange={(event) => updateField('groupCoordinatorEmail', event.target.value.toLowerCase())}
                                         placeholder="coordinator@example.com"
@@ -1687,6 +1790,7 @@ function RegistrationPage() {
                                     State
                                     <input
                                         className={fieldClass}
+                                        required
                                         value={formData.stateOfResidence}
                                         onChange={(event) => updateField('stateOfResidence', event.target.value)}
                                         placeholder="Kerala"
@@ -1698,6 +1802,7 @@ function RegistrationPage() {
                                         className={fieldClass}
                                         type="number"
                                         min="2"
+                                        required
                                         value={formData.expectedParticipants}
                                         onChange={(event) => updateField('expectedParticipants', event.target.value)}
                                         placeholder="25"
@@ -1707,6 +1812,7 @@ function RegistrationPage() {
                                     Primary Delegate Category
                                     <select
                                         className={fieldClass}
+                                        required
                                         value={formData.category}
                                         onChange={(event) => updateRegistrationCategory(event.target.value)}
                                     >
@@ -1769,6 +1875,21 @@ function RegistrationPage() {
 
                         {activeTab === 'competitions' && (
                             <div className="mt-6 grid gap-6">
+                                <label className={labelClass}>
+                                    Student Competition Participation
+                                    <select
+                                        className={fieldClass}
+                                        value={formData.competitionParticipation}
+                                        onChange={(event) => updateParticipation('competitionParticipation', event.target.value)}
+                                    >
+                                        <option value="participating">Participating</option>
+                                        <option value="not_participating">Not participating</option>
+                                    </select>
+                                </label>
+                                {formData.competitionParticipation === 'not_participating' ? (
+                                    <p className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm font-semibold text-zinc-600">Student competitions marked as not participating.</p>
+                                ) : (
+                                <>
                                 {!isGroupRegistration && (
                                     <div className="grid gap-5 md:grid-cols-2">
                                         <label className={labelClass}>
@@ -1889,20 +2010,40 @@ function RegistrationPage() {
                                         <option value="No">No</option>
                                     </select>
                                 </label>
+                                </>
+                                )}
                             </div>
                         )}
 
                         {activeTab === 'workshop' && (
                             <div className="mt-6 grid gap-6">
+                                <label className={labelClass}>
+                                    Workshop Participation
+                                    <select
+                                        className={fieldClass}
+                                        value={formData.workshopParticipation}
+                                        onChange={(event) => updateParticipation('workshopParticipation', event.target.value)}
+                                    >
+                                        <option value="participating">Participating</option>
+                                        <option value="not_participating">Not participating</option>
+                                    </select>
+                                </label>
+                                {formData.workshopParticipation === 'not_participating' ? (
+                                    <p className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm font-semibold text-zinc-600">Workshops marked as not participating.</p>
+                                ) : (
+                                <>
+                                <p className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
+                                    Each student can attend only one workshop. Selecting another workshop will replace the previous choice for that student.
+                                </p>
                                 <div>
                                     <p className={labelClass}>Pre-Conference Workshop Area</p>
                                     {!formData.category ? (
                                         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Select a category in the General step to view available workshops and prices.</p>
                                     ) : isGroupRegistration && !formData.groupMembers.length ? (
                                         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Upload the student roster in the General step to assign workshops.</p>
-                                    ) : workshopPrograms.length ? (
+                                    ) : preCongressWorkshopPrograms.length ? (
                                         <div className="mt-3 grid gap-3 md:grid-cols-3">
-                                        {workshopPrograms.map((program) => (
+                                        {preCongressWorkshopPrograms.map((program) => (
                                             isGroupRegistration ? (
                                                 <article key={program.name} className="rounded-lg border border-zinc-200 bg-white p-4">
                                                     <div className="flex items-start justify-between gap-3">
@@ -1961,6 +2102,73 @@ function RegistrationPage() {
                                         <p className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">No workshops are available for this category.</p>
                                     )}
                                 </div>
+                                <div>
+                                    <p className={labelClass}>Post-Congress Workshop Area</p>
+                                    {!formData.category ? (
+                                        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Select a category in the General step to view available post-congress workshops and prices.</p>
+                                    ) : isGroupRegistration && !formData.groupMembers.length ? (
+                                        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Upload the student roster in the General step to assign post-congress workshops.</p>
+                                    ) : postCongressWorkshopPrograms.length ? (
+                                        <div className="mt-3 grid gap-3 md:grid-cols-3">
+                                        {postCongressWorkshopPrograms.map((program) => (
+                                            isGroupRegistration ? (
+                                                <article key={program.name} className="rounded-lg border border-zinc-200 bg-white p-4">
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div>
+                                                            <h4 className="text-sm font-bold text-zinc-950">{program.name}</h4>
+                                                            {program.description && <p className="mt-1 text-xs text-zinc-500">{program.description}</p>}
+                                                        </div>
+                                                        <span className="shrink-0 text-xs font-bold text-emerald-700">{program.price ? `Rs. ${program.price.toLocaleString('en-IN')} / student` : 'Free'}</span>
+                                                    </div>
+                                                    <div className="mt-3 max-h-56 space-y-2 overflow-auto rounded-lg border border-zinc-100 bg-zinc-50 p-2">
+                                                        {formData.groupMembers.map((member, index) => {
+                                                            const workshops = Array.isArray(member.workshops) ? member.workshops : [];
+                                                            const memberChecked = workshops.includes(program.name);
+
+                                                            return (
+                                                                <label key={`${program.name}-${member.email || member.name}-${index}`} className={`flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold ${
+                                                                    memberChecked
+                                                                        ? 'border-emerald-500 bg-emerald-50 text-emerald-950'
+                                                                        : 'border-zinc-200 bg-white text-zinc-700'
+                                                                }`}>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={memberChecked}
+                                                                        onChange={() => toggleGroupMemberProgram(index, 'workshop', program.name)}
+                                                                    />
+                                                                    <span>{formatStudentLabel(member, index)}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    <p className="mt-2 text-xs font-semibold text-zinc-500">{groupSelectionsForProgram('workshop', program.name).length} students selected</p>
+                                                </article>
+                                            ) : (
+                                            <label
+                                                key={program.name}
+                                                className={`rounded-lg border p-4 text-sm font-bold ${
+                                                    formData.selectedWorkshops.includes(program.name)
+                                                        ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
+                                                        : 'border-zinc-200 bg-white text-zinc-700'
+                                                }`}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    className="mr-2"
+                                                    checked={formData.selectedWorkshops.includes(program.name)}
+                                                    onChange={() => toggleWorkshop(program.name)}
+                                                />
+                                                <span>{program.name}</span>
+                                                <span className="ml-2 text-xs font-bold text-emerald-700">{program.price ? `Rs. ${program.price.toLocaleString('en-IN')}` : 'Free'}</span>
+                                                {program.description && <span className="mt-1 block pl-6 text-xs font-normal text-zinc-500">{program.description}</span>}
+                                            </label>
+                                            )
+                                        ))}
+                                        </div>
+                                    ) : (
+                                        <p className="mt-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-600">No post-congress workshops are available for this category.</p>
+                                    )}
+                                </div>
                                 <label className={labelClass}>
                                     Workshop Fee Acknowledgement
                                     <select
@@ -1973,6 +2181,8 @@ function RegistrationPage() {
                                         <option value="No">No</option>
                                     </select>
                                 </label>
+                                </>
+                                )}
                             </div>
                         )}
 
@@ -1980,7 +2190,7 @@ function RegistrationPage() {
                             <div className="mt-6">
                                 <p className={labelClass}>Presentation Type</p>
                                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                    {['Oral Presentation', 'Poster Presentation'].map((option) => (
+                                    {['Not Participating', 'Oral Presentation', 'Poster Presentation'].map((option) => (
                                         <label
                                             key={option}
                                             className={`rounded-lg border p-4 text-sm font-bold ${
@@ -2006,9 +2216,25 @@ function RegistrationPage() {
                         {activeTab === 'hr-drive' && (
                             <div className="mt-6 grid gap-5 md:grid-cols-2">
                                 <label className={`${labelClass} md:col-span-2`}>
+                                    HR Drive Participation
+                                    <select
+                                        className={fieldClass}
+                                        value={formData.hrDriveParticipation}
+                                        onChange={(event) => updateParticipation('hrDriveParticipation', event.target.value)}
+                                    >
+                                        <option value="not_participating">Not participating</option>
+                                        <option value="participating">Participating</option>
+                                    </select>
+                                </label>
+                                {formData.hrDriveParticipation === 'not_participating' ? (
+                                    <p className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm font-semibold text-zinc-600 md:col-span-2">HR Drive marked as not participating.</p>
+                                ) : (
+                                <>
+                                <label className={`${labelClass} md:col-span-2`}>
                                     Name of College Studying or Last Studied (in capital letters) with State
                                     <input
                                         className={fieldClass}
+                                        required={formData.hrDriveParticipation !== 'not_participating'}
                                         value={formData.hrCollegeWithState}
                                         onChange={(event) => updateField('hrCollegeWithState', event.target.value.toUpperCase())}
                                         placeholder="ABC COLLEGE OF PHARMACY, KERALA"
@@ -2018,26 +2244,29 @@ function RegistrationPage() {
                                     Course and Year of Study or Highest Qualification (if passed out)
                                     <input
                                         className={fieldClass}
+                                        required={formData.hrDriveParticipation !== 'not_participating'}
                                         value={formData.hrCourseOrQualification}
                                         onChange={(event) => updateField('hrCourseOrQualification', event.target.value)}
                                         placeholder="B.Pharm, 4th Year or M.Pharm"
                                     />
                                 </label>
                                 <label className={labelClass}>
-                                    WhatsApp Number
+                                    WhatsApp Number <span className="text-rose-600">*</span>
                                     <input
                                         className={fieldClass}
                                         type="tel"
+                                        required={formData.hrDriveParticipation !== 'not_participating'}
                                         value={formData.hrWhatsappNumber}
                                         onChange={(event) => updateField('hrWhatsappNumber', event.target.value)}
                                         placeholder="+91 9876543210"
                                     />
                                 </label>
                                 <label className={labelClass}>
-                                    Confirm WhatsApp Number
+                                    Confirm WhatsApp Number <span className="text-rose-600">*</span>
                                     <input
                                         className={fieldClass}
                                         type="tel"
+                                        required={formData.hrDriveParticipation !== 'not_participating'}
                                         value={formData.hrWhatsappConfirmation}
                                         onChange={(event) => updateField('hrWhatsappConfirmation', event.target.value)}
                                         placeholder="Re-enter WhatsApp number"
@@ -2048,7 +2277,7 @@ function RegistrationPage() {
                                     <input
                                         className={fieldClass}
                                         type="email"
-                                        required
+                                        required={formData.hrDriveParticipation !== 'not_participating'}
                                         value={formData.hrEmail}
                                         onChange={(event) => updateField('hrEmail', event.target.value.toLowerCase())}
                                         placeholder="name@example.com"
@@ -2059,7 +2288,7 @@ function RegistrationPage() {
                                     <input
                                         className={fieldClass}
                                         type="email"
-                                        required
+                                        required={formData.hrDriveParticipation !== 'not_participating'}
                                         value={formData.hrEmailConfirmation}
                                         onChange={(event) => updateField('hrEmailConfirmation', event.target.value.toLowerCase())}
                                         placeholder="Re-enter email address"
@@ -2069,6 +2298,7 @@ function RegistrationPage() {
                                     Select the core area of your preference
                                     <select
                                         className={fieldClass}
+                                        required={formData.hrDriveParticipation !== 'not_participating'}
                                         value={formData.hrCoreArea}
                                         onChange={(event) => updateField('hrCoreArea', event.target.value)}
                                     >
@@ -2078,6 +2308,8 @@ function RegistrationPage() {
                                         ))}
                                     </select>
                                 </label>
+                                </>
+                                )}
                             </div>
                         )}
 
@@ -2126,9 +2358,12 @@ function RegistrationPage() {
                                         ['Expected Participants', formData.expectedParticipants || 'Not entered'],
                                         ['Uploaded Student Roster', `${formData.groupMembers.length} students`],
                                         ['Primary Category', formData.category || 'Not selected'],
+                                        ['Student Competition Participation', formData.competitionParticipation === 'not_participating' ? 'Not participating' : 'Participating'],
                                         ['Competition Selections', `${formData.groupMembers.reduce((total, member) => total + (Array.isArray(member.competitions) ? member.competitions.length : 0), 0)} student entries`],
+                                        ['Workshop Participation', formData.workshopParticipation === 'not_participating' ? 'Not participating' : 'Participating'],
                                         ['Workshop Selections', `${formData.groupMembers.reduce((total, member) => total + (Array.isArray(member.workshops) ? member.workshops.length : 0), 0)} student entries`],
                                         ['Presentation', formData.presentationType || 'Not selected'],
+                                        ['HR Drive Participation', formData.hrDriveParticipation === 'not_participating' ? 'Not participating' : 'Participating'],
                                         ['HR College', formData.hrCollegeWithState || 'Not entered'],
                                         ['HR Course / Qualification', formData.hrCourseOrQualification || 'Not entered'],
                                         ['HR WhatsApp', formData.hrWhatsappNumber || 'Not entered'],
@@ -2148,9 +2383,12 @@ function RegistrationPage() {
                                         ['Email', formData.email || 'Not entered'],
                                         ['WhatsApp', formData.whatsappNumber || 'Not entered'],
                                         ['College', formData.collegeWithState || 'Not entered'],
+                                        ['Student Competition Participation', formData.competitionParticipation === 'not_participating' ? 'Not participating' : 'Participating'],
                                         ['Competitions', formData.studentCompetitions.join(', ') || 'None'],
+                                        ['Workshop Participation', formData.workshopParticipation === 'not_participating' ? 'Not participating' : 'Participating'],
                                         ['Workshops', formData.selectedWorkshops.join(', ') || 'Not selected'],
                                         ['Presentation', formData.presentationType || 'Not selected'],
+                                        ['HR Drive Participation', formData.hrDriveParticipation === 'not_participating' ? 'Not participating' : 'Participating'],
                                         ['HR College', formData.hrCollegeWithState || 'Not entered'],
                                         ['HR Course / Qualification', formData.hrCourseOrQualification || 'Not entered'],
                                         ['HR WhatsApp', formData.hrWhatsappNumber || 'Not entered'],
