@@ -26,6 +26,7 @@ Open `http://localhost:3000`. Use `npm run dev` only when working on frontend UI
 - `ADMIN_SEED_EMAIL`: initial super-admin email.
 - `ADMIN_SEED_USERNAME`: initial super-admin username.
 - `ADMIN_SEED_PASSWORD`: initial super-admin password.
+- `BLOB_READ_WRITE_TOKEN`: Vercel Blob read/write token used for abstract and abstract book uploads.
 
 Never expose these values through `VITE_*` variables or commit `.env.local`.
 
@@ -41,7 +42,7 @@ npm run db:init
 
 ## Deployment
 
-Set all four environment variables for Vercel Development, Preview, and Production, then deploy:
+Set all environment variables, including `BLOB_READ_WRITE_TOKEN`, for Vercel Development, Preview, and Production, then deploy:
 
 ```bash
 npx vercel deploy --prod

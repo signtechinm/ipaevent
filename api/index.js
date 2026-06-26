@@ -338,7 +338,7 @@ function getMailTransporter() {
     return { transporter: mailTransporter, from: config.from };
 }
 
-async function sendStudentMail({ to, subject, preview, body }) {
+async function sendStudentMail({ to, subject, preview, body, htmlBody, textBody }) {
     const recipient = String(to || '').trim();
     if (!recipient || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
         return { skipped: true, reason: 'missing-recipient' };
@@ -351,13 +351,16 @@ async function sendStudentMail({ to, subject, preview, body }) {
     }
 
     const safePreview = escapeHtml(preview || '');
-    const safeBody = Array.isArray(body) ? body.map((line) => `<p>${escapeHtml(line)}</p>`).join('\n') : String(body || '');
+    const safeBody = htmlBody
+        ? String(htmlBody)
+        : Array.isArray(body) ? body.map((line) => `<p>${escapeHtml(line)}</p>`).join('\n') : String(body || '');
+    const plainText = textBody || (Array.isArray(body) ? body.join('\n\n') : String(body || ''));
     return mailer.transporter.sendMail({
         from: mailer.from,
         to: recipient,
         replyTo: process.env.MAIL_REPLY_TO || process.env.MAIL_FROM || 'nsc2026@ipakerala.org',
         subject,
-        text: Array.isArray(body) ? body.join('\n\n') : String(body || ''),
+        text: plainText,
         html: `
             <div style="display:none;max-height:0;overflow:hidden">${safePreview}</div>
             <div style="font-family:Arial,sans-serif;line-height:1.6;color:#18181b">
@@ -377,6 +380,102 @@ function queueStudentMail(message) {
 
 function getRegistrationMailRecipient(registration = {}) {
     return registration.email || registration.groupCoordinatorEmail || registration.hrEmail || '';
+}
+
+function summarizeGroupProgramSelections(groupMembers = [], field) {
+    if (!Array.isArray(groupMembers)) return '';
+    return groupMembers
+        .map((member) => {
+            const selections = Array.isArray(member?.[field]) ? member[field] : [];
+            return selections.length ? `${member.name}: ${selections.join(', ')}` : '';
+        })
+        .filter(Boolean)
+        .join(' | ');
+}
+
+function buildRegistrationSubmittedMailBody(registration) {
+    const isGroup = registration.registrationMode === 'group';
+    const competitionSummary = isGroup
+        ? summarizeGroupProgramSelections(registration.groupMembers, 'competitions') || 'None selected'
+        : (registration.studentCompetitions || []).join(', ') || 'None selected';
+    const workshopSummary = isGroup
+        ? summarizeGroupProgramSelections(registration.groupMembers, 'workshops') || 'None selected'
+        : (registration.selectedWorkshops || []).join(', ') || 'None selected';
+    const hrSummary = registration.hrCoreArea
+        ? `${registration.hrCoreArea}${registration.hrEmail ? `, ${registration.hrEmail}` : ''}${registration.hrWhatsappNumber ? `, ${registration.hrWhatsappNumber}` : ''}`
+        : 'Not participating';
+
+    return [
+        `Dear ${registration.participantName || registration.groupCoordinatorName || 'Delegate'},`,
+        `Your registration has been received successfully. Registration number: ${registration.registrationNumber || '-'}.`,
+        'Registration status: Pending.',
+        `Registration type: ${isGroup ? 'Group Registration' : 'Individual Registration'}.`,
+        isGroup
+            ? `Institution: ${registration.institutionName || '-'}; Coordinator: ${registration.groupCoordinatorName || '-'}; Students uploaded: ${(registration.groupMembers || []).length}.`
+            : `Participant: ${registration.participantName || '-'}; Category: ${registration.category || '-'}; Email: ${registration.email || '-'}.`,
+        `Category: ${registration.category || '-'}.`,
+        `Student competitions: ${competitionSummary}.`,
+        `Workshop: ${workshopSummary}.`,
+        `Presentation: ${registration.presentationType || 'Not selected'}.`,
+        `HR Drive: ${hrSummary}.`,
+        'Please keep this registration number for abstract submission and future updates.',
+    ];
+}
+
+function buildConfirmedRegistrationMail(registration) {
+    const delegateId = registration.registrationNumber || '-';
+    const participantName = registration.participantName || registration.groupCoordinatorName || 'Participant';
+    const qrPayload = [
+        '14th IPA NSC 2026',
+        `Delegate ID: ${delegateId}`,
+        `Name: ${participantName}`,
+        `Type: ${registration.registrationMode === 'group' ? 'Group Registration' : 'Individual Registration'}`,
+        `Institution: ${registration.institutionName || registration.collegeWithState || '-'}`,
+    ].join('\n');
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrPayload)}`;
+    const portalUrl = 'https://nsc2026.ipakerala.org';
+    const whatsAppCommunityUrl = 'https://chat.whatsapp.com/Cx1Kgf5tlHQJLSrvkl3liP';
+    const safeDelegateId = escapeHtml(delegateId);
+    const safeName = escapeHtml(participantName);
+    const htmlBody = `
+        <p>Dear participant,</p>
+        <p><strong>Congratulations!</strong></p>
+        <p>Your registration for the <strong>14th IPA National Student Congress (IPA NSC) 2026</strong>, organized by the Indian Pharmaceutical Association (IPA) Kerala State Branch, has been verified and confirmed.</p>
+        <p>Your Registration/Delegate ID Number is: <strong>${safeDelegateId}</strong></p>
+        <div style="margin:20px 0;padding:16px;border:1px solid #d4d4d8;border-radius:12px;background:#f8fafc;max-width:340px;text-align:center">
+            <p style="margin:0 0 10px;font-weight:bold;color:#0d124f">E-Ticket / Gate Pass QR</p>
+            <img src="${qrUrl}" alt="QR Gate Pass for ${safeName}" width="220" height="220" style="display:block;margin:0 auto 10px;border:0" />
+            <p style="margin:0;font-size:13px;color:#52525b">Present this QR at the registration desk for quick scanning and entry.</p>
+        </div>
+        <p><strong>These following critical actions are required from your end:</strong></p>
+        <ol>
+            <li>Please save this QR gate pass for future reference. You can present it digitally on your smartphone or carry a printed copy to the venue at the registration desk for quick barcode scanning and entry.</li>
+            <li>Visit our official web portal for brochures, detailed information, and guidelines of scientific events and student competitions:<br><a href="${portalUrl}">${portalUrl}</a></li>
+            <li>Join the Congress WhatsApp Community for real-time announcements, instant scheduling changes, and emergency updates during the event:<br><a href="${whatsAppCommunityUrl}">${whatsAppCommunityUrl}</a></li>
+        </ol>
+        <p>We look forward to welcoming you to an incredible, high-energy congress. Travel safe!</p>
+        <p>Warm regards,</p>
+        <p><strong>Organizing Secretariat</strong><br>14th IPA NSC 2026<br>&amp;<br>IPA Kerala State Branch</p>
+    `;
+    const textBody = [
+        'Dear participant,',
+        'Congratulations!',
+        'Your registration for the 14th IPA National Student Congress (IPA NSC) 2026, organized by the Indian Pharmaceutical Association (IPA) Kerala State Branch, has been verified and confirmed.',
+        `Your Registration/Delegate ID Number is: ${delegateId}`,
+        `E-Ticket / Gate Pass QR: ${qrUrl}`,
+        'These following critical actions are required from your end:',
+        '1. Please save this QR gate pass for future reference. You can present it digitally on your smartphone or carry a printed copy to the venue at the registration desk for quick barcode scanning and entry.',
+        `2. Visit our official web portal for brochures, detailed information, and guidelines of scientific events and student competitions: ${portalUrl}`,
+        `3. Join the Congress WhatsApp Community for real-time announcements, instant scheduling changes, and emergency updates during the event: ${whatsAppCommunityUrl}`,
+        'We look forward to welcoming you to an incredible, high-energy congress. Travel safe!',
+        'Warm regards,',
+        'Organizing Secretariat',
+        '14th IPA NSC 2026',
+        '&',
+        'IPA Kerala State Branch',
+    ].join('\n\n');
+
+    return { htmlBody, textBody };
 }
 
 async function getRegistrationContactForMail(sql, registrationNumber) {
@@ -403,12 +502,7 @@ async function notifyRegistrationSubmitted(registration) {
         to,
         subject: `Registration received - ${registration.registrationNumber || 'NSC 2026'}`,
         preview: 'Your NSC 2026 registration has been received.',
-        body: [
-            `Dear ${registration.participantName || registration.groupCoordinatorName || 'Delegate'},`,
-            `Your registration has been received successfully. Registration number: ${registration.registrationNumber || '-'}.`,
-            `Payment status: ${formatStatusLabel(registration.paymentStatus || 'pending')}. Approval status: ${formatStatusLabel(registration.approvalStatus || 'pending_review')}.`,
-            'Please keep this registration number for payment verification, abstract submission, and future updates.',
-        ],
+        body: buildRegistrationSubmittedMailBody(registration),
     }).catch((error) => console.error('notifyRegistrationSubmitted failed:', error));
 }
 
@@ -429,6 +523,17 @@ async function notifyPaymentUpdated(registration) {
 
 async function notifyApprovalUpdated(registration) {
     const to = getRegistrationMailRecipient(registration);
+    if (registration.approvalStatus === 'approved') {
+        const { htmlBody, textBody } = buildConfirmedRegistrationMail(registration);
+        await sendStudentMail({
+            to,
+            subject: `Registration confirmed - ${registration.registrationNumber || '14th IPA NSC 2026'}`,
+            preview: 'Your 14th IPA NSC 2026 registration has been verified and confirmed.',
+            htmlBody,
+            textBody,
+        }).catch((error) => console.error('notifyApprovalUpdated confirmed mail failed:', error));
+        return;
+    }
     await sendStudentMail({
         to,
         subject: `Registration approval updated - ${registration.registrationNumber || 'NSC 2026'}`,
@@ -935,8 +1040,13 @@ function mapRegistration(row, competitions = []) {
         transactionDetails: row.transaction_details || '',
         registrationNumber: row.registration_number || '',
         submittedAt: row.submitted_at || '',
+        registrationFee: Number(row.registration_fee) || 0,
+        competitionFee: Number(row.competition_fee) || 0,
+        workshopFee: Number(row.workshop_fee) || 0,
+        totalPayableAmount: Number(row.total_payable_amount) || 0,
         paymentStatus: row.payment_status || 'pending',
         approvalStatus: row.approval_status || 'not_submitted',
+        registrationStatus: row.registration_status || 'draft',
     };
 }
 

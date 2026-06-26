@@ -398,6 +398,30 @@ body {
     transform: translateY(-5px);
 }
 
+.tour-attractions-carousel {
+    display: flex;
+    gap: 1.25rem;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-padding-inline: 0.25rem;
+    scroll-snap-type: x mandatory;
+    padding: 0.25rem 0.25rem 1rem;
+    scrollbar-width: none;
+}
+
+.tour-attractions-carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.tour-attraction-slide {
+    flex: 0 0 min(360px, 84vw);
+    scroll-snap-align: start;
+}
+
+.tour-attraction-card {
+    min-height: 420px;
+}
+
 .perspective-carousel {
     perspective: 2100px;
     perspective-origin: center 45%;
@@ -922,6 +946,10 @@ body {
     .programs-events-section {
         background-attachment: scroll;
         background-position: center;
+    }
+
+    .tour-attraction-slide {
+        flex-basis: min(320px, 88vw);
     }
 }
 

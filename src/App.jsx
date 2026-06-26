@@ -81,9 +81,10 @@ const pageHighlights = {
 };
 
 const updates = [
-    ['Abstract submission opening soon', 'Poster and oral presentation links will be published here.'],
-    ['Brochure download area ready', 'Event brochures, sponsor materials, and information booklets.'],
-    ['Competition registration planned', 'Student competitions and placement activities get dedicated links.'],
+    ['Abstract Submission', 'Last date: 31-07-2026'],
+    ['Abstract Acceptance Mail', 'Last date: 05-08-2026'],
+    ['Video Submission and Evaluation', 'Last date: 22-08-2026'],
+    ['Acceptance email for presentation', 'Last date: 11-09-2026'],
 ];
 
 const preCongressWorkshops = [
@@ -279,8 +280,11 @@ function normalizeAccommodationCms(data = {}) {
         accommodationSpaces: Array.isArray(data.accommodationSpaces) ? data.accommodationSpaces : accommodationTravelDefaults.accommodationSpaces,
         pickupPoints: Array.isArray(data.pickupPoints) ? data.pickupPoints : accommodationTravelDefaults.pickupPoints,
         touristAttractions: (Array.isArray(data.touristAttractions) ? data.touristAttractions : accommodationTravelDefaults.touristAttractions).map((place = {}, index) => ({
-            ...accommodationTravelDefaults.touristAttractions[index % accommodationTravelDefaults.touristAttractions.length],
-            ...place,
+            name: String(place.name || '').trim() || `Tour Attraction ${index + 1}`,
+            category: String(place.category || '').trim(),
+            distance: String(place.distance || '').trim(),
+            image: String(place.image || '').trim(),
+            description: String(place.description || '').trim(),
         })),
     };
 }
@@ -610,7 +614,7 @@ function Header() {
             <div className={`mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 transition-all duration-300 sm:px-6 lg:px-8 ${isCompact ? 'py-0' : 'py-1'}`}>
                 <a href="/" className="group flex shrink-0 items-end gap-4">
                     <img
-                        src="/14th NSC LOGO - DARK.png"
+                        src="/logo man.png"
                         alt="14th IPA National Students Congress logo"
                         className={`w-auto object-contain transition-all duration-300 ${isCompact ? 'h-14 sm:h-16' : 'h-20 sm:h-24'}`}
                     />
@@ -776,12 +780,12 @@ function QuickFacts() {
                             Congress and workshop schedule
                         </h2>
                         <p className="mt-3 text-base font-medium leading-7 text-white/75">
-                            Pre-congress workshops begin on 17 September, followed by the National Students Congress on {eventDate} and post-congress training on 21 September.
+                            Several workshops are available exclusively for registered participants of the 14th IPA-NSC. Participants may choose a workshop based on their area of interest and confirm their seats available during registration itself by paying the applicable fees for each workshop in addition to the registration fees in each category.
                         </p>
                     </div>
                     <div className="snapshot-logo-panel grid grid-cols-[1.15fr_0.85fr] items-center gap-5 rounded-2xl border border-white/15 bg-white/8 p-5 backdrop-blur-md">
                         <img
-                            src="/14th NSC LOGO - LIGHT.png"
+                            src="/logo light.png"
                             alt="14th IPA National Students Congress logo"
                             className="snapshot-event-logo h-28 w-full object-contain sm:h-32"
                         />
@@ -1115,31 +1119,55 @@ function AccommodationTravelPage() {
                 </div>
 
                 <div id="tour-attractions" className="mt-12 scroll-mt-28">
-                    <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#df0867]">Tour Attractions</p>
-                    <h3 className="mt-2 text-2xl font-bold text-zinc-950">Nearby places to visit</h3>
-                    <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#df0867]">Tour Attractions</p>
+                            <h3 className="mt-2 text-2xl font-bold text-zinc-950">Nearby places to visit</h3>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                aria-label="Previous tour attraction"
+                                onClick={() => document.getElementById('tour-attractions-carousel')?.scrollBy({ left: -380, behavior: 'smooth' })}
+                                className="rounded-lg border border-zinc-300 px-3 py-2 text-sm font-bold text-zinc-700 hover:bg-zinc-100"
+                            >
+                                Prev
+                            </button>
+                            <button
+                                type="button"
+                                aria-label="Next tour attraction"
+                                onClick={() => document.getElementById('tour-attractions-carousel')?.scrollBy({ left: 380, behavior: 'smooth' })}
+                                className="rounded-lg bg-[#11145f] px-3 py-2 text-sm font-bold text-white hover:bg-[#20257d]"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                    <div id="tour-attractions-carousel" className="tour-attractions-carousel mt-5">
                         {cmsContent.touristAttractions.map((place, index) => (
-                            <Reveal key={place.name} delay={index * 80}>
-                                <article className="interactive-card flex h-full flex-col overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
+                            <div key={`${place.name}-${index}`} className="tour-attraction-slide h-full">
+                                <article className="interactive-card tour-attraction-card flex h-full flex-col overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
                                     {place.image && (
                                         <img
                                             src={place.image}
                                             alt={place.name}
-                                            className="h-40 w-full object-cover"
+                                            className="aspect-[4/3] w-full shrink-0 object-cover"
                                             loading="lazy"
                                             decoding="async"
                                         />
                                     )}
                                     <div className="flex flex-1 flex-col p-5">
-                                        <span className="w-fit rounded-lg bg-white px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-emerald-800 ring-1 ring-emerald-100">
-                                            {place.category}
-                                        </span>
+                                        {place.category && (
+                                            <span className="w-fit rounded-lg bg-white px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-emerald-800 ring-1 ring-emerald-100">
+                                                {place.category}
+                                            </span>
+                                        )}
                                         <h4 className="mt-4 text-lg font-bold text-zinc-950">{place.name}</h4>
-                                        <p className="mt-2 text-sm font-semibold text-[#11145f]">{place.distance}</p>
-                                        <p className="mt-3 text-sm leading-6 text-zinc-600">{place.description}</p>
+                                        {place.distance && <p className="mt-2 text-sm font-semibold text-[#11145f]">{place.distance}</p>}
+                                        {place.description && <p className="mt-3 text-sm leading-6 text-zinc-600">{place.description}</p>}
                                     </div>
                                 </article>
-                            </Reveal>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -1257,6 +1285,15 @@ function RegistrationPage() {
         return Array.isArray(selections) && selections.includes(programName);
     });
     const formatStudentLabel = (member, index) => `${index + 1}. ${member.name}${member.course ? ` (${member.course})` : ''}`;
+    const groupProgramSummary = (type) => formData.groupMembers
+        .map((member) => {
+            const selections = Array.isArray(member[type]) ? member[type] : [];
+            return selections.length ? `${member.name}: ${selections.join(', ')}` : '';
+        })
+        .filter(Boolean)
+        .join(' | ');
+    const registrationStatusLabel = formData.registrationStatus === 'submitted' ? 'Pending' : 'Draft';
+    const paymentStatusLabel = String(formData.paymentStatus || 'pending').replaceAll('_', ' ');
 
     const totals = useMemo(() => {
         const perStudentRegistrationFee = selectedCategory?.registrationFee || 0;
@@ -2409,21 +2446,66 @@ function RegistrationPage() {
                         )}
 
                         {activeTab === 'confirmation' && (
-                            <div className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-6">
-                                <p className="text-sm font-bold uppercase text-emerald-700">
-                                    14th IPA National Students Congress 2026 - {isGroupRegistration ? 'Group Registration' : 'Early Bird Registration'}
-                                </p>
-                                <h3 className="mt-3 text-2xl font-bold text-emerald-950">Your response has been recorded.</h3>
-                                <p className="mt-3 text-sm leading-6 text-emerald-900">
-                                    Registration number: <span className="font-bold">{formData.registrationNumber || 'Generated after submit'}</span>
-                                </p>
-                                <p className="mt-2 text-sm leading-6 text-emerald-900">
-                                    Approval status: <span className="font-bold">{formData.approvalStatus === 'approved' ? 'Approved' : 'Pending admin review'}</span>
-                                </p>
+                            <div className="mt-6 grid gap-5">
+                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-6">
+                                    <p className="text-sm font-bold uppercase text-emerald-700">
+                                        14th IPA National Students Congress 2026 - {isGroupRegistration ? 'Group Registration' : 'Early Bird Registration'}
+                                    </p>
+                                    <h3 className="mt-3 text-2xl font-bold text-emerald-950">Your response has been recorded.</h3>
+                                    <div className="mt-4 grid gap-3 text-sm leading-6 text-emerald-900 sm:grid-cols-3">
+                                        <p>Registration number: <span className="font-bold">{formData.registrationNumber || 'Generated after submit'}</span></p>
+                                        <p>Registration status: <span className="font-bold">{registrationStatusLabel}</span></p>
+                                        <p>Payment status: <span className="font-bold capitalize">{paymentStatusLabel}</span></p>
+                                    </div>
+                                </div>
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {(isGroupRegistration
+                                        ? [
+                                            ['Registration Type', 'Group Registration'],
+                                            ['Institution', formData.institutionName || 'Not entered'],
+                                            ['Coordinator', formData.groupCoordinatorName || 'Not entered'],
+                                            ['Coordinator Email', formData.groupCoordinatorEmail || 'Not entered'],
+                                            ['Coordinator WhatsApp', formData.groupCoordinatorWhatsapp || 'Not entered'],
+                                            ['State', formData.stateOfResidence || 'Not entered'],
+                                            ['Uploaded Student Roster', `${formData.groupMembers.length} students`],
+                                            ['Primary Category', formData.category || 'Not selected'],
+                                            ['Student Competitions', formData.competitionParticipation === 'not_participating' ? 'Not participating' : groupProgramSummary('competitions') || 'None selected'],
+                                            ['Workshops', formData.workshopParticipation === 'not_participating' ? 'Not participating' : groupProgramSummary('workshops') || 'None selected'],
+                                            ['Presentation', formData.presentationType || 'Not selected'],
+                                            ['HR Drive', formData.hrDriveParticipation === 'not_participating' ? 'Not participating' : `${formData.hrCoreArea || 'Selected'} - ${formData.hrEmail || formData.hrWhatsappNumber || 'details entered'}`],
+                                            ['Registration Fee', `Rs. ${totals.registrationFee.toLocaleString('en-IN')}`],
+                                            ['Competition Fee', `Rs. ${totals.competitionFee.toLocaleString('en-IN')}`],
+                                            ['Workshop Fee', `Rs. ${totals.workshopFee.toLocaleString('en-IN')}`],
+                                            ['Total Payable', `Rs. ${totals.total.toLocaleString('en-IN')}`],
+                                        ]
+                                        : [
+                                            ['Registration Type', 'Individual Registration'],
+                                            ['Participant', formData.participantName || 'Not entered'],
+                                            ['Category', formData.category || 'Not selected'],
+                                            ['Email', formData.email || 'Not entered'],
+                                            ['WhatsApp', formData.whatsappNumber || 'Not entered'],
+                                            ['State', formData.stateOfResidence || 'Not entered'],
+                                            ['Food Preference', formData.foodPreference || 'Not selected'],
+                                            ['Competitions', formData.competitionParticipation === 'not_participating' ? 'Not participating' : formData.studentCompetitions.join(', ') || 'None selected'],
+                                            ['Workshop', formData.workshopParticipation === 'not_participating' ? 'Not participating' : formData.selectedWorkshops.join(', ') || 'None selected'],
+                                            ['Presentation', formData.presentationType || 'Not selected'],
+                                            ['HR Drive', formData.hrDriveParticipation === 'not_participating' ? 'Not participating' : `${formData.hrCoreArea || 'Selected'} - ${formData.hrEmail || formData.hrWhatsappNumber || 'details entered'}`],
+                                            ['Registration Fee', `Rs. ${totals.registrationFee.toLocaleString('en-IN')}`],
+                                            ['Competition Fee', `Rs. ${totals.competitionFee.toLocaleString('en-IN')}`],
+                                            ['Workshop Fee', `Rs. ${totals.workshopFee.toLocaleString('en-IN')}`],
+                                            ['Total Payable', `Rs. ${totals.total.toLocaleString('en-IN')}`],
+                                        ]
+                                    ).map(([label, value]) => (
+                                        <div key={label} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                            <p className="text-xs font-bold uppercase text-zinc-500">{label}</p>
+                                            <p className="mt-1 text-sm font-semibold text-zinc-900">{value}</p>
+                                        </div>
+                                    ))}
+                                </div>
                                 <button
                                     type="button"
                                     onClick={submitAnotherResponse}
-                                    className="mt-5 rounded-lg bg-emerald-800 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-900"
+                                    className="w-fit rounded-lg bg-emerald-800 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-900"
                                 >
                                     Submit another response
                                 </button>
@@ -3544,7 +3626,7 @@ function Contact() {
                     <div>
                         <div className="flex max-w-2xl items-center gap-6 rounded-2xl bg-white/8 p-6 backdrop-blur-md ring-1 ring-white/12">
                             <img
-                                src="/14th NSC LOGO - LIGHT.png"
+                                src="/logo light.png"
                                 alt="14th IPA National Students Congress"
                                 className="h-28 min-w-0 flex-1 object-contain sm:h-32"
                             />
@@ -3687,7 +3769,7 @@ function AdminLoginPage() {
             </div>
             <div className="grid min-h-screen w-full items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
                 <div>
-                    <img src="/14th NSC LOGO - DARK.png" alt="14th IPA National Students Congress logo" className="admin-logo h-24 w-auto rounded-lg bg-white p-2" />
+                    <img src="/logo man.png" alt="14th IPA National Students Congress logo" className="admin-logo h-24 w-auto rounded-lg bg-white p-2" />
                     <p className="mt-8 text-sm font-bold uppercase text-amber-300">Admin Panel</p>
                     <h1 className="mt-3 text-4xl font-bold leading-tight sm:text-5xl">Secure event operations for the 14th IPA National Students Congress 2026.</h1>
                     <p className="mt-5 max-w-xl text-base leading-7 text-zinc-300">
@@ -5224,7 +5306,7 @@ function AdminPage() {
                 <aside className="admin-sidebar border-b border-zinc-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
                     <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-4">
                         <a href="/admin/dashboard" className="flex min-w-0 items-center gap-3">
-                            <img src="/14th NSC LOGO - DARK.png" alt="14th IPA National Students Congress logo" className="admin-logo size-9 rounded-md border border-zinc-200 bg-white object-contain p-1" />
+                            <img src="/logo man.png" alt="14th IPA National Students Congress logo" className="admin-logo size-9 rounded-md border border-zinc-200 bg-white object-contain p-1" />
                             <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold text-zinc-950">NSC Admin</p>
                                 <p className="truncate text-xs text-zinc-500">Event operations</p>
@@ -6939,15 +7021,11 @@ function AdminPage() {
 }
 
 const coreAreas = [
-    'Pharmaceutical Technology',
+    'Pharmaceutics & Pharmaceutical Technology',
+    'Pharmacology & Clinical Pharmacy',
+    'Pharmacognosy & Phytochemistry',
     'Medicinal Chemistry',
-    'Pharmacognosy, Indigenous Drugs, Herbal Formulations and Phytochemistry',
-    'Pharmacology and Toxicology',
-    'Clinical Research & Pharmacovigilance',
-    'Pharmaceutical Analysis and Quality Assurance',
-    'Biotechnology and Biotherapeutics',
-    'Hospital, Community and Clinical Pharmacy',
-    'Artificial Intelligence / Bioinformatics / Data Analytics',
+    'Pharmaceutical Regulatory Affairs and Quality Assurance',
 ];
 
 const rejectionCriteria = [
