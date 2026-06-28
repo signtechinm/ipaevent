@@ -58,6 +58,25 @@ WHERE selected_workshops = '[]'::jsonb AND pre_conference_workshop IS NOT NULL;
 UPDATE event_registrations
 SET approval_status = 'pending_review'
 WHERE registration_status = 'submitted' AND approval_status = 'not_submitted';
+UPDATE event_registrations r
+SET group_members = (
+    SELECT jsonb_agg(
+        CASE
+            WHEN COALESCE(member->>'registrationNumber', '') = '' AND r.registration_number IS NOT NULL
+                THEN member || jsonb_build_object('registrationNumber', r.registration_number || '-' || LPAD(ord::text, 3, '0'))
+            ELSE member
+        END
+        ORDER BY ord
+    )
+    FROM jsonb_array_elements(COALESCE(r.group_members, '[]'::jsonb)) WITH ORDINALITY AS item(member, ord)
+)
+WHERE r.registration_mode = 'group'
+    AND r.registration_number IS NOT NULL
+    AND EXISTS (
+        SELECT 1
+        FROM jsonb_array_elements(COALESCE(r.group_members, '[]'::jsonb)) AS member
+        WHERE COALESCE(member->>'registrationNumber', '') = ''
+    );
 
 CREATE TABLE IF NOT EXISTS registration_competitions (
     id BIGSERIAL PRIMARY KEY,
@@ -99,14 +118,26 @@ SELECT * FROM (VALUES
     ('AI', 'workshop', 0, 10),
     ('FIP Vaccination Training (2 days)', 'workshop', 0, 20),
     ('3D Printing', 'workshop', 0, 30),
-    ('NDDS Formulation and Characterization', 'workshop', 0, 40)
+    ('NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization', 'workshop', 0, 40)
 ) AS seed(name, program_type, price, sort_order)
 WHERE NOT EXISTS (SELECT 1 FROM event_programs)
 ON CONFLICT (program_type, name) DO NOTHING;
 
 INSERT INTO event_programs (name, program_type, description, price, sort_order)
-VALUES ('NDDS Formulation and Characterization', 'workshop', 'Workshop session', 0, 40)
+VALUES ('NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization', 'workshop', 'Workshop session', 0, 40)
 ON CONFLICT (program_type, name) DO NOTHING;
+
+UPDATE event_programs
+SET name = 'NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization',
+    updated_at = NOW()
+WHERE program_type = 'workshop'
+    AND name = 'NDDS Formulation and Characterization'
+    AND NOT EXISTS (
+        SELECT 1
+        FROM event_programs existing
+        WHERE existing.program_type = 'workshop'
+            AND existing.name = 'NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization'
+    );
 
 UPDATE event_programs
 SET name = 'FIP Vaccination Training (2 days)',
@@ -302,6 +333,14 @@ CREATE TABLE IF NOT EXISTS abstract_book_content (
     blob_path TEXT,
     file_size BIGINT NOT NULL DEFAULT 0,
     file_type VARCHAR(120),
+    updated_by BIGINT REFERENCES admin_users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS home_content (
+    id TEXT PRIMARY KEY DEFAULT 'main',
+    content JSONB NOT NULL DEFAULT '{}'::jsonb,
     updated_by BIGINT REFERENCES admin_users(id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

@@ -50,7 +50,27 @@ const defaultPrograms = [
     ['AI', 'workshop', 0, 10],
     ['FIP Vaccination Training (2 days)', 'workshop', 0, 20],
     ['3D Printing', 'workshop', 0, 30],
-    ['NDDS Formulation and Characterization', 'workshop', 0, 40],
+    ['NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization', 'workshop', 0, 40],
+];
+
+const defaultHomeContent = {
+    newsUpdates: [
+        { title: 'Abstract Submission', copy: 'Last date: 31-07-2026' },
+        { title: 'Abstract Acceptance Mail', copy: 'Last date: 05-08-2026' },
+        { title: 'Video Submission and Evaluation', copy: 'Last date: 22-08-2026' },
+        { title: 'Acceptance email for presentation', copy: 'Last date: 11-09-2026' },
+    ],
+};
+
+const hrCoreAreaOptions = [
+    'Production / Manufacturing',
+    'QA/QC',
+    'Marketing / Sales',
+    'Pharmacist',
+    'Pharmacovigilance / Clinical Trial',
+    'Regulatory / Documentation',
+    'Higher Studies',
+    'Others',
 ];
 
 const defaultAccommodationTravelContent = {
@@ -271,6 +291,38 @@ async function ensureAccommodationTravelContent(sql) {
     return existing[0] || { content: defaultAccommodationTravelContent, updated_at: null };
 }
 
+async function ensureHomeContent(sql) {
+    await sql`
+        CREATE TABLE IF NOT EXISTS home_content (
+            id TEXT PRIMARY KEY DEFAULT 'main',
+            content JSONB NOT NULL DEFAULT '{}'::jsonb,
+            updated_by BIGINT REFERENCES admin_users(id),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `;
+
+    const rows = await sql`
+        INSERT INTO home_content (id, content)
+        VALUES ('main', ${JSON.stringify(defaultHomeContent)}::jsonb)
+        ON CONFLICT (id) DO NOTHING
+        RETURNING content, updated_at
+    `;
+
+    if (rows.length) {
+        return rows[0];
+    }
+
+    const existing = await sql`
+        SELECT content, updated_at
+        FROM home_content
+        WHERE id = 'main'
+        LIMIT 1
+    `;
+
+    return existing[0] || { content: defaultHomeContent, updated_at: null };
+}
+
 function slugifyFilePart(value, fallback = 'photo') {
     const slug = String(value || '')
         .toLowerCase()
@@ -382,6 +434,12 @@ function getRegistrationMailRecipient(registration = {}) {
     return registration.email || registration.groupCoordinatorEmail || registration.hrEmail || '';
 }
 
+function getUniqueMailRecipients(values = []) {
+    return [...new Set(values
+        .map((value) => String(value || '').trim().toLowerCase())
+        .filter((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)))];
+}
+
 function summarizeGroupProgramSelections(groupMembers = [], field) {
     if (!Array.isArray(groupMembers)) return '';
     return groupMembers
@@ -393,7 +451,67 @@ function summarizeGroupProgramSelections(groupMembers = [], field) {
         .join(' | ');
 }
 
-function buildRegistrationSubmittedMailBody(registration) {
+function summarizeGroupSingleSelections(groupMembers = [], field, emptyValue = '') {
+    if (!Array.isArray(groupMembers)) return '';
+    return groupMembers
+        .map((member) => {
+            const selection = String(member?.[field] || '').trim();
+            return selection && selection !== emptyValue ? `${member.name}: ${selection}` : '';
+        })
+        .filter(Boolean)
+        .join(' | ');
+}
+
+function formatMailCurrency(value) {
+    return `Rs. ${(Number(value) || 0).toLocaleString('en-IN')}`;
+}
+
+function formatMailBoolean(value) {
+    return value === true || value === 'Yes' ? 'Yes' : 'No';
+}
+
+function joinMailList(value, fallback = 'None selected') {
+    return Array.isArray(value) && value.length ? value.join(', ') : fallback;
+}
+
+function groupMemberRegistrationNumber(parentRegistrationNumber, index) {
+    return parentRegistrationNumber ? `${parentRegistrationNumber}-${String(index + 1).padStart(3, '0')}` : '';
+}
+
+function assignGroupMemberRegistrationNumbers(groupMembers = [], parentRegistrationNumber = '') {
+    return groupMembers.map((member, index) => ({
+        ...member,
+        registrationNumber: member.registrationNumber || groupMemberRegistrationNumber(parentRegistrationNumber, index),
+    }));
+}
+
+function buildGroupStudentRegistration(registration, member, index) {
+    return {
+        ...registration,
+        registrationMode: 'individual',
+        registrationNumber: member.registrationNumber || groupMemberRegistrationNumber(registration.registrationNumber, index),
+        participantName: member.name || `Student ${index + 1}`,
+        email: member.email || registration.groupCoordinatorEmail || '',
+        whatsappNumber: member.whatsapp || registration.groupCoordinatorWhatsapp || '',
+        category: member.category || registration.category || '',
+        stateOfResidence: member.state || registration.stateOfResidence || '',
+        foodPreference: member.foodPreference || '',
+        courseOfStudy: member.course || '',
+        collegeWithState: member.college || registration.institutionName || '',
+        studentCompetitions: Array.isArray(member.competitions) ? member.competitions : [],
+        selectedWorkshops: Array.isArray(member.workshops) ? member.workshops : [],
+        presentationType: member.presentationType || 'Not Participating',
+        hrCoreArea: member.hrCoreArea || '',
+        hrDriveParticipation: member.hrCoreArea ? 'participating' : 'not_participating',
+        groupMembers: [],
+        groupCoordinatorName: registration.groupCoordinatorName,
+        groupCoordinatorEmail: registration.groupCoordinatorEmail,
+        groupCoordinatorWhatsapp: registration.groupCoordinatorWhatsapp,
+        institutionName: registration.institutionName,
+    };
+}
+
+function getRegistrationMailSummary(registration) {
     const isGroup = registration.registrationMode === 'group';
     const competitionSummary = isGroup
         ? summarizeGroupProgramSelections(registration.groupMembers, 'competitions') || 'None selected'
@@ -401,52 +519,212 @@ function buildRegistrationSubmittedMailBody(registration) {
     const workshopSummary = isGroup
         ? summarizeGroupProgramSelections(registration.groupMembers, 'workshops') || 'None selected'
         : (registration.selectedWorkshops || []).join(', ') || 'None selected';
+    const presentationSummary = isGroup
+        ? summarizeGroupSingleSelections(registration.groupMembers, 'presentationType', 'Not Participating') || 'Not selected'
+        : registration.presentationType || 'Not selected';
     const hrSummary = registration.hrCoreArea
         ? `${registration.hrCoreArea}${registration.hrEmail ? `, ${registration.hrEmail}` : ''}${registration.hrWhatsappNumber ? `, ${registration.hrWhatsappNumber}` : ''}`
         : 'Not participating';
+    const groupHrSummary = isGroup
+        ? summarizeGroupSingleSelections(registration.groupMembers, 'hrCoreArea') || 'Not participating'
+        : hrSummary;
+    const primaryName = registration.participantName || registration.groupCoordinatorName || 'Delegate';
+    const institution = registration.institutionName || registration.collegeWithState || '-';
+    const contactEmail = registration.email || registration.groupCoordinatorEmail || registration.hrEmail || '-';
+    const contactPhone = registration.whatsappNumber || registration.groupCoordinatorWhatsapp || registration.hrWhatsappNumber || '-';
+    const groupMembers = Array.isArray(registration.groupMembers) ? registration.groupMembers : [];
+
+    return {
+        isGroup,
+        primaryName,
+        institution,
+        contactEmail,
+        contactPhone,
+        competitionSummary,
+        workshopSummary,
+        presentationSummary,
+        hrSummary,
+        groupHrSummary,
+        rows: [
+            ['Registration Number', registration.registrationNumber || '-'],
+            ['Registration Type', isGroup ? 'Group Registration' : 'Individual Registration'],
+            ['Name', primaryName],
+            ['Category', registration.category || '-'],
+            ['Institution / College', institution],
+            ['State', registration.stateOfResidence || '-'],
+            ['Email', contactEmail],
+            ['WhatsApp', contactPhone],
+            ['Food Preference', registration.foodPreference || '-'],
+            ['Course', registration.courseOfStudy || '-'],
+            ['Presentation', presentationSummary],
+            ['Competitions Opted', competitionSummary],
+            ['Workshops Opted', workshopSummary],
+            ['HR Drive', isGroup ? groupHrSummary : hrSummary],
+            ['Competition Fee Acknowledged', formatMailBoolean(registration.competitionFeeAcknowledged)],
+            ['Workshop Fee Acknowledged', formatMailBoolean(registration.workshopFeeAcknowledged)],
+            ['Registration Fee', formatMailCurrency(registration.registrationFee)],
+            ['Competition Fee', formatMailCurrency(registration.competitionFee)],
+            ['Workshop Fee', formatMailCurrency(registration.workshopFee)],
+            ['Total Payable', formatMailCurrency(registration.totalPayableAmount)],
+            ['Transaction Details', registration.transactionDetails || '-'],
+            ['Payment Status', formatStatusLabel(registration.paymentStatus)],
+            ['Approval Status', formatStatusLabel(registration.approvalStatus)],
+        ],
+        groupMembers,
+    };
+}
+
+function buildRegistrationSummaryHtml(registration) {
+    const summary = getRegistrationMailSummary(registration);
+    const rowsHtml = summary.rows
+        .map(([label, value]) => `
+            <tr>
+                <td style="padding:8px 10px;border:1px solid #e4e4e7;background:#f8fafc;font-weight:bold;width:38%">${escapeHtml(label)}</td>
+                <td style="padding:8px 10px;border:1px solid #e4e4e7">${escapeHtml(value)}</td>
+            </tr>
+        `)
+        .join('');
+    const groupRowsHtml = summary.isGroup && summary.groupMembers.length
+        ? `
+            <h3 style="margin:18px 0 8px;color:#0d124f">Group Student Details</h3>
+            <table style="border-collapse:collapse;width:100%;font-size:13px">
+                <thead>
+                    <tr>
+                        ${['Reg. No.', 'Student', 'Email', 'WhatsApp', 'Course', 'College', 'Competitions', 'Workshop', 'Presentation', 'HR Drive'].map((label) => `<th style="padding:8px;border:1px solid #e4e4e7;background:#eef2ff;text-align:left">${escapeHtml(label)}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${summary.groupMembers.map((member) => `
+                        <tr>
+                            <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.registrationNumber || '-')}</td>
+                            <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.name || '-')}</td>
+                            <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.email || '-')}</td>
+                            <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.whatsapp || '-')}</td>
+                            <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.course || '-')}</td>
+                            <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.college || '-')}</td>
+                            <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(joinMailList(member.competitions))}</td>
+                            <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(joinMailList(member.workshops))}</td>
+                            <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.presentationType || 'Not Participating')}</td>
+                            <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.hrCoreArea || 'Not participating')}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `
+        : '';
+
+    return `
+        <h3 style="margin:18px 0 8px;color:#0d124f">Registration Details</h3>
+        <table style="border-collapse:collapse;width:100%;font-size:14px">
+            <tbody>${rowsHtml}</tbody>
+        </table>
+        ${groupRowsHtml}
+    `;
+}
+
+function buildRegistrationSummaryText(registration) {
+    const summary = getRegistrationMailSummary(registration);
+    const lines = [
+        'Registration Details',
+        ...summary.rows.map(([label, value]) => `${label}: ${value}`),
+    ];
+    if (summary.isGroup && summary.groupMembers.length) {
+        lines.push('', 'Group Student Details');
+        summary.groupMembers.forEach((member, index) => {
+            lines.push(`${index + 1}. Reg. No.: ${member.registrationNumber || '-'} | ${member.name || '-'} | Email: ${member.email || '-'} | WhatsApp: ${member.whatsapp || '-'} | Course: ${member.course || '-'} | College: ${member.college || '-'} | Competitions: ${joinMailList(member.competitions)} | Workshop: ${joinMailList(member.workshops)} | Presentation: ${member.presentationType || 'Not Participating'} | HR Drive: ${member.hrCoreArea || 'Not participating'}`);
+        });
+    }
+    return lines.join('\n');
+}
+
+function buildRegistrationSubmittedMail(registration) {
+    const summary = getRegistrationMailSummary(registration);
+    const safeName = escapeHtml(summary.primaryName);
+    const htmlBody = `
+        <p>Dear ${safeName},</p>
+        <p>Your registration has been received successfully. Registration number: <strong>${escapeHtml(registration.registrationNumber || '-')}</strong>.</p>
+        <p>Registration status: <strong>Pending Review</strong>.</p>
+        ${buildRegistrationSummaryHtml(registration)}
+        <p>Please keep this registration number for abstract submission and future updates.</p>
+    `;
+    const textBody = [
+        `Dear ${summary.primaryName},`,
+        `Your registration has been received successfully. Registration number: ${registration.registrationNumber || '-'}.`,
+        'Registration status: Pending Review.',
+        '',
+        buildRegistrationSummaryText(registration),
+        '',
+        'Please keep this registration number for abstract submission and future updates.',
+    ].join('\n');
+
+    return { htmlBody, textBody };
+}
+
+function buildRegistrationSubmittedMailBody(registration) {
+    const summary = getRegistrationMailSummary(registration);
 
     return [
-        `Dear ${registration.participantName || registration.groupCoordinatorName || 'Delegate'},`,
+        `Dear ${summary.primaryName},`,
         `Your registration has been received successfully. Registration number: ${registration.registrationNumber || '-'}.`,
         'Registration status: Pending.',
-        `Registration type: ${isGroup ? 'Group Registration' : 'Individual Registration'}.`,
-        isGroup
+        `Registration type: ${summary.isGroup ? 'Group Registration' : 'Individual Registration'}.`,
+        summary.isGroup
             ? `Institution: ${registration.institutionName || '-'}; Coordinator: ${registration.groupCoordinatorName || '-'}; Students uploaded: ${(registration.groupMembers || []).length}.`
             : `Participant: ${registration.participantName || '-'}; Category: ${registration.category || '-'}; Email: ${registration.email || '-'}.`,
         `Category: ${registration.category || '-'}.`,
-        `Student competitions: ${competitionSummary}.`,
-        `Workshop: ${workshopSummary}.`,
-        `Presentation: ${registration.presentationType || 'Not selected'}.`,
-        `HR Drive: ${hrSummary}.`,
+        `Student competitions: ${summary.competitionSummary}.`,
+        `Workshop: ${summary.workshopSummary}.`,
+        `Presentation: ${summary.presentationSummary}.`,
+        `HR Drive: ${summary.isGroup ? summary.groupHrSummary : summary.hrSummary}.`,
         'Please keep this registration number for abstract submission and future updates.',
     ];
 }
 
 function buildConfirmedRegistrationMail(registration) {
     const delegateId = registration.registrationNumber || '-';
-    const participantName = registration.participantName || registration.groupCoordinatorName || 'Participant';
+    const summary = getRegistrationMailSummary(registration);
+    const participantName = summary.primaryName || 'Participant';
     const qrPayload = [
         '14th IPA NSC 2026',
-        `Delegate ID: ${delegateId}`,
+        `Registration Number: ${delegateId}`,
         `Name: ${participantName}`,
         `Type: ${registration.registrationMode === 'group' ? 'Group Registration' : 'Individual Registration'}`,
-        `Institution: ${registration.institutionName || registration.collegeWithState || '-'}`,
+        `Category: ${registration.category || '-'}`,
+        `Institution: ${summary.institution}`,
+        `Email: ${summary.contactEmail}`,
+        `WhatsApp: ${summary.contactPhone}`,
     ].join('\n');
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrPayload)}`;
     const portalUrl = 'https://nsc2026.ipakerala.org';
     const whatsAppCommunityUrl = 'https://chat.whatsapp.com/Cx1Kgf5tlHQJLSrvkl3liP';
     const safeDelegateId = escapeHtml(delegateId);
     const safeName = escapeHtml(participantName);
+    const qrDetailsHtml = [
+        ['Name', participantName],
+        ['Registration Number', delegateId],
+        ['Type', registration.registrationMode === 'group' ? 'Group Registration' : 'Individual Registration'],
+        ['Category', registration.category || '-'],
+        ['Institution', summary.institution],
+        ['Email', summary.contactEmail],
+        ['WhatsApp', summary.contactPhone],
+    ].map(([label, value]) => `
+        <tr>
+            <td style="padding:5px 0;color:#52525b;font-size:12px;text-align:left">${escapeHtml(label)}</td>
+            <td style="padding:5px 0;font-weight:bold;font-size:12px;text-align:right">${escapeHtml(value)}</td>
+        </tr>
+    `).join('');
     const htmlBody = `
-        <p>Dear participant,</p>
+        <p>Dear ${safeName},</p>
         <p><strong>Congratulations!</strong></p>
         <p>Your registration for the <strong>14th IPA National Student Congress (IPA NSC) 2026</strong>, organized by the Indian Pharmaceutical Association (IPA) Kerala State Branch, has been verified and confirmed.</p>
         <p>Your Registration/Delegate ID Number is: <strong>${safeDelegateId}</strong></p>
         <div style="margin:20px 0;padding:16px;border:1px solid #d4d4d8;border-radius:12px;background:#f8fafc;max-width:340px;text-align:center">
             <p style="margin:0 0 10px;font-weight:bold;color:#0d124f">E-Ticket / Gate Pass QR</p>
             <img src="${qrUrl}" alt="QR Gate Pass for ${safeName}" width="220" height="220" style="display:block;margin:0 auto 10px;border:0" />
+            <table style="border-collapse:collapse;width:100%;margin:8px 0 10px">${qrDetailsHtml}</table>
             <p style="margin:0;font-size:13px;color:#52525b">Present this QR at the registration desk for quick scanning and entry.</p>
         </div>
+        ${buildRegistrationSummaryHtml(registration)}
         <p><strong>These following critical actions are required from your end:</strong></p>
         <ol>
             <li>Please save this QR gate pass for future reference. You can present it digitally on your smartphone or carry a printed copy to the venue at the registration desk for quick barcode scanning and entry.</li>
@@ -458,11 +736,17 @@ function buildConfirmedRegistrationMail(registration) {
         <p><strong>Organizing Secretariat</strong><br>14th IPA NSC 2026<br>&amp;<br>IPA Kerala State Branch</p>
     `;
     const textBody = [
-        'Dear participant,',
+        `Dear ${participantName},`,
         'Congratulations!',
         'Your registration for the 14th IPA National Student Congress (IPA NSC) 2026, organized by the Indian Pharmaceutical Association (IPA) Kerala State Branch, has been verified and confirmed.',
         `Your Registration/Delegate ID Number is: ${delegateId}`,
+        `Name: ${participantName}`,
+        `Category: ${registration.category || '-'}`,
+        `Institution: ${summary.institution}`,
+        `Email: ${summary.contactEmail}`,
+        `WhatsApp: ${summary.contactPhone}`,
         `E-Ticket / Gate Pass QR: ${qrUrl}`,
+        buildRegistrationSummaryText(registration),
         'These following critical actions are required from your end:',
         '1. Please save this QR gate pass for future reference. You can present it digitally on your smartphone or carry a printed copy to the venue at the registration desk for quick barcode scanning and entry.',
         `2. Visit our official web portal for brochures, detailed information, and guidelines of scientific events and student competitions: ${portalUrl}`,
@@ -479,31 +763,49 @@ function buildConfirmedRegistrationMail(registration) {
 }
 
 async function getRegistrationContactForMail(sql, registrationNumber) {
-    const rows = await sql`
-        SELECT registration_number, participant_name, group_coordinator_name, email,
-               group_coordinator_email, hr_email, payment_status, approval_status
-        FROM event_registrations
-        WHERE registration_number = ${registrationNumber}
-        LIMIT 1
-    `;
-    if (!rows.length) return null;
+    const row = await findRegistrationForPublicNumber(sql, registrationNumber);
+    if (!row) return null;
     return {
-        registrationNumber: rows[0].registration_number || '',
-        name: rows[0].participant_name || rows[0].group_coordinator_name || 'Delegate',
-        email: rows[0].email || rows[0].group_coordinator_email || rows[0].hr_email || '',
-        paymentStatus: rows[0].payment_status || '',
-        approvalStatus: rows[0].approval_status || '',
+        registrationNumber: row.canonicalRegistrationNumber || '',
+        name: row.contactName || 'Delegate',
+        email: row.contactEmail || '',
+        paymentStatus: row.payment_status || '',
+        approvalStatus: row.approval_status || '',
     };
 }
 
 async function notifyRegistrationSubmitted(registration) {
-    const to = getRegistrationMailRecipient(registration);
-    await sendStudentMail({
+    const summaryRecipients = registration.registrationMode === 'group'
+        ? getUniqueMailRecipients([registration.groupCoordinatorEmail])
+        : getUniqueMailRecipients([getRegistrationMailRecipient(registration)]);
+    const { htmlBody, textBody } = buildRegistrationSubmittedMail(registration);
+
+    await Promise.all(summaryRecipients.map((to) => sendStudentMail({
         to,
         subject: `Registration received - ${registration.registrationNumber || 'NSC 2026'}`,
         preview: 'Your NSC 2026 registration has been received.',
-        body: buildRegistrationSubmittedMailBody(registration),
-    }).catch((error) => console.error('notifyRegistrationSubmitted failed:', error));
+        htmlBody,
+        textBody,
+    }))).catch((error) => console.error('notifyRegistrationSubmitted coordinator failed:', error));
+
+    if (registration.registrationMode !== 'group') {
+        return;
+    }
+
+    const groupMembers = Array.isArray(registration.groupMembers) ? registration.groupMembers : [];
+    await Promise.all(groupMembers
+        .filter((member) => member.email)
+        .map((member, index) => {
+            const studentRegistration = buildGroupStudentRegistration(registration, member, index);
+            const studentMail = buildRegistrationSubmittedMail(studentRegistration);
+            return sendStudentMail({
+                to: member.email,
+                subject: `Registration received - ${studentRegistration.registrationNumber || 'NSC 2026'}`,
+                preview: 'Your NSC 2026 student registration has been received.',
+                htmlBody: studentMail.htmlBody,
+                textBody: studentMail.textBody,
+            });
+        })).catch((error) => console.error('notifyRegistrationSubmitted students failed:', error));
 }
 
 async function notifyPaymentUpdated(registration) {
@@ -522,30 +824,92 @@ async function notifyPaymentUpdated(registration) {
 }
 
 async function notifyApprovalUpdated(registration) {
-    const to = getRegistrationMailRecipient(registration);
+    const recipients = registration.registrationMode === 'group'
+        ? getUniqueMailRecipients([registration.groupCoordinatorEmail])
+        : getUniqueMailRecipients([getRegistrationMailRecipient(registration)]);
     if (registration.approvalStatus === 'approved') {
         const { htmlBody, textBody } = buildConfirmedRegistrationMail(registration);
-        await sendStudentMail({
+        await Promise.all(recipients.map((to) => sendStudentMail({
             to,
             subject: `Registration confirmed - ${registration.registrationNumber || '14th IPA NSC 2026'}`,
             preview: 'Your 14th IPA NSC 2026 registration has been verified and confirmed.',
             htmlBody,
             textBody,
-        }).catch((error) => console.error('notifyApprovalUpdated confirmed mail failed:', error));
+        }))).catch((error) => console.error('notifyApprovalUpdated coordinator confirmed mail failed:', error));
+
+        if (registration.registrationMode === 'group') {
+            const groupMembers = Array.isArray(registration.groupMembers) ? registration.groupMembers : [];
+            await Promise.all(groupMembers
+                .filter((member) => member.email)
+                .map((member, index) => {
+                    const studentRegistration = buildGroupStudentRegistration(registration, member, index);
+                    const studentMail = buildConfirmedRegistrationMail(studentRegistration);
+                    return sendStudentMail({
+                        to: member.email,
+                        subject: `Registration confirmed - ${studentRegistration.registrationNumber || '14th IPA NSC 2026'}`,
+                        preview: 'Your 14th IPA NSC 2026 registration has been verified and confirmed.',
+                        htmlBody: studentMail.htmlBody,
+                        textBody: studentMail.textBody,
+                    });
+                })).catch((error) => console.error('notifyApprovalUpdated student confirmed mail failed:', error));
+        }
         return;
     }
-    await sendStudentMail({
+
+    const htmlBody = `
+        <p>Dear ${escapeHtml(registration.participantName || registration.groupCoordinatorName || 'Delegate')},</p>
+        <p>Your registration <strong>${escapeHtml(registration.registrationNumber || '-')}</strong> approval status has been updated to <strong>${escapeHtml(formatStatusLabel(registration.approvalStatus))}</strong>.</p>
+        ${buildRegistrationSummaryHtml(registration)}
+        <p>Please watch your email and the portal for further updates.</p>
+    `;
+    const textBody = [
+        `Dear ${registration.participantName || registration.groupCoordinatorName || 'Delegate'},`,
+        `Your registration ${registration.registrationNumber || '-'} approval status has been updated to ${formatStatusLabel(registration.approvalStatus)}.`,
+        '',
+        buildRegistrationSummaryText(registration),
+        '',
+        'Please watch your email and the portal for further updates.',
+    ].join('\n');
+
+    await Promise.all(recipients.map((to) => sendStudentMail({
         to,
         subject: `Registration approval updated - ${registration.registrationNumber || 'NSC 2026'}`,
         preview: `Your registration approval status is now ${formatStatusLabel(registration.approvalStatus)}.`,
-        body: [
-            `Dear ${registration.participantName || registration.groupCoordinatorName || 'Delegate'},`,
-            `Your registration ${registration.registrationNumber || '-'} approval status has been updated to ${formatStatusLabel(registration.approvalStatus)}.`,
-            registration.approvalStatus === 'approved'
-                ? 'If your payment status is also success, you may proceed with eligible scientific submissions from the portal.'
-                : 'Please watch your email and the portal for further updates.',
-        ],
-    }).catch((error) => console.error('notifyApprovalUpdated failed:', error));
+        htmlBody,
+        textBody,
+    }))).catch((error) => console.error('notifyApprovalUpdated coordinator failed:', error));
+
+    if (registration.registrationMode !== 'group') {
+        return;
+    }
+
+    const groupMembers = Array.isArray(registration.groupMembers) ? registration.groupMembers : [];
+    await Promise.all(groupMembers
+        .filter((member) => member.email)
+        .map((member, index) => {
+            const studentRegistration = buildGroupStudentRegistration(registration, member, index);
+            const studentHtmlBody = `
+                <p>Dear ${escapeHtml(studentRegistration.participantName || 'Delegate')},</p>
+                <p>Your registration <strong>${escapeHtml(studentRegistration.registrationNumber || '-')}</strong> approval status has been updated to <strong>${escapeHtml(formatStatusLabel(registration.approvalStatus))}</strong>.</p>
+                ${buildRegistrationSummaryHtml(studentRegistration)}
+                <p>Please watch your email and the portal for further updates.</p>
+            `;
+            const studentTextBody = [
+                `Dear ${studentRegistration.participantName || 'Delegate'},`,
+                `Your registration ${studentRegistration.registrationNumber || '-'} approval status has been updated to ${formatStatusLabel(registration.approvalStatus)}.`,
+                '',
+                buildRegistrationSummaryText(studentRegistration),
+                '',
+                'Please watch your email and the portal for further updates.',
+            ].join('\n');
+            return sendStudentMail({
+                to: member.email,
+                subject: `Registration approval updated - ${studentRegistration.registrationNumber || 'NSC 2026'}`,
+                preview: `Your registration approval status is now ${formatStatusLabel(registration.approvalStatus)}.`,
+                htmlBody: studentHtmlBody,
+                textBody: studentTextBody,
+            });
+        })).catch((error) => console.error('notifyApprovalUpdated students failed:', error));
 }
 
 async function notifyAbstractReviewed(contact, submission) {
@@ -817,8 +1181,21 @@ async function ensureProgramCatalog(sql) {
     }
     await sql`
         INSERT INTO event_programs (name, program_type, description, price, sort_order)
-        VALUES ('NDDS Formulation and Characterization', 'workshop', 'Workshop session', 0, 40)
+        VALUES ('NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization', 'workshop', 'Workshop session', 0, 40)
         ON CONFLICT (program_type, name) DO NOTHING
+    `;
+    await sql`
+        UPDATE event_programs
+        SET name = 'NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization',
+            updated_at = NOW()
+        WHERE program_type = 'workshop'
+            AND name = 'NDDS Formulation and Characterization'
+            AND NOT EXISTS (
+                SELECT 1
+                FROM event_programs existing
+                WHERE existing.program_type = 'workshop'
+                    AND existing.name = 'NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization'
+            )
     `;
     await sql`
         UPDATE event_programs
@@ -976,6 +1353,27 @@ async function ensureRegistrationEnhancements(sql) {
         SET approval_status = 'pending_review'
         WHERE registration_status = 'submitted' AND approval_status = 'not_submitted'
     `;
+    await sql`
+        UPDATE event_registrations r
+        SET group_members = (
+            SELECT jsonb_agg(
+                CASE
+                    WHEN COALESCE(member->>'registrationNumber', '') = '' AND r.registration_number IS NOT NULL
+                        THEN member || jsonb_build_object('registrationNumber', r.registration_number || '-' || LPAD(ord::text, 3, '0'))
+                    ELSE member
+                END
+                ORDER BY ord
+            )
+            FROM jsonb_array_elements(COALESCE(r.group_members, '[]'::jsonb)) WITH ORDINALITY AS item(member, ord)
+        )
+        WHERE r.registration_mode = 'group'
+            AND r.registration_number IS NOT NULL
+            AND EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements(COALESCE(r.group_members, '[]'::jsonb)) AS member
+                WHERE COALESCE(member->>'registrationNumber', '') = ''
+            )
+    `;
 }
 
 function normalizeGroupMembers(value) {
@@ -992,12 +1390,19 @@ function normalizeGroupMembers(value) {
         college: String(member?.college || '').trim(),
         state: String(member?.state || '').trim(),
         foodPreference: String(member?.foodPreference || '').trim(),
+        registrationNumber: String(member?.registrationNumber || '').trim(),
         competitions: Array.isArray(member?.competitions)
             ? [...new Set(member.competitions.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 2)
             : [],
         workshops: Array.isArray(member?.workshops)
             ? [...new Set(member.workshops.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 1)
             : [],
+        presentationType: ['Oral Presentation', 'Poster Presentation'].includes(String(member?.presentationType || '').trim())
+            ? String(member.presentationType).trim()
+            : 'Not Participating',
+        hrCoreArea: hrCoreAreaOptions.includes(String(member?.hrCoreArea || '').trim())
+            ? String(member.hrCoreArea).trim()
+            : '',
     })).filter((member) => member.name);
 }
 
@@ -1030,6 +1435,7 @@ function mapRegistration(row, competitions = []) {
         selectedWorkshops: normalizeSelectedWorkshops(row.selected_workshops, row.pre_conference_workshop),
         workshopFeeAcknowledged: row.workshop_fee_acknowledged ? 'Yes' : 'No',
         presentationType: row.presentation_type || '',
+        hrDriveParticipation: row.hr_core_area ? 'participating' : 'not_participating',
         hrCollegeWithState: row.hr_college_with_state || '',
         hrCourseOrQualification: row.hr_course_or_qualification || '',
         hrWhatsappNumber: row.hr_whatsapp_number || '',
@@ -1075,6 +1481,7 @@ function mapAdminRegistration(row) {
         selectedWorkshops: normalizeSelectedWorkshops(row.selected_workshops, row.pre_conference_workshop),
         workshopFeeAcknowledged: Boolean(row.workshop_fee_acknowledged),
         presentationType: row.presentation_type || '',
+        hrDriveParticipation: row.hr_core_area ? 'participating' : 'not_participating',
         hrCollegeWithState: row.hr_college_with_state || '',
         hrCourseOrQualification: row.hr_course_or_qualification || '',
         hrWhatsappNumber: row.hr_whatsapp_number || '',
@@ -1107,6 +1514,14 @@ async function saveRegistration(sql, data, submit = false) {
     const expectedParticipants = data.expectedParticipants ? Number.parseInt(data.expectedParticipants, 10) : null;
     const groupMembers = data.registrationMode === 'group' ? normalizeGroupMembers(data.groupMembers) : [];
     const groupCompetitions = [...new Set(groupMembers.flatMap((member) => member.competitions))];
+    const groupPresentationTypes = [...new Set(groupMembers.map((member) => member.presentationType).filter((value) => value && value !== 'Not Participating'))];
+    const groupHrCoreAreas = [...new Set(groupMembers.map((member) => member.hrCoreArea).filter(Boolean))];
+    const presentationType = data.registrationMode === 'group'
+        ? groupPresentationTypes.length ? groupPresentationTypes.join(', ') : 'Not Participating'
+        : data.presentationType || 'Not Participating';
+    const hrCoreArea = data.registrationMode === 'group'
+        ? groupHrCoreAreas.join(', ')
+        : data.hrCoreArea || '';
     const selectedWorkshops = data.workshopParticipation === 'not_participating'
         ? []
         : data.registrationMode === 'group'
@@ -1163,8 +1578,11 @@ async function saveRegistration(sql, data, submit = false) {
             throw inputError('One or more selected programs are not available for this category. Review your selections.');
         }
         if (data.hrDriveParticipation !== 'not_participating') {
+            if (data.registrationMode === 'group' && !groupHrCoreAreas.length) {
+                throw inputError('Select at least one student for the HR Drive.');
+            }
             if (!String(data.hrCollegeWithState || '').trim() || !String(data.hrCourseOrQualification || '').trim()
-                || !String(data.hrWhatsappNumber || '').trim() || !String(data.hrCoreArea || '').trim()) {
+                || !String(data.hrWhatsappNumber || '').trim() || !String(hrCoreArea || '').trim()) {
                 throw inputError('Complete all HR Drive fields before submitting.');
             }
             if (!String(data.hrEmail || '').trim() || !String(data.hrEmailConfirmation || '').trim()) {
@@ -1200,9 +1618,9 @@ async function saveRegistration(sql, data, submit = false) {
             ${data.whatsappNumber || null}, ${data.email || null}, ${data.foodPreference || null},
             ${data.courseOfStudy || null}, ${data.collegeWithState || null},
             ${booleanValue(data.competitionFeeAcknowledged)}, ${selectedWorkshops[0] || null},
-            ${JSON.stringify(selectedWorkshops)}::jsonb, ${booleanValue(data.workshopFeeAcknowledged)}, ${data.presentationType || null},
+            ${JSON.stringify(selectedWorkshops)}::jsonb, ${booleanValue(data.workshopFeeAcknowledged)}, ${presentationType || null},
             ${data.hrCollegeWithState || null}, ${data.hrCourseOrQualification || null}, ${data.hrWhatsappNumber || null},
-            ${data.hrWhatsappConfirmation || null}, ${data.hrEmail || null}, ${data.hrEmailConfirmation || null}, ${data.hrCoreArea || null},
+            ${data.hrWhatsappConfirmation || null}, ${data.hrEmail || null}, ${data.hrEmailConfirmation || null}, ${hrCoreArea || null},
             ${fees.registrationFee}, ${fees.competitionFee}, ${fees.workshopFee}, ${fees.total},
             ${data.transactionDetails || null}, ${submit ? 'submitted' : 'draft'},
             ${submit ? 'pending_review' : 'not_submitted'},
@@ -1263,6 +1681,22 @@ async function saveRegistration(sql, data, submit = false) {
             RETURNING *
         `;
         Object.assign(row, updatedRows[0]);
+    }
+
+    if (row.registration_mode === 'group' && row.registration_number) {
+        const numberedGroupMembers = assignGroupMemberRegistrationNumbers(normalizeGroupMembers(row.group_members), row.registration_number);
+        const currentGroupMembers = JSON.stringify(normalizeGroupMembers(row.group_members));
+        const nextGroupMembers = JSON.stringify(numberedGroupMembers);
+        if (currentGroupMembers !== nextGroupMembers) {
+            const updatedRows = await sql`
+                UPDATE event_registrations
+                SET group_members = ${nextGroupMembers}::jsonb,
+                    updated_at = NOW()
+                WHERE id = ${row.id}
+                RETURNING *
+            `;
+            Object.assign(row, updatedRows[0]);
+        }
     }
 
     await sql`DELETE FROM registration_competitions WHERE registration_id = ${row.id}`;
@@ -1634,6 +2068,43 @@ function mapAbstractSubmission(row) {
     };
 }
 
+async function findRegistrationForPublicNumber(sql, registrationNumber) {
+    const normalized = String(registrationNumber || '').trim().toUpperCase().replace(/\s+/g, '');
+    if (!normalized) return null;
+
+    const rows = await sql`
+        SELECT r.id, r.registration_number, r.registration_mode, r.participant_name,
+               r.institution_name, r.group_coordinator_name, r.group_coordinator_email,
+               r.group_coordinator_whatsapp, r.email, r.whatsapp_number,
+               r.payment_status, r.approval_status, r.registration_status,
+               gm.member AS group_member
+        FROM event_registrations r
+        LEFT JOIN LATERAL (
+            SELECT member
+            FROM jsonb_array_elements(COALESCE(r.group_members, '[]'::jsonb)) AS member
+            WHERE UPPER(REPLACE(member->>'registrationNumber', ' ', '')) = ${normalized}
+            LIMIT 1
+        ) gm ON TRUE
+        WHERE UPPER(REPLACE(r.registration_number, ' ', '')) = ${normalized}
+           OR gm.member IS NOT NULL
+        LIMIT 1
+    `;
+    if (!rows.length) return null;
+
+    const row = rows[0];
+    const member = row.group_member || null;
+    const memberRegistrationNumber = member?.registrationNumber || member?.registration_number || '';
+    return {
+        ...row,
+        canonicalRegistrationNumber: memberRegistrationNumber || row.registration_number || registrationNumber,
+        contactName: member?.name || row.participant_name || row.group_coordinator_name || 'Delegate',
+        contactEmail: member?.email || row.email || row.group_coordinator_email || '',
+        contactWhatsapp: member?.whatsapp || row.whatsapp_number || row.group_coordinator_whatsapp || '',
+        displayInstitution: member?.college || row.institution_name || '',
+        isGroupMember: Boolean(member),
+    };
+}
+
 async function handlePublicAbstractRoute(path, request, response, sql) {
     if (path === 'abstracts/check' && request.method === 'GET') {
         await ensureAbstractSubmissions(sql);
@@ -1641,19 +2112,12 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
         if (!regNum) {
             return send(response, 400, { error: 'Registration number is required.' });
         }
-        const regRows = await sql`
-            SELECT id, registration_number, participant_name, institution_name,
-                   payment_status, approval_status, registration_status
-            FROM event_registrations
-            WHERE UPPER(REPLACE(registration_number, ' ', '')) = ${regNum.replace(/\s+/g, '')}
-            LIMIT 1
-        `;
-        if (!regRows.length) {
+        const reg = await findRegistrationForPublicNumber(sql, regNum);
+        if (!reg) {
             return send(response, 200, { valid: false });
         }
 
-        const reg = regRows[0];
-        const canonicalRegNum = reg.registration_number || regNum;
+        const canonicalRegNum = reg.canonicalRegistrationNumber || regNum;
         const absRows = await sql`
             SELECT status, file_name, poster_video_link, video_link_submitted_at
             FROM abstract_submissions
@@ -1673,8 +2137,8 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
                     : '';
         return send(response, 200, {
             valid: true,
-            participantName: reg.participant_name || '',
-            institutionName: reg.institution_name || '',
+            participantName: reg.contactName || '',
+            institutionName: reg.displayInstitution || '',
             paymentStatus: reg.payment_status || '',
             approvalStatus: reg.approval_status || '',
             registrationStatus: reg.registration_status || '',
@@ -1698,24 +2162,18 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
         const fileType = String(request.body?.fileType || '').trim();
         const validatedFile = validateAbstractUpload({ fileName, fileType, fileData, fileSize });
 
-        const regRows = await sql`
-            SELECT id, registration_number, participant_name, institution_name,
-                   payment_status, approval_status, registration_status
-            FROM event_registrations
-            WHERE UPPER(REPLACE(registration_number, ' ', '')) = ${regNum.replace(/\s+/g, '')}
-            LIMIT 1
-        `;
-        if (!regRows.length) throw inputError('Registration number not found.');
-        if (regRows[0].registration_status !== 'submitted') {
+        const reg = await findRegistrationForPublicNumber(sql, regNum);
+        if (!reg) throw inputError('Registration number not found.');
+        if (reg.registration_status !== 'submitted') {
             throw inputError('Registration must be submitted before abstract submission.');
         }
-        if (regRows[0].payment_status !== 'success') {
+        if (reg.payment_status !== 'success') {
             throw inputError('Payment must be marked success before abstract submission.');
         }
-        if (regRows[0].approval_status !== 'approved') {
+        if (reg.approval_status !== 'approved') {
             throw inputError('Registration must be approved before abstract submission.');
         }
-        const canonicalRegNum = regRows[0].registration_number || regNum;
+        const canonicalRegNum = reg.canonicalRegistrationNumber || regNum;
 
         const existing = await sql`
             SELECT id FROM abstract_submissions WHERE registration_number = ${canonicalRegNum} LIMIT 1
@@ -1735,8 +2193,8 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
                 (registration_number, participant_name, institution_name, file_name, file_size, file_type, file_url, blob_path, status)
             VALUES (
                 ${canonicalRegNum},
-                ${regRows[0].participant_name || null},
-                ${regRows[0].institution_name || null},
+                ${reg.contactName || null},
+                ${reg.displayInstitution || null},
                 ${fileName},
                 ${fileSize},
                 ${fileType || null},
@@ -1753,7 +2211,7 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
             subject: `Abstract received - ${canonicalRegNum}`,
             preview: 'Your abstract has been received and is pending review.',
             body: [
-                `Dear ${contact?.name || regRows[0].participant_name || 'Delegate'},`,
+                `Dear ${contact?.name || reg.contactName || 'Delegate'},`,
                 `Your abstract file "${fileName}" has been received for registration ${canonicalRegNum}.`,
                 'The scientific committee will review it and notify you by email when the status is updated.',
             ],
@@ -1896,6 +2354,11 @@ export default async function handler(request, response) {
 
         if (path === 'accommodation-travel' && request.method === 'GET') {
             const row = await ensureAccommodationTravelContent(sql);
+            return send(response, 200, { content: row.content, updatedAt: row.updated_at });
+        }
+
+        if (path === 'home-content' && request.method === 'GET') {
+            const row = await ensureHomeContent(sql);
             return send(response, 200, { content: row.content, updatedAt: row.updated_at });
         }
 
@@ -2349,6 +2812,14 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             return send(response, 200, { content: row.content, updatedAt: row.updated_at });
         }
 
+        if (path === 'admin/home-content' && request.method === 'GET') {
+            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.view')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const row = await ensureHomeContent(sql);
+            return send(response, 200, { content: row.content, updatedAt: row.updated_at });
+        }
+
         if (path === 'admin/accommodation-travel/tourist-attraction-photo' && request.method === 'POST') {
             if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
                 return send(response, 403, { error: 'Permission denied.' });
@@ -2424,6 +2895,24 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             const content = request.body?.content || defaultAccommodationTravelContent;
             const rows = await sql`
                 INSERT INTO accommodation_travel_content (id, content, updated_by, updated_at)
+                VALUES ('main', ${JSON.stringify(content)}::jsonb, ${session.id}, NOW())
+                ON CONFLICT (id) DO UPDATE SET
+                    content = EXCLUDED.content,
+                    updated_by = EXCLUDED.updated_by,
+                    updated_at = NOW()
+                RETURNING content, updated_at
+            `;
+            return send(response, 200, { content: rows[0].content, updatedAt: rows[0].updated_at });
+        }
+
+        if (path === 'admin/home-content' && request.method === 'PUT') {
+            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            await ensureHomeContent(sql);
+            const content = request.body?.content || defaultHomeContent;
+            const rows = await sql`
+                INSERT INTO home_content (id, content, updated_by, updated_at)
                 VALUES ('main', ${JSON.stringify(content)}::jsonb, ${session.id}, NOW())
                 ON CONFLICT (id) DO UPDATE SET
                     content = EXCLUDED.content,

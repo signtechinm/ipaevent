@@ -80,12 +80,27 @@ const pageHighlights = {
     'Partners and Sponsors': 'Showcase confirmed partners, sponsors, collaborators, and institutional supporters.',
 };
 
-const updates = [
-    ['Abstract Submission', 'Last date: 31-07-2026'],
-    ['Abstract Acceptance Mail', 'Last date: 05-08-2026'],
-    ['Video Submission and Evaluation', 'Last date: 22-08-2026'],
-    ['Acceptance email for presentation', 'Last date: 11-09-2026'],
-];
+const homeContentDefaults = {
+    newsUpdates: [
+        { title: 'Abstract Submission', copy: 'Last date: 31-07-2026' },
+        { title: 'Abstract Acceptance Mail', copy: 'Last date: 05-08-2026' },
+        { title: 'Video Submission and Evaluation', copy: 'Last date: 22-08-2026' },
+        { title: 'Acceptance email for presentation', copy: 'Last date: 11-09-2026' },
+    ],
+};
+
+function normalizeHomeContent(data = {}) {
+    const newsUpdates = Array.isArray(data.newsUpdates) ? data.newsUpdates : homeContentDefaults.newsUpdates;
+    return {
+        ...homeContentDefaults,
+        ...data,
+        newsUpdates: newsUpdates
+            .map((item = {}) => ({
+                title: String(item.title || '').trim(),
+                copy: String(item.copy || '').trim(),
+            })),
+    };
+}
 
 const preCongressWorkshops = [
     {
@@ -101,7 +116,7 @@ const preCongressWorkshops = [
         title: 'Molecular Docking & Molecular Dynamics Simulation, NDDS and Advanced in Neurological Screening Models',
         events: [
             { number: 3, name: 'Molecular Docking & Molecular Dynamics Simulation' },
-            { number: 4, name: 'NDDS' },
+            { number: 4, name: 'NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization' },
             { number: 5, name: 'Advanced in Neurological Screening Models' },
         ],
         date: '18 September 2026',
@@ -113,6 +128,7 @@ const postCongressWorkshop = {
     number: 7,
     title: 'FIP Vaccination Training (2 days)',
     copy: 'Post-congress hands-on vaccination training workshop.',
+    note: 'In post Congress session: For FIP Vaccination Training a BLS (Basic Life Support) Certificate or Training letter is mandatory. Others are not eligible to attend this workshop.',
     date: '21-22 September 2026',
     venue: 'Amrita School of Pharmacy, Ernakulam',
     host: 'IPA Kerala Branch',
@@ -691,6 +707,16 @@ function Header() {
 }
 
 function Hero() {
+    const [homeContent, setHomeContent] = useState(homeContentDefaults);
+
+    useEffect(() => {
+        apiRequest('home-content')
+            .then(({ content }) => setHomeContent(normalizeHomeContent(content)))
+            .catch(() => setHomeContent(homeContentDefaults));
+    }, []);
+
+    const newsUpdates = normalizeHomeContent(homeContent).newsUpdates.filter((item) => item.title || item.copy);
+
     return (
         <section id="home" className="relative overflow-hidden bg-[#0d124f] text-white">
             <img
@@ -738,14 +764,14 @@ function Hero() {
 
                 <aside id="news-and-updates" className="hero-panel self-end rounded-lg bg-white p-5 text-zinc-950 shadow-2xl">
                     <div className="flex items-center justify-between gap-4 border-b border-zinc-200 pb-4">
-                        <h2 className="text-base font-bold">Latest Updates</h2>
+                        <h2 className="text-base font-bold">Latest News and Updates</h2>
                         <span className="live-badge rounded-lg bg-[#e7f5ec] px-3 py-1 text-xs font-semibold text-[#00652f]">Live</span>
                     </div>
                     <div className="mt-4 space-y-4">
-                        {updates.map(([title, copy]) => (
-                            <div key={title} className="update-row rounded-lg p-2 transition duration-300 hover:bg-zinc-50">
-                                <p className="text-sm font-semibold text-zinc-900">{title}</p>
-                                <p className="mt-1 text-sm text-zinc-600">{copy}</p>
+                        {newsUpdates.map((item, index) => (
+                            <div key={`${item.title}-${index}`} className="update-row rounded-lg p-2 transition duration-300 hover:bg-zinc-50">
+                                {item.title && <p className="text-sm font-semibold text-zinc-900">{item.title}</p>}
+                                {item.copy && <p className="mt-1 text-sm text-zinc-600">{item.copy}</p>}
                             </div>
                         ))}
                     </div>
@@ -892,6 +918,7 @@ function QuickFacts() {
                                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#00652f]">Post-Congress Workshop</p>
                                     <h3 className="mt-2 text-2xl font-bold leading-snug text-[#11145f]">{postCongressWorkshop.title}</h3>
                                     <p className="mt-2 text-sm text-zinc-600">{postCongressWorkshop.copy}</p>
+                                    <p className="mt-3 text-sm font-bold leading-6 text-red-600">{postCongressWorkshop.note}</p>
                                 </div>
                             </div>
                             <dl className="grid shrink-0 gap-4 border-t border-dashed border-zinc-200 pt-4 sm:grid-cols-2 lg:min-w-[520px] lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
@@ -1292,6 +1319,13 @@ function RegistrationPage() {
         })
         .filter(Boolean)
         .join(' | ');
+    const groupSingleSelectionSummary = (field, emptyValue = '') => formData.groupMembers
+        .map((member) => {
+            const selection = String(member[field] || '').trim();
+            return selection && selection !== emptyValue ? `${member.name}: ${selection}` : '';
+        })
+        .filter(Boolean)
+        .join(' | ');
     const registrationStatusLabel = formData.registrationStatus === 'submitted' ? 'Pending' : 'Draft';
     const paymentStatusLabel = String(formData.paymentStatus || 'pending').replaceAll('_', ' ');
 
@@ -1389,6 +1423,8 @@ function RegistrationPage() {
                     ...member,
                     competitions: [],
                     workshops: [],
+                    presentationType: 'Not Participating',
+                    hrCoreArea: '',
                 })),
                 expectedParticipants: String(groupMembers.length),
             }));
@@ -1476,6 +1512,38 @@ function RegistrationPage() {
         setNotice('');
     }
 
+    function updateGroupMemberPresentation(memberIndex, presentationType) {
+        setFormData((current) => {
+            const groupMembers = current.groupMembers.map((member, index) => (
+                index === memberIndex ? { ...member, presentationType } : member
+            ));
+            const selectedTypes = [...new Set(groupMembers.map((member) => member.presentationType).filter((value) => value && value !== 'Not Participating'))];
+
+            return {
+                ...current,
+                groupMembers,
+                presentationType: selectedTypes.length ? selectedTypes.join(', ') : 'Not Participating',
+            };
+        });
+        setNotice('');
+    }
+
+    function updateGroupMemberHrCoreArea(memberIndex, hrCoreArea) {
+        setFormData((current) => {
+            const groupMembers = current.groupMembers.map((member, index) => (
+                index === memberIndex ? { ...member, hrCoreArea } : member
+            ));
+            const selectedAreas = [...new Set(groupMembers.map((member) => member.hrCoreArea).filter(Boolean))];
+
+            return {
+                ...current,
+                groupMembers,
+                hrCoreArea: selectedAreas.join(', '),
+            };
+        });
+        setNotice('');
+    }
+
     function updateParticipation(field, value) {
         setFormData((current) => {
             if (field === 'competitionParticipation' && value === 'not_participating') {
@@ -1508,6 +1576,7 @@ function RegistrationPage() {
                     hrEmail: '',
                     hrEmailConfirmation: '',
                     hrCoreArea: '',
+                    groupMembers: current.groupMembers.map((member) => ({ ...member, hrCoreArea: '' })),
                 };
             }
             return { ...current, [field]: value };
@@ -1570,6 +1639,11 @@ function RegistrationPage() {
         const hrPartiallyFilled = formData.hrCollegeWithState.trim() || formData.hrCourseOrQualification.trim()
             || formData.hrWhatsappNumber.trim() || formData.hrEmail.trim() || formData.hrCoreArea;
         if (formData.hrDriveParticipation !== 'not_participating' || hrPartiallyFilled) {
+            if (isGroupRegistration && !formData.groupMembers.some((member) => member.hrCoreArea)) {
+                setActiveTab('hr-drive');
+                setNotice('Select at least one student for the HR Drive.');
+                return;
+            }
             if (formData.hrWhatsappNumber.trim() !== formData.hrWhatsappConfirmation.trim()) {
                 setActiveTab('hr-drive');
                 setNotice('The HR Drive WhatsApp numbers do not match.');
@@ -2141,6 +2215,9 @@ function RegistrationPage() {
                                 </div>
                                 <div>
                                     <p className={labelClass}>Post-Congress Workshop Area</p>
+                                    <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-bold leading-6 text-red-700">
+                                        {postCongressWorkshop.note}
+                                    </p>
                                     {!formData.category ? (
                                         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Select a category in the General step to view available post-congress workshops and prices.</p>
                                     ) : isGroupRegistration && !formData.groupMembers.length ? (
@@ -2226,27 +2303,71 @@ function RegistrationPage() {
                         {activeTab === 'presentation' && (
                             <div className="mt-6">
                                 <p className={labelClass}>Presentation Type</p>
-                                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                    {['Not Participating', 'Oral Presentation', 'Poster Presentation'].map((option) => (
-                                        <label
-                                            key={option}
-                                            className={`rounded-lg border p-4 text-sm font-bold ${
-                                                formData.presentationType === option
-                                                    ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
-                                                    : 'border-zinc-200 bg-white text-zinc-700'
-                                            }`}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="presentationType"
-                                                className="mr-2"
-                                                checked={formData.presentationType === option}
-                                                onChange={() => updateField('presentationType', option)}
-                                            />
-                                            {option}
-                                        </label>
-                                    ))}
-                                </div>
+                                {isGroupRegistration ? (
+                                    !formData.groupMembers.length ? (
+                                        <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Upload the student roster in the General step to assign presentation choices.</p>
+                                    ) : (
+                                        <div className="mt-3 grid gap-3 md:grid-cols-3">
+                                            {['Not Participating', 'Oral Presentation', 'Poster Presentation'].map((option) => (
+                                                <article key={option} className="rounded-lg border border-zinc-200 bg-white p-4">
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div>
+                                                            <h4 className="text-sm font-bold text-zinc-950">{option}</h4>
+                                                            <p className="mt-1 text-xs text-zinc-500">Select students for this presentation choice.</p>
+                                                        </div>
+                                                        <span className="shrink-0 text-xs font-bold text-emerald-700">
+                                                            {formData.groupMembers.filter((member) => (member.presentationType || 'Not Participating') === option).length} selected
+                                                        </span>
+                                                    </div>
+                                                    <div className="mt-3 max-h-56 space-y-2 overflow-auto rounded-lg border border-zinc-100 bg-zinc-50 p-2">
+                                                        {formData.groupMembers.map((member, index) => {
+                                                            const memberPresentation = member.presentationType || 'Not Participating';
+                                                            const memberChecked = memberPresentation === option;
+
+                                                            return (
+                                                                <label key={`${option}-${member.email || member.name}-${index}`} className={`flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold ${
+                                                                    memberChecked
+                                                                        ? 'border-emerald-500 bg-emerald-50 text-emerald-950'
+                                                                        : 'border-zinc-200 bg-white text-zinc-700'
+                                                                }`}>
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`group-presentation-${index}`}
+                                                                        checked={memberChecked}
+                                                                        onChange={() => updateGroupMemberPresentation(index, option)}
+                                                                    />
+                                                                    <span>{formatStudentLabel(member, index)}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </article>
+                                            ))}
+                                        </div>
+                                    )
+                                ) : (
+                                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                                        {['Not Participating', 'Oral Presentation', 'Poster Presentation'].map((option) => (
+                                            <label
+                                                key={option}
+                                                className={`rounded-lg border p-4 text-sm font-bold ${
+                                                    formData.presentationType === option
+                                                        ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
+                                                        : 'border-zinc-200 bg-white text-zinc-700'
+                                                }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="presentationType"
+                                                    className="mr-2"
+                                                    checked={formData.presentationType === option}
+                                                    onChange={() => updateField('presentationType', option)}
+                                                />
+                                                {option}
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -2333,17 +2454,59 @@ function RegistrationPage() {
                                 </label>
                                 <label className={`${labelClass} md:col-span-2`}>
                                     Select the core area of your preference
-                                    <select
-                                        className={fieldClass}
-                                        required={formData.hrDriveParticipation !== 'not_participating'}
-                                        value={formData.hrCoreArea}
-                                        onChange={(event) => updateField('hrCoreArea', event.target.value)}
-                                    >
-                                        <option value="">Choose</option>
-                                        {hrCoreAreaOptions.map((option) => (
-                                            <option key={option} value={option}>{option}</option>
-                                        ))}
-                                    </select>
+                                    {isGroupRegistration ? (
+                                        !formData.groupMembers.length ? (
+                                            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Upload the student roster in the General step to assign HR Drive core areas.</p>
+                                        ) : (
+                                            <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                                {hrCoreAreaOptions.map((option) => (
+                                                    <article key={option} className="rounded-lg border border-zinc-200 bg-white p-4">
+                                                        <div className="flex items-start justify-between gap-3">
+                                                            <div>
+                                                                <h4 className="text-sm font-bold text-zinc-950">{option}</h4>
+                                                                <p className="mt-1 text-xs text-zinc-500">Select students for this HR Drive core area.</p>
+                                                            </div>
+                                                            <span className="shrink-0 text-xs font-bold text-emerald-700">
+                                                                {formData.groupMembers.filter((member) => member.hrCoreArea === option).length} selected
+                                                            </span>
+                                                        </div>
+                                                        <div className="mt-3 max-h-56 space-y-2 overflow-auto rounded-lg border border-zinc-100 bg-zinc-50 p-2">
+                                                            {formData.groupMembers.map((member, index) => {
+                                                                const memberChecked = member.hrCoreArea === option;
+
+                                                                return (
+                                                                    <label key={`${option}-${member.email || member.name}-${index}`} className={`flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold ${
+                                                                        memberChecked
+                                                                            ? 'border-emerald-500 bg-emerald-50 text-emerald-950'
+                                                                            : 'border-zinc-200 bg-white text-zinc-700'
+                                                                    }`}>
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={memberChecked}
+                                                                            onChange={() => updateGroupMemberHrCoreArea(index, memberChecked ? '' : option)}
+                                                                        />
+                                                                        <span>{formatStudentLabel(member, index)}</span>
+                                                                    </label>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </article>
+                                                ))}
+                                            </div>
+                                        )
+                                    ) : (
+                                        <select
+                                            className={fieldClass}
+                                            required={formData.hrDriveParticipation !== 'not_participating'}
+                                            value={formData.hrCoreArea}
+                                            onChange={(event) => updateField('hrCoreArea', event.target.value)}
+                                        >
+                                            <option value="">Choose</option>
+                                            {hrCoreAreaOptions.map((option) => (
+                                                <option key={option} value={option}>{option}</option>
+                                            ))}
+                                        </select>
+                                    )}
                                 </label>
                                 </>
                                 )}
@@ -2399,13 +2562,13 @@ function RegistrationPage() {
                                         ['Competition Selections', `${formData.groupMembers.reduce((total, member) => total + (Array.isArray(member.competitions) ? member.competitions.length : 0), 0)} student entries`],
                                         ['Workshop Participation', formData.workshopParticipation === 'not_participating' ? 'Not participating' : 'Participating'],
                                         ['Workshop Selections', `${formData.groupMembers.reduce((total, member) => total + (Array.isArray(member.workshops) ? member.workshops.length : 0), 0)} student entries`],
-                                        ['Presentation', formData.presentationType || 'Not selected'],
+                                        ['Presentation', groupSingleSelectionSummary('presentationType', 'Not Participating') || 'Not selected'],
                                         ['HR Drive Participation', formData.hrDriveParticipation === 'not_participating' ? 'Not participating' : 'Participating'],
                                         ['HR College', formData.hrCollegeWithState || 'Not entered'],
                                         ['HR Course / Qualification', formData.hrCourseOrQualification || 'Not entered'],
                                         ['HR WhatsApp', formData.hrWhatsappNumber || 'Not entered'],
                                         ['HR Email', formData.hrEmail || 'Not entered'],
-                                        ['Preferred Core Area', formData.hrCoreArea || 'Not selected'],
+                                        ['Preferred Core Area', groupSingleSelectionSummary('hrCoreArea') || 'Not selected'],
                                         ['Registration Subtotal', `Rs. ${totals.registrationSubtotal.toLocaleString('en-IN')}`],
                                         ['Group Discount', totals.registrationDiscount ? `Rs. ${totals.registrationDiscount.toLocaleString('en-IN')}` : 'Not applicable'],
                                         ['Registration Fee', `Rs. ${totals.registrationFee.toLocaleString('en-IN')}`],
@@ -2471,8 +2634,8 @@ function RegistrationPage() {
                                             ['Primary Category', formData.category || 'Not selected'],
                                             ['Student Competitions', formData.competitionParticipation === 'not_participating' ? 'Not participating' : groupProgramSummary('competitions') || 'None selected'],
                                             ['Workshops', formData.workshopParticipation === 'not_participating' ? 'Not participating' : groupProgramSummary('workshops') || 'None selected'],
-                                            ['Presentation', formData.presentationType || 'Not selected'],
-                                            ['HR Drive', formData.hrDriveParticipation === 'not_participating' ? 'Not participating' : `${formData.hrCoreArea || 'Selected'} - ${formData.hrEmail || formData.hrWhatsappNumber || 'details entered'}`],
+                                            ['Presentation', groupSingleSelectionSummary('presentationType', 'Not Participating') || 'Not selected'],
+                                            ['HR Drive', formData.hrDriveParticipation === 'not_participating' ? 'Not participating' : groupSingleSelectionSummary('hrCoreArea') || `${formData.hrEmail || formData.hrWhatsappNumber || 'details entered'}`],
                                             ['Registration Fee', `Rs. ${totals.registrationFee.toLocaleString('en-IN')}`],
                                             ['Competition Fee', `Rs. ${totals.competitionFee.toLocaleString('en-IN')}`],
                                             ['Workshop Fee', `Rs. ${totals.workshopFee.toLocaleString('en-IN')}`],
@@ -3691,10 +3854,21 @@ function Contact() {
                             </section>
 
                             <section className="rounded-2xl bg-[#df0867]/15 p-5 ring-1 ring-[#df0867]/35 sm:p-6">
-                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">Official Email</p>
-                                <a href="mailto:ipakeralastate@gmail.com" className="mt-3 block break-all text-base font-bold text-white underline decoration-[#df0867] decoration-2 underline-offset-4 hover:text-[#ffd36a]">
-                                    ipakeralastate@gmail.com
-                                </a>
+                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">Email IDs</p>
+                                <div className="mt-3 grid gap-3">
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-wide text-white/55">Official Mail ID</p>
+                                        <a href="mailto:ipakeralastate@gmail.com" className="mt-1 block break-all text-base font-bold text-white underline decoration-[#df0867] decoration-2 underline-offset-4 hover:text-[#ffd36a]">
+                                            ipakeralastate@gmail.com
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-wide text-white/55">Scientific Services Mail ID</p>
+                                        <a href="mailto:nsc2026@ipakerala.org" className="mt-1 block break-all text-base font-bold text-white underline decoration-[#df0867] decoration-2 underline-offset-4 hover:text-[#ffd36a]">
+                                            nsc2026@ipakerala.org
+                                        </a>
+                                    </div>
+                                </div>
                             </section>
                         </div>
 
@@ -3918,6 +4092,14 @@ function AdminSidebarIcon({ name }) {
                 <path d="M15 17v-8" />
             </>
         ),
+        'home-content': (
+            <>
+                <path d="M4 11.5 12 5l8 6.5" />
+                <path d="M6 10.5V20h12v-9.5" />
+                <path d="M9 14h6" />
+                <path d="M9 17h4" />
+            </>
+        ),
         accommodation: (
             <>
                 <path d="M4 11.5 12 5l8 6.5" />
@@ -3987,6 +4169,7 @@ const adminModules = [
     { id: 'pricing', label: 'Pricing', description: 'Configure registration, competition, and workshop fees.' },
     { id: 'winners', label: 'Winners', description: 'Prepare and publish competition results.' },
     { id: 'reports', label: 'Reports', description: 'Generate operational and financial reports.' },
+    { id: 'home-content', label: 'Home CMS', description: 'Manage latest news and updates shown on the home page.' },
     { id: 'accommodation', label: 'Accommodation CMS', description: 'Publish stays, pickup points, and travel guidance.' },
     { id: 'users', label: 'Users & Roles', description: 'Manage admin accounts, roles, and permissions.' },
     { id: 'audit', label: 'Audit Logs', description: 'Review important administrative activity.' },
@@ -3998,7 +4181,7 @@ const adminNavigationGroups = [
     { label: 'Overview', modules: ['dashboard'] },
     { label: 'Registration', modules: ['registrations', 'students'] },
     { label: 'Event Setup', modules: ['categories', 'programs', 'pricing'] },
-    { label: 'Content', modules: ['abstracts', 'scientific', 'winners', 'accommodation'] },
+    { label: 'Content', modules: ['home-content', 'abstracts', 'scientific', 'winners', 'accommodation'] },
     { label: 'Reports', modules: ['reports', 'payments'] },
     { label: 'Administration', modules: ['users', 'audit'] },
 ];
@@ -4015,7 +4198,7 @@ const abstractsAdminSections = [
     { id: 'abstract-book', label: 'Abstract Book Submission', description: 'Upload or replace the final abstract book PDF shown on the public scientific page.' },
 ];
 
-const implementedAdminModules = new Set(['dashboard', 'registrations', 'students', 'payments', 'categories', 'pricing', 'programs', 'users', 'accommodation', 'scientific', 'abstracts']);
+const implementedAdminModules = new Set(['dashboard', 'registrations', 'students', 'payments', 'categories', 'pricing', 'programs', 'users', 'home-content', 'accommodation', 'scientific', 'abstracts']);
 
 function registrationStatusBadgeClass(status) {
     if (status === 'submitted') return 'bg-emerald-100 text-emerald-800';
@@ -4080,8 +4263,39 @@ function AdminPage() {
     const [registrationsLoading, setRegistrationsLoading] = useState(false);
     const [registrationsError, setRegistrationsError] = useState('');
     const [registrationSearch, setRegistrationSearch] = useState('');
+    const [registrationFilters, setRegistrationFilters] = useState({
+        mode: '',
+        registrationStatus: '',
+        paymentStatus: '',
+        approvalStatus: '',
+        category: '',
+        competition: '',
+        workshop: '',
+        presentation: '',
+        hrCoreArea: '',
+        foodPreference: '',
+        dateFrom: '',
+        dateTo: '',
+        minAmount: '',
+        maxAmount: '',
+    });
     const [paymentSearch, setPaymentSearch] = useState('');
     const [studentSearch, setStudentSearch] = useState('');
+    const [studentFilters, setStudentFilters] = useState({
+        mode: '',
+        registrationStatus: '',
+        paymentStatus: '',
+        approvalStatus: '',
+        category: '',
+        course: '',
+        competition: '',
+        workshop: '',
+        presentation: '',
+        hrCoreArea: '',
+        foodPreference: '',
+        dateFrom: '',
+        dateTo: '',
+    });
     const [selectedRegistration, setSelectedRegistration] = useState(null);
     const [paymentStatusDraft, setPaymentStatusDraft] = useState('pending');
     const [paymentUpdating, setPaymentUpdating] = useState(false);
@@ -4108,6 +4322,10 @@ function AdminPage() {
     const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false);
     const [selectedPricingCategoryId, setSelectedPricingCategoryId] = useState('');
     const [categoryForm, setCategoryForm] = useState({ name: '', registrationFee: '0', sortOrder: '0', isActive: true });
+    const [homeCms, setHomeCms] = useState(homeContentDefaults);
+    const [homeCmsLoading, setHomeCmsLoading] = useState(false);
+    const [homeCmsSaving, setHomeCmsSaving] = useState(false);
+    const [homeCmsNotice, setHomeCmsNotice] = useState('');
     const [accommodationCms, setAccommodationCms] = useState(accommodationTravelDefaults);
     const [accommodationCmsLoading, setAccommodationCmsLoading] = useState(false);
     const [accommodationCmsSaving, setAccommodationCmsSaving] = useState(false);
@@ -4286,6 +4504,19 @@ function AdminPage() {
             })
             .finally(() => setIsLoading(false));
     }, []);
+
+    useEffect(() => {
+        if (activeModule !== 'home-content' || !session) {
+            return;
+        }
+
+        setHomeCmsLoading(true);
+        setHomeCmsNotice('');
+        apiRequest('admin/home-content')
+            .then(({ content }) => setHomeCms(normalizeHomeContent(content)))
+            .catch((error) => setHomeCmsNotice(error.message))
+            .finally(() => setHomeCmsLoading(false));
+    }, [activeModule, session]);
 
     useEffect(() => {
         if (activeModule !== 'accommodation' || !session) {
@@ -4603,6 +4834,111 @@ function AdminPage() {
 
         return haystack.includes(userSearch.toLowerCase());
     });
+    const registrationCategoryOptions = [...new Set(registrations.map((registration) => registration.category).filter(Boolean))].sort();
+    const registrationCompetitionOptions = [...new Set(registrations.flatMap((registration) => [
+        ...(Array.isArray(registration.studentCompetitions) ? registration.studentCompetitions : []),
+        ...(Array.isArray(registration.groupMembers) ? registration.groupMembers.flatMap((member) => Array.isArray(member.competitions) ? member.competitions : []) : []),
+    ]).filter(Boolean))].sort();
+    const registrationWorkshopOptions = [...new Set(registrations.flatMap((registration) => [
+        ...(Array.isArray(registration.selectedWorkshops) ? registration.selectedWorkshops : []),
+        ...(Array.isArray(registration.groupMembers) ? registration.groupMembers.flatMap((member) => Array.isArray(member.workshops) ? member.workshops : []) : []),
+    ]).filter(Boolean))].sort();
+    const presentationOptions = [...new Set(registrations.flatMap((registration) => [
+        registration.presentationType,
+        ...(Array.isArray(registration.groupMembers) ? registration.groupMembers.map((member) => member.presentationType) : []),
+    ]).filter(Boolean))].sort();
+    const hrCoreAreaFilterOptions = [...new Set(registrations.flatMap((registration) => [
+        ...(String(registration.hrCoreArea || '').split(',').map((item) => item.trim())),
+        ...(Array.isArray(registration.groupMembers) ? registration.groupMembers.map((member) => member.hrCoreArea) : []),
+    ]).filter(Boolean))].sort();
+    const courseFilterOptions = [...new Set(registrations.flatMap((registration) => [
+        registration.courseOfStudy,
+        ...(Array.isArray(registration.groupMembers) ? registration.groupMembers.map((member) => member.course) : []),
+    ]).filter(Boolean))].sort();
+    const foodFilterOptions = [...new Set(registrations.flatMap((registration) => [
+        registration.foodPreference,
+        ...(Array.isArray(registration.groupMembers) ? registration.groupMembers.map((member) => member.foodPreference) : []),
+    ]).filter(Boolean))].sort();
+
+    function updateRegistrationFilter(name, value) {
+        setRegistrationFilters((current) => ({ ...current, [name]: value }));
+    }
+
+    function updateStudentFilter(name, value) {
+        setStudentFilters((current) => ({ ...current, [name]: value }));
+    }
+
+    function clearRegistrationFilters() {
+        setRegistrationSearch('');
+        setRegistrationFilters({
+            mode: '',
+            registrationStatus: '',
+            paymentStatus: '',
+            approvalStatus: '',
+            category: '',
+            competition: '',
+            workshop: '',
+            presentation: '',
+            hrCoreArea: '',
+            foodPreference: '',
+            dateFrom: '',
+            dateTo: '',
+            minAmount: '',
+            maxAmount: '',
+        });
+    }
+
+    function clearStudentFilters() {
+        setStudentSearch('');
+        setStudentFilters({
+            mode: '',
+            registrationStatus: '',
+            paymentStatus: '',
+            approvalStatus: '',
+            category: '',
+            course: '',
+            competition: '',
+            workshop: '',
+            presentation: '',
+            hrCoreArea: '',
+            foodPreference: '',
+            dateFrom: '',
+            dateTo: '',
+        });
+    }
+
+    function recordDateValue(record) {
+        return record.submittedAt || record.updatedAt || record.createdAt || '';
+    }
+
+    function matchesDateRange(value, from, to) {
+        if (!from && !to) return true;
+        const time = value ? new Date(value).getTime() : 0;
+        if (!time) return false;
+        if (from && time < new Date(`${from}T00:00:00`).getTime()) return false;
+        if (to && time > new Date(`${to}T23:59:59`).getTime()) return false;
+        return true;
+    }
+
+    function registrationProgramValues(registration, field) {
+        const directValues = field === 'competitions' ? registration.studentCompetitions : registration.selectedWorkshops;
+        const groupValues = Array.isArray(registration.groupMembers)
+            ? registration.groupMembers.flatMap((member) => Array.isArray(member[field]) ? member[field] : [])
+            : [];
+        return [...new Set([...(Array.isArray(directValues) ? directValues : []), ...groupValues].filter(Boolean))];
+    }
+
+    function registrationSingleValues(registration, field) {
+        const directValue = field === 'presentationType' ? registration.presentationType : registration.hrCoreArea;
+        const groupValues = Array.isArray(registration.groupMembers)
+            ? registration.groupMembers.map((member) => member[field]).filter(Boolean)
+            : [];
+        return [...new Set([
+            ...String(directValue || '').split(',').map((item) => item.trim()).filter(Boolean),
+            ...groupValues,
+        ])];
+    }
+
     const filteredRegistrations = registrations.filter((registration) => {
         const haystack = [
             registration.registrationNumber,
@@ -4610,25 +4946,62 @@ function AdminPage() {
             registration.institutionName,
             registration.groupCoordinatorName,
             registration.email,
+            registration.groupCoordinatorEmail,
             registration.whatsappNumber,
+            registration.groupCoordinatorWhatsapp,
             registration.category,
             registration.registrationStatus,
             registration.paymentStatus,
             registration.approvalStatus,
+            registration.presentationType,
+            registration.hrCoreArea,
+            registration.transactionDetails,
+            ...(Array.isArray(registration.studentCompetitions) ? registration.studentCompetitions : []),
+            ...(Array.isArray(registration.selectedWorkshops) ? registration.selectedWorkshops : []),
+            ...(Array.isArray(registration.groupMembers) ? registration.groupMembers.flatMap((member) => [
+                member.registrationNumber,
+                member.name,
+                member.email,
+                member.whatsapp,
+                member.course,
+                member.college,
+                member.state,
+                member.foodPreference,
+                member.presentationType,
+                member.hrCoreArea,
+                ...(Array.isArray(member.competitions) ? member.competitions : []),
+                ...(Array.isArray(member.workshops) ? member.workshops : []),
+            ]) : []),
         ].join(' ').toLowerCase();
-        return haystack.includes(registrationSearch.trim().toLowerCase());
+        if (!haystack.includes(registrationSearch.trim().toLowerCase())) return false;
+        if (registrationFilters.mode && registration.registrationMode !== registrationFilters.mode) return false;
+        if (registrationFilters.registrationStatus && registration.registrationStatus !== registrationFilters.registrationStatus) return false;
+        if (registrationFilters.paymentStatus && registration.paymentStatus !== registrationFilters.paymentStatus) return false;
+        if (registrationFilters.approvalStatus && registration.approvalStatus !== registrationFilters.approvalStatus) return false;
+        if (registrationFilters.category && registration.category !== registrationFilters.category) return false;
+        if (registrationFilters.foodPreference) {
+            const foodValues = [
+                registration.foodPreference,
+                ...(Array.isArray(registration.groupMembers) ? registration.groupMembers.map((member) => member.foodPreference) : []),
+            ];
+            if (!foodValues.includes(registrationFilters.foodPreference)) return false;
+        }
+        if (registrationFilters.competition && !registrationProgramValues(registration, 'competitions').includes(registrationFilters.competition)) return false;
+        if (registrationFilters.workshop && !registrationProgramValues(registration, 'workshops').includes(registrationFilters.workshop)) return false;
+        if (registrationFilters.presentation && !registrationSingleValues(registration, 'presentationType').includes(registrationFilters.presentation)) return false;
+        if (registrationFilters.hrCoreArea && !registrationSingleValues(registration, 'hrCoreArea').includes(registrationFilters.hrCoreArea)) return false;
+        if (!matchesDateRange(recordDateValue(registration), registrationFilters.dateFrom, registrationFilters.dateTo)) return false;
+        const totalAmount = Number(registration.totalPayableAmount) || 0;
+        if (registrationFilters.minAmount !== '' && totalAmount < Number(registrationFilters.minAmount)) return false;
+        if (registrationFilters.maxAmount !== '' && totalAmount > Number(registrationFilters.maxAmount)) return false;
+        return true;
     });
-    const approvedPaidStudents = registrations
-        .filter((registration) =>
-            registration.registrationStatus === 'submitted' &&
-            registration.paymentStatus === 'success' &&
-            registration.approvalStatus === 'approved'
-        )
-        .flatMap((registration) => {
+    const allRegistrationStudents = registrations.flatMap((registration) => {
             if (registration.registrationMode === 'group' && registration.groupMembers.length) {
                 return registration.groupMembers.map((member, index) => ({
                     id: `${registration.id}-${index}`,
-                    registrationNumber: registration.registrationNumber,
+                    registrationNumber: member.registrationNumber || `${registration.registrationNumber}-${String(index + 1).padStart(3, '0')}`,
+                    parentRegistrationNumber: registration.registrationNumber,
                     registrationMode: 'group',
                     name: member.name,
                     email: member.email || registration.groupCoordinatorEmail,
@@ -4638,15 +5011,32 @@ function AdminPage() {
                     college: member.college,
                     state: member.state,
                     foodPreference: member.foodPreference,
+                    competitions: Array.isArray(member.competitions) ? member.competitions : [],
+                    workshops: Array.isArray(member.workshops) ? member.workshops : [],
+                    presentationType: member.presentationType || 'Not Participating',
+                    hrCoreArea: member.hrCoreArea || '',
                     coordinator: registration.groupCoordinatorName,
+                    coordinatorEmail: registration.groupCoordinatorEmail,
+                    coordinatorWhatsapp: registration.groupCoordinatorWhatsapp,
+                    institutionName: registration.institutionName,
                     paymentStatus: registration.paymentStatus,
                     approvalStatus: registration.approvalStatus,
+                    registrationStatus: registration.registrationStatus,
+                    registrationFee: registration.registrationFee,
+                    competitionFee: registration.competitionFee,
+                    workshopFee: registration.workshopFee,
+                    totalPayableAmount: registration.totalPayableAmount,
+                    transactionDetails: registration.transactionDetails,
+                    submittedAt: registration.submittedAt,
+                    createdAt: registration.createdAt,
+                    updatedAt: registration.updatedAt,
                 }));
             }
 
             return [{
                 id: `${registration.id}-individual`,
                 registrationNumber: registration.registrationNumber,
+                parentRegistrationNumber: '',
                 registrationMode: registration.registrationMode,
                 name: registration.participantName,
                 email: registration.email,
@@ -4656,14 +5046,36 @@ function AdminPage() {
                 college: registration.institutionName || registration.collegeWithState,
                 state: registration.stateOfResidence,
                 foodPreference: registration.foodPreference,
+                competitions: Array.isArray(registration.studentCompetitions) ? registration.studentCompetitions : [],
+                workshops: Array.isArray(registration.selectedWorkshops) ? registration.selectedWorkshops : [],
+                presentationType: registration.presentationType || 'Not Participating',
+                hrCoreArea: registration.hrCoreArea || '',
                 coordinator: '',
+                coordinatorEmail: '',
+                coordinatorWhatsapp: '',
+                institutionName: registration.institutionName,
                 paymentStatus: registration.paymentStatus,
                 approvalStatus: registration.approvalStatus,
+                registrationStatus: registration.registrationStatus,
+                registrationFee: registration.registrationFee,
+                competitionFee: registration.competitionFee,
+                workshopFee: registration.workshopFee,
+                totalPayableAmount: registration.totalPayableAmount,
+                transactionDetails: registration.transactionDetails,
+                submittedAt: registration.submittedAt,
+                createdAt: registration.createdAt,
+                updatedAt: registration.updatedAt,
             }];
         });
-    const filteredStudents = approvedPaidStudents.filter((student) => {
+    const approvedPaidStudents = allRegistrationStudents.filter((student) =>
+        student.registrationStatus === 'submitted' &&
+        student.paymentStatus === 'success' &&
+        student.approvalStatus === 'approved'
+    );
+    const filteredStudents = allRegistrationStudents.filter((student) => {
         const haystack = [
             student.registrationNumber,
+            student.parentRegistrationNumber,
             student.name,
             student.email,
             student.whatsapp,
@@ -4671,9 +5083,136 @@ function AdminPage() {
             student.course,
             student.college,
             student.state,
+            student.foodPreference,
+            student.coordinator,
+            student.coordinatorEmail,
+            student.presentationType,
+            student.hrCoreArea,
+            ...(Array.isArray(student.competitions) ? student.competitions : []),
+            ...(Array.isArray(student.workshops) ? student.workshops : []),
+            student.registrationStatus,
+            student.paymentStatus,
+            student.approvalStatus,
         ].join(' ').toLowerCase();
-        return haystack.includes(studentSearch.trim().toLowerCase());
+        if (!haystack.includes(studentSearch.trim().toLowerCase())) return false;
+        if (studentFilters.mode && student.registrationMode !== studentFilters.mode) return false;
+        if (studentFilters.registrationStatus && student.registrationStatus !== studentFilters.registrationStatus) return false;
+        if (studentFilters.paymentStatus && student.paymentStatus !== studentFilters.paymentStatus) return false;
+        if (studentFilters.approvalStatus && student.approvalStatus !== studentFilters.approvalStatus) return false;
+        if (studentFilters.category && student.category !== studentFilters.category) return false;
+        if (studentFilters.course && student.course !== studentFilters.course) return false;
+        if (studentFilters.foodPreference && student.foodPreference !== studentFilters.foodPreference) return false;
+        if (studentFilters.competition && !(Array.isArray(student.competitions) && student.competitions.includes(studentFilters.competition))) return false;
+        if (studentFilters.workshop && !(Array.isArray(student.workshops) && student.workshops.includes(studentFilters.workshop))) return false;
+        if (studentFilters.presentation && student.presentationType !== studentFilters.presentation) return false;
+        if (studentFilters.hrCoreArea && student.hrCoreArea !== studentFilters.hrCoreArea) return false;
+        if (!matchesDateRange(recordDateValue(student), studentFilters.dateFrom, studentFilters.dateTo)) return false;
+        return true;
     });
+
+    function csvCell(value) {
+        const text = Array.isArray(value) ? value.join(', ') : String(value ?? '');
+        return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    function downloadCsv(filename, columns, rows) {
+        const csv = [
+            columns.map((column) => csvCell(column.label)).join(','),
+            ...rows.map((row) => columns.map((column) => csvCell(column.value(row))).join(',')),
+        ].join('\r\n');
+        const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function formatExportDate(value) {
+        return value ? new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '';
+    }
+
+    function exportRegistrations() {
+        const columns = [
+            { label: 'Registration Number', value: (row) => row.registrationNumber },
+            { label: 'Registration Mode', value: (row) => row.registrationMode },
+            { label: 'Registration Status', value: (row) => row.registrationStatus },
+            { label: 'Payment Status', value: (row) => row.paymentStatus },
+            { label: 'Approval Status', value: (row) => row.approvalStatus },
+            { label: 'Participant Name', value: (row) => row.participantName },
+            { label: 'Institution Name', value: (row) => row.institutionName },
+            { label: 'Group Coordinator Name', value: (row) => row.groupCoordinatorName },
+            { label: 'Group Coordinator Email', value: (row) => row.groupCoordinatorEmail },
+            { label: 'Group Coordinator WhatsApp', value: (row) => row.groupCoordinatorWhatsapp },
+            { label: 'Expected Participants', value: (row) => row.expectedParticipants },
+            { label: 'Uploaded Student Count', value: (row) => Array.isArray(row.groupMembers) ? row.groupMembers.length : 0 },
+            { label: 'Category', value: (row) => row.category },
+            { label: 'State', value: (row) => row.stateOfResidence },
+            { label: 'WhatsApp', value: (row) => row.whatsappNumber },
+            { label: 'Email', value: (row) => row.email },
+            { label: 'Food Preference', value: (row) => row.foodPreference },
+            { label: 'Course', value: (row) => row.courseOfStudy },
+            { label: 'College With State', value: (row) => row.collegeWithState },
+            { label: 'Competitions', value: (row) => registrationProgramValues(row, 'competitions') },
+            { label: 'Competition Fee Acknowledged', value: (row) => row.competitionFeeAcknowledged ? 'Yes' : 'No' },
+            { label: 'Workshops', value: (row) => registrationProgramValues(row, 'workshops') },
+            { label: 'Workshop Fee Acknowledged', value: (row) => row.workshopFeeAcknowledged ? 'Yes' : 'No' },
+            { label: 'Presentation', value: (row) => registrationSingleValues(row, 'presentationType') },
+            { label: 'HR Drive Participation', value: (row) => row.hrDriveParticipation },
+            { label: 'HR College / State', value: (row) => row.hrCollegeWithState },
+            { label: 'HR Course / Qualification', value: (row) => row.hrCourseOrQualification },
+            { label: 'HR WhatsApp', value: (row) => row.hrWhatsappNumber },
+            { label: 'HR Email', value: (row) => row.hrEmail },
+            { label: 'HR Core Area', value: (row) => registrationSingleValues(row, 'hrCoreArea') },
+            { label: 'Registration Fee', value: (row) => row.registrationFee },
+            { label: 'Competition Fee', value: (row) => row.competitionFee },
+            { label: 'Workshop Fee', value: (row) => row.workshopFee },
+            { label: 'Total Payable', value: (row) => row.totalPayableAmount },
+            { label: 'Transaction Details', value: (row) => row.transactionDetails },
+            { label: 'Submitted At', value: (row) => formatExportDate(row.submittedAt) },
+            { label: 'Created At', value: (row) => formatExportDate(row.createdAt) },
+            { label: 'Updated At', value: (row) => formatExportDate(row.updatedAt) },
+            { label: 'Group Student Details', value: (row) => Array.isArray(row.groupMembers) ? row.groupMembers.map((member) => `${member.registrationNumber || ''} ${member.name || ''} | ${member.email || ''} | ${member.whatsapp || ''} | ${member.course || ''} | ${member.college || ''} | Competitions: ${(member.competitions || []).join('; ')} | Workshops: ${(member.workshops || []).join('; ')} | Presentation: ${member.presentationType || ''} | HR: ${member.hrCoreArea || ''}`).join('\n') : '' },
+        ];
+        downloadCsv(`registrations-${new Date().toISOString().slice(0, 10)}.csv`, columns, filteredRegistrations);
+    }
+
+    function exportStudents() {
+        const columns = [
+            { label: 'Student Registration Number', value: (row) => row.registrationNumber },
+            { label: 'Parent Registration Number', value: (row) => row.parentRegistrationNumber },
+            { label: 'Registration Mode', value: (row) => row.registrationMode },
+            { label: 'Registration Status', value: (row) => row.registrationStatus },
+            { label: 'Payment Status', value: (row) => row.paymentStatus },
+            { label: 'Approval Status', value: (row) => row.approvalStatus },
+            { label: 'Student Name', value: (row) => row.name },
+            { label: 'Email', value: (row) => row.email },
+            { label: 'WhatsApp', value: (row) => row.whatsapp },
+            { label: 'Category', value: (row) => row.category },
+            { label: 'Course', value: (row) => row.course },
+            { label: 'College', value: (row) => row.college },
+            { label: 'State', value: (row) => row.state },
+            { label: 'Food Preference', value: (row) => row.foodPreference },
+            { label: 'Competitions', value: (row) => row.competitions },
+            { label: 'Workshops', value: (row) => row.workshops },
+            { label: 'Presentation', value: (row) => row.presentationType },
+            { label: 'HR Core Area', value: (row) => row.hrCoreArea },
+            { label: 'Coordinator', value: (row) => row.coordinator },
+            { label: 'Coordinator Email', value: (row) => row.coordinatorEmail },
+            { label: 'Coordinator WhatsApp', value: (row) => row.coordinatorWhatsapp },
+            { label: 'Institution Name', value: (row) => row.institutionName },
+            { label: 'Registration Fee', value: (row) => row.registrationFee },
+            { label: 'Competition Fee', value: (row) => row.competitionFee },
+            { label: 'Workshop Fee', value: (row) => row.workshopFee },
+            { label: 'Total Payable', value: (row) => row.totalPayableAmount },
+            { label: 'Transaction Details', value: (row) => row.transactionDetails },
+            { label: 'Submitted At', value: (row) => formatExportDate(row.submittedAt) },
+            { label: 'Created At', value: (row) => formatExportDate(row.createdAt) },
+            { label: 'Updated At', value: (row) => formatExportDate(row.updatedAt) },
+        ];
+        downloadCsv(`students-${new Date().toISOString().slice(0, 10)}.csv`, columns, filteredStudents);
+    }
     const paymentRows = registrations
         .filter((registration) => registration.registrationStatus === 'submitted' || registration.transactionDetails || registration.totalPayableAmount > 0)
         .sort((a, b) => new Date(b.submittedAt || b.updatedAt || b.createdAt).getTime() - new Date(a.submittedAt || a.updatedAt || a.createdAt).getTime());
@@ -4834,6 +5373,65 @@ function AdminPage() {
             setNotice(`Temporary password set: ${temporaryPassword}`);
         } catch (error) {
             setNotice(error.message);
+        }
+    }
+
+    function updateHomeNewsItem(index, field, value) {
+        setHomeCms((current) => {
+            const cms = normalizeHomeContent(current);
+            const newsUpdates = [...cms.newsUpdates];
+            newsUpdates[index] = { ...newsUpdates[index], [field]: value };
+            return normalizeHomeContent({ ...cms, newsUpdates });
+        });
+        setHomeCmsNotice('');
+    }
+
+    function addHomeNewsItem() {
+        setHomeCms((current) => {
+            const cms = normalizeHomeContent(current);
+            return normalizeHomeContent({
+                ...cms,
+                newsUpdates: [...cms.newsUpdates, { title: '', copy: '' }],
+            });
+        });
+        setHomeCmsNotice('');
+    }
+
+    function removeHomeNewsItem(index) {
+        setHomeCms((current) => {
+            const cms = normalizeHomeContent(current);
+            return normalizeHomeContent({
+                ...cms,
+                newsUpdates: cms.newsUpdates.filter((_, rowIndex) => rowIndex !== index),
+            });
+        });
+        setHomeCmsNotice('News item removed. Save to publish changes.');
+    }
+
+    async function saveHomeCms() {
+        const content = {
+            ...normalizeHomeContent(homeCms),
+            newsUpdates: normalizeHomeContent(homeCms).newsUpdates.filter((item) => item.title || item.copy),
+        };
+        if (!content.newsUpdates.length) {
+            setHomeCmsNotice('Add at least one news/update item.');
+            return;
+        }
+
+        setHomeCmsSaving(true);
+        setHomeCmsNotice('Saving...');
+
+        try {
+            const payload = await apiRequest('admin/home-content', {
+                method: 'PUT',
+                body: JSON.stringify({ content }),
+            });
+            setHomeCms(normalizeHomeContent(payload.content));
+            setHomeCmsNotice('Home news and updates saved.');
+        } catch (error) {
+            setHomeCmsNotice(error.message);
+        } finally {
+            setHomeCmsSaving(false);
         }
     }
 
@@ -5647,7 +6245,72 @@ function AdminPage() {
                                     >
                                         {registrationsLoading ? 'Loading...' : 'Refresh'}
                                     </button>
+                                    <button
+                                        type="button"
+                                        onClick={exportRegistrations}
+                                        disabled={!filteredRegistrations.length}
+                                        className="rounded-lg border border-emerald-700 px-4 py-2.5 text-sm font-bold text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Export Excel
+                                    </button>
                                 </div>
+                            </div>
+
+                            <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-sm font-bold text-zinc-900">Filters</p>
+                                    <button type="button" onClick={clearRegistrationFilters} className="text-xs font-bold text-emerald-800 hover:text-emerald-900">
+                                        Clear filters
+                                    </button>
+                                </div>
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                    {[
+                                        ['mode', 'Mode', [['', 'All modes'], ['individual', 'Individual'], ['group', 'Group']]],
+                                        ['registrationStatus', 'Registration Status', [['', 'All registration statuses'], ['draft', 'Draft'], ['submitted', 'Submitted']]],
+                                        ['paymentStatus', 'Payment Status', [['', 'All payment statuses'], ['pending', 'Pending'], ['success', 'Success'], ['failed', 'Failed'], ['manual_verification_required', 'Manual verification required'], ['refunded', 'Refunded']]],
+                                        ['approvalStatus', 'Approval Status', [['', 'All approval statuses'], ['not_submitted', 'Not submitted'], ['pending_review', 'Pending review'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['cancelled', 'Cancelled']]],
+                                    ].map(([name, label, options]) => (
+                                        <label key={name} className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                                            {label}
+                                            <select value={registrationFilters[name]} onChange={(event) => updateRegistrationFilter(name, event.target.value)} className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-zinc-800">
+                                                {options.map(([value, optionLabel]) => <option key={value} value={value}>{optionLabel}</option>)}
+                                            </select>
+                                        </label>
+                                    ))}
+                                    {[
+                                        ['category', 'Category', registrationCategoryOptions],
+                                        ['competition', 'Competition', registrationCompetitionOptions],
+                                        ['workshop', 'Workshop', registrationWorkshopOptions],
+                                        ['presentation', 'Presentation', presentationOptions],
+                                        ['hrCoreArea', 'HR Core Area', hrCoreAreaFilterOptions],
+                                        ['foodPreference', 'Food Preference', foodFilterOptions],
+                                    ].map(([name, label, options]) => (
+                                        <label key={name} className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                                            {label}
+                                            <select value={registrationFilters[name]} onChange={(event) => updateRegistrationFilter(name, event.target.value)} className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-zinc-800">
+                                                <option value="">All {label.toLowerCase()}</option>
+                                                {options.map((option) => <option key={option} value={option}>{option}</option>)}
+                                            </select>
+                                        </label>
+                                    ))}
+                                    <label className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                                        Submitted From
+                                        <input type="date" value={registrationFilters.dateFrom} onChange={(event) => updateRegistrationFilter('dateFrom', event.target.value)} className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-zinc-800" />
+                                    </label>
+                                    <label className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                                        Submitted To
+                                        <input type="date" value={registrationFilters.dateTo} onChange={(event) => updateRegistrationFilter('dateTo', event.target.value)} className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-zinc-800" />
+                                    </label>
+                                    <label className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                                        Min Amount
+                                        <input type="number" min="0" value={registrationFilters.minAmount} onChange={(event) => updateRegistrationFilter('minAmount', event.target.value)} className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-zinc-800" placeholder="0" />
+                                    </label>
+                                    <label className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                                        Max Amount
+                                        <input type="number" min="0" value={registrationFilters.maxAmount} onChange={(event) => updateRegistrationFilter('maxAmount', event.target.value)} className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-zinc-800" placeholder="No limit" />
+                                    </label>
+                                </div>
+                                <p className="mt-3 text-xs font-semibold text-zinc-500">{filteredRegistrations.length.toLocaleString('en-IN')} of {registrations.length.toLocaleString('en-IN')} registrations shown.</p>
                             </div>
 
                             {registrationsError && (
@@ -5865,11 +6528,32 @@ function AdminPage() {
                                                     {selectedRegistration.groupMembers.length ? (
                                                         <div className="mt-3 overflow-x-auto rounded-lg border border-zinc-200">
                                                             <table className="min-w-[850px] w-full text-left text-xs">
-                                                                <thead className="bg-zinc-100 text-zinc-600"><tr>{groupMemberColumns.map(([key, label]) => <th key={key} className="px-3 py-2 font-semibold">{label}</th>)}</tr></thead>
+                                                                <thead className="bg-zinc-100 text-zinc-600">
+                                                                    <tr>
+                                                                        {[['registrationNumber', 'Reg. No.'], ...groupMemberColumns, ['competitions', 'Competitions'], ['workshops', 'Workshop'], ['presentationType', 'Presentation'], ['hrCoreArea', 'HR Drive']].map(([key, label]) => (
+                                                                            <th key={key} className="px-3 py-2 font-semibold">{label}</th>
+                                                                        ))}
+                                                                    </tr>
+                                                                </thead>
                                                                 <tbody className="divide-y divide-zinc-200">
-                                                                    {selectedRegistration.groupMembers.map((member, index) => (
-                                                                        <tr key={`${member.email}-${index}`}>{groupMemberColumns.map(([key]) => <td key={key} className="px-3 py-2 text-zinc-700">{member[key] || '-'}</td>)}</tr>
-                                                                    ))}
+                                                                    {selectedRegistration.groupMembers.map((member, index) => {
+                                                                        const rowColumns = [
+                                                                            ['registrationNumber', member.registrationNumber || `${selectedRegistration.registrationNumber}-${String(index + 1).padStart(3, '0')}`],
+                                                                            ...groupMemberColumns.map(([key]) => [key, member[key] || '-']),
+                                                                            ['competitions', Array.isArray(member.competitions) && member.competitions.length ? member.competitions.join(', ') : '-'],
+                                                                            ['workshops', Array.isArray(member.workshops) && member.workshops.length ? member.workshops.join(', ') : '-'],
+                                                                            ['presentationType', member.presentationType || 'Not Participating'],
+                                                                            ['hrCoreArea', member.hrCoreArea || '-'],
+                                                                        ];
+
+                                                                        return (
+                                                                            <tr key={`${member.email}-${index}`}>
+                                                                                {rowColumns.map(([key, value]) => (
+                                                                                    <td key={key} className="px-3 py-2 text-zinc-700">{value}</td>
+                                                                                ))}
+                                                                            </tr>
+                                                                        );
+                                                                    })}
                                                                 </tbody>
                                                             </table>
                                                         </div>
@@ -6308,8 +6992,8 @@ function AdminPage() {
 
                             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
-                                    <h2 className="text-lg font-bold">Approved &amp; Paid Students</h2>
-                                    <p className="mt-1 text-sm text-zinc-600">Only submitted registrations with payment success and admin approval are listed here.</p>
+                                    <h2 className="text-lg font-bold">Student Directory</h2>
+                                    <p className="mt-1 text-sm text-zinc-600">Flattened student-level view from individual and group registrations.</p>
                                 </div>
                                 <div className="flex flex-col gap-2 sm:flex-row">
                                     <input
@@ -6327,7 +7011,65 @@ function AdminPage() {
                                     >
                                         {registrationsLoading ? 'Loading...' : 'Refresh'}
                                     </button>
+                                    <button
+                                        type="button"
+                                        onClick={exportStudents}
+                                        disabled={!filteredStudents.length}
+                                        className="rounded-lg border border-emerald-700 px-4 py-2.5 text-sm font-bold text-emerald-800 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Export Excel
+                                    </button>
                                 </div>
+                            </div>
+
+                            <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-sm font-bold text-zinc-900">Filters</p>
+                                    <button type="button" onClick={clearStudentFilters} className="text-xs font-bold text-emerald-800 hover:text-emerald-900">
+                                        Clear filters
+                                    </button>
+                                </div>
+                                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                    {[
+                                        ['mode', 'Mode', [['', 'All modes'], ['individual', 'Individual'], ['group', 'Group']]],
+                                        ['registrationStatus', 'Registration Status', [['', 'All registration statuses'], ['draft', 'Draft'], ['submitted', 'Submitted']]],
+                                        ['paymentStatus', 'Payment Status', [['', 'All payment statuses'], ['pending', 'Pending'], ['success', 'Success'], ['failed', 'Failed'], ['manual_verification_required', 'Manual verification required'], ['refunded', 'Refunded']]],
+                                        ['approvalStatus', 'Approval Status', [['', 'All approval statuses'], ['not_submitted', 'Not submitted'], ['pending_review', 'Pending review'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['cancelled', 'Cancelled']]],
+                                    ].map(([name, label, options]) => (
+                                        <label key={name} className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                                            {label}
+                                            <select value={studentFilters[name]} onChange={(event) => updateStudentFilter(name, event.target.value)} className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-zinc-800">
+                                                {options.map(([value, optionLabel]) => <option key={value} value={value}>{optionLabel}</option>)}
+                                            </select>
+                                        </label>
+                                    ))}
+                                    {[
+                                        ['category', 'Category', registrationCategoryOptions],
+                                        ['course', 'Course', courseFilterOptions],
+                                        ['competition', 'Competition', registrationCompetitionOptions],
+                                        ['workshop', 'Workshop', registrationWorkshopOptions],
+                                        ['presentation', 'Presentation', presentationOptions],
+                                        ['hrCoreArea', 'HR Core Area', hrCoreAreaFilterOptions],
+                                        ['foodPreference', 'Food Preference', foodFilterOptions],
+                                    ].map(([name, label, options]) => (
+                                        <label key={name} className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                                            {label}
+                                            <select value={studentFilters[name]} onChange={(event) => updateStudentFilter(name, event.target.value)} className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-zinc-800">
+                                                <option value="">All {label.toLowerCase()}</option>
+                                                {options.map((option) => <option key={option} value={option}>{option}</option>)}
+                                            </select>
+                                        </label>
+                                    ))}
+                                    <label className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                                        Submitted From
+                                        <input type="date" value={studentFilters.dateFrom} onChange={(event) => updateStudentFilter('dateFrom', event.target.value)} className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-zinc-800" />
+                                    </label>
+                                    <label className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                                        Submitted To
+                                        <input type="date" value={studentFilters.dateTo} onChange={(event) => updateStudentFilter('dateTo', event.target.value)} className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium normal-case tracking-normal text-zinc-800" />
+                                    </label>
+                                </div>
+                                <p className="mt-3 text-xs font-semibold text-zinc-500">{filteredStudents.length.toLocaleString('en-IN')} of {allRegistrationStudents.length.toLocaleString('en-IN')} student rows shown.</p>
                             </div>
 
                             {registrationsError && (
@@ -6336,7 +7078,7 @@ function AdminPage() {
 
                             {!registrationsLoading && !registrationsError && filteredStudents.length === 0 && (
                                 <p className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm font-semibold text-zinc-600">
-                                    {studentSearch ? 'No eligible students match your search.' : 'No approved and paid students yet.'}
+                                    {studentSearch ? 'No student rows match your search.' : 'No student rows found yet.'}
                                 </p>
                             )}
 
@@ -6350,6 +7092,7 @@ function AdminPage() {
                                                 <th className="px-4 py-3">Contact</th>
                                                 <th className="px-4 py-3">Course / Category</th>
                                                 <th className="px-4 py-3">College / State</th>
+                                                <th className="px-4 py-3">Programs</th>
                                                 <th className="px-4 py-3">Status</th>
                                             </tr>
                                         </thead>
@@ -6376,7 +7119,16 @@ function AdminPage() {
                                                         <p className="max-w-xs text-zinc-700">{student.college || '-'}</p>
                                                         <p className="mt-1 text-xs text-zinc-500">{student.state || '-'}</p>
                                                     </td>
+                                                    <td className="px-4 py-4 text-xs text-zinc-600">
+                                                        <p>Competitions: {student.competitions.length ? student.competitions.join(', ') : '-'}</p>
+                                                        <p className="mt-1">Workshops: {student.workshops.length ? student.workshops.join(', ') : '-'}</p>
+                                                        <p className="mt-1">Presentation: {student.presentationType || '-'}</p>
+                                                        <p className="mt-1">HR: {student.hrCoreArea || '-'}</p>
+                                                    </td>
                                                     <td className="px-4 py-4">
+                                                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ${registrationStatusBadgeClass(student.registrationStatus)}`}>
+                                                            {formatAdminStatus(student.registrationStatus)}
+                                                        </span>
                                                         <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ${paymentStatusBadgeClass(student.paymentStatus)}`}>
                                                             Payment: {formatAdminStatus(student.paymentStatus)}
                                                         </span>
@@ -6655,6 +7407,51 @@ function AdminPage() {
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {activeModule === 'home-content' && (
+                        <div className="mt-6 space-y-5">
+                            <div className="admin-card rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-zinc-950">Latest News and Updates</h3>
+                                        <p className="mt-1 text-sm text-zinc-500">These rows appear in the white panel on the home page hero area.</p>
+                                    </div>
+                                    <button type="button" onClick={addHomeNewsItem} className="admin-button rounded-lg border border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-700 hover:bg-zinc-100">
+                                        Add News Item
+                                    </button>
+                                </div>
+
+                                {homeCmsLoading ? (
+                                    <p className="mt-6 text-sm font-semibold text-zinc-500">Loading content...</p>
+                                ) : (
+                                    <div className="mt-5 space-y-4">
+                                        {normalizeHomeContent(homeCms).newsUpdates.map((item, index) => (
+                                            <div key={index} className="grid gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] md:items-start">
+                                                <label className="block text-sm font-semibold text-zinc-800">
+                                                    Title
+                                                    <input className="admin-input mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100" value={item.title} onChange={(event) => updateHomeNewsItem(index, 'title', event.target.value)} placeholder="e.g. Abstract Submission" />
+                                                </label>
+                                                <label className="block text-sm font-semibold text-zinc-800">
+                                                    Update Text
+                                                    <textarea className="admin-input mt-2 min-h-20 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100" value={item.copy} onChange={(event) => updateHomeNewsItem(index, 'copy', event.target.value)} placeholder="e.g. Last date: 31-07-2026" />
+                                                </label>
+                                                <button type="button" onClick={() => removeHomeNewsItem(index)} className="rounded-lg border border-red-200 px-3 py-2 text-sm font-bold text-red-700 hover:bg-red-50 md:mt-7">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        ))}
+
+                                        <div className="flex flex-col gap-3 border-t border-zinc-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                                            <p className="min-h-6 text-sm font-semibold text-emerald-700">{homeCmsNotice}</p>
+                                            <button type="button" onClick={saveHomeCms} disabled={homeCmsSaving} className="admin-button rounded-lg bg-emerald-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50">
+                                                {homeCmsSaving ? 'Saving...' : 'Save Latest News and Updates'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
@@ -7742,11 +8539,11 @@ export default function App() {
             <Header />
             <main>
                 <Hero />
-                <section className="announcement-bar border-y border-[#075b35] text-white" aria-label="Important event announcement">
+                <section className="announcement-bar border-y border-[#075b35] text-white" aria-label="Important dates announcement">
                     <div className="mx-auto flex max-w-7xl items-center px-4 sm:px-6 lg:px-8">
                         <div className="relative z-10 flex shrink-0 items-center gap-2 border-r border-white/20 bg-[#00572a] py-3 pr-4 sm:pr-6">
                             <span className="announcement-pulse size-2 rounded-full bg-[#ffd36a]" />
-                            <span className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd36a]">Important</span>
+                            <span className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd36a]">Important Dates</span>
                         </div>
                         <div className="announcement-window min-w-0 flex-1 overflow-hidden py-3">
                             <div className="announcement-track flex w-max items-center">
