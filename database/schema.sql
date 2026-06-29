@@ -116,7 +116,7 @@ SELECT * FROM (VALUES
     ('Elocution', 'competition', 100, 50),
     ('Clinical Skill Sets', 'competition', 100, 60),
     ('AI', 'workshop', 0, 10),
-    ('FIP Vaccination Training (2 days)', 'workshop', 0, 20),
+    ('FIP Vaccination Training (2 days)', 'workshop', 1000, 20),
     ('3D Printing', 'workshop', 0, 30),
     ('NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization', 'workshop', 0, 40)
 ) AS seed(name, program_type, price, sort_order)
@@ -142,6 +142,7 @@ WHERE program_type = 'workshop'
 UPDATE event_programs
 SET name = 'FIP Vaccination Training (2 days)',
     description = 'Post-congress workshop, 21-22 September 2026',
+    price = 1000,
     sort_order = 20,
     is_active = TRUE,
     updated_at = NOW()
@@ -155,9 +156,10 @@ WHERE program_type = 'workshop'
     );
 
 INSERT INTO event_programs (name, program_type, description, price, sort_order)
-VALUES ('FIP Vaccination Training (2 days)', 'workshop', 'Post-congress workshop, 21-22 September 2026', 0, 20)
+VALUES ('FIP Vaccination Training (2 days)', 'workshop', 'Post-congress workshop, 21-22 September 2026', 1000, 20)
 ON CONFLICT (program_type, name) DO UPDATE
 SET description = EXCLUDED.description,
+    price = EXCLUDED.price,
     sort_order = EXCLUDED.sort_order,
     is_active = TRUE,
     updated_at = NOW();

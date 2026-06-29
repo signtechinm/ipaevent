@@ -32,6 +32,7 @@ const standaloneSponsorFees = {
     'cultural-event': 10000,
 };
 const quantityBasedSponsorItems = new Set(['session', 'cultural-event']);
+const fipVaccinationWorkshopName = 'FIP Vaccination Training (2 days)';
 const souvenirAdvertisementFees = {
     'outer-back-cover': 50000,
     'inside-front-cover': 50000,
@@ -48,7 +49,7 @@ const defaultPrograms = [
     ['Elocution', 'competition', 100, 50],
     ['Clinical Skill Sets', 'competition', 100, 60],
     ['AI', 'workshop', 0, 10],
-    ['FIP Vaccination Training (2 days)', 'workshop', 0, 20],
+    [fipVaccinationWorkshopName, 'workshop', 1000, 20],
     ['3D Printing', 'workshop', 0, 30],
     ['NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization', 'workshop', 0, 40],
 ];
@@ -923,7 +924,7 @@ async function notifyAbstractReviewed(contact, submission) {
             `Your abstract submitted under registration ${submission.registrationNumber || contact.registrationNumber || '-'} has been marked ${formatStatusLabel(submission.status)}.`,
             submission.adminRemarks ? `Remarks: ${submission.adminRemarks}` : 'No additional remarks were added.',
             submission.status === 'accepted'
-                ? 'You may submit your poster video link from the Scientific Service page when ready.'
+                ? 'You may submit your presentation link from the Scientific Service page when ready.'
                 : 'Please watch the portal and your registered email for further instructions.',
         ],
     }).catch((error) => console.error('notifyAbstractReviewed failed:', error));
@@ -933,11 +934,11 @@ async function notifyVideoReviewed(contact, submission) {
     if (!contact) return;
     await sendStudentMail({
         to: contact.email,
-        subject: `Video review update - ${submission.registrationNumber || contact.registrationNumber}`,
-        preview: `Your video review status is now ${formatStatusLabel(submission.videoReviewStatus)}.`,
+        subject: `Presentation review update - ${submission.registrationNumber || contact.registrationNumber}`,
+        preview: `Your presentation review status is now ${formatStatusLabel(submission.videoReviewStatus)}.`,
         body: [
             `Dear ${contact.name || 'Delegate'},`,
-            `Your poster video review status for registration ${submission.registrationNumber || contact.registrationNumber || '-'} has been updated to ${formatStatusLabel(submission.videoReviewStatus)}.`,
+            `Your presentation review status for registration ${submission.registrationNumber || contact.registrationNumber || '-'} has been updated to ${formatStatusLabel(submission.videoReviewStatus)}.`,
             submission.videoReviewRemarks ? `Remarks: ${submission.videoReviewRemarks}` : 'No additional remarks were added.',
         ],
     }).catch((error) => console.error('notifyVideoReviewed failed:', error));
@@ -1201,6 +1202,7 @@ async function ensureProgramCatalog(sql) {
         UPDATE event_programs
         SET name = 'FIP Vaccination Training (2 days)',
             description = 'Post-congress workshop, 21-22 September 2026',
+            price = 1000,
             sort_order = 20,
             is_active = TRUE,
             updated_at = NOW()
@@ -1215,9 +1217,10 @@ async function ensureProgramCatalog(sql) {
     `;
     await sql`
         INSERT INTO event_programs (name, program_type, description, price, sort_order)
-        VALUES ('FIP Vaccination Training (2 days)', 'workshop', 'Post-congress workshop, 21-22 September 2026', 0, 20)
+        VALUES ('FIP Vaccination Training (2 days)', 'workshop', 'Post-congress workshop, 21-22 September 2026', 1000, 20)
         ON CONFLICT (program_type, name) DO UPDATE
         SET description = EXCLUDED.description,
+            price = EXCLUDED.price,
             sort_order = EXCLUDED.sort_order,
             is_active = TRUE,
             updated_at = NOW()
@@ -1391,6 +1394,9 @@ function normalizeGroupMembers(value) {
         state: String(member?.state || '').trim(),
         foodPreference: String(member?.foodPreference || '').trim(),
         registrationNumber: String(member?.registrationNumber || '').trim(),
+        fipVaccinationEligibility: ['Yes', 'No'].includes(String(member?.fipVaccinationEligibility || '').trim())
+            ? String(member.fipVaccinationEligibility).trim()
+            : '',
         competitions: Array.isArray(member?.competitions)
             ? [...new Set(member.competitions.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 2)
             : [],
@@ -1576,6 +1582,16 @@ async function saveRegistration(sql, data, submit = false) {
             return !program || !availableProgramIds.has(String(program.id));
         })) {
             throw inputError('One or more selected programs are not available for this category. Review your selections.');
+        }
+        if (selectedWorkshops.includes(fipVaccinationWorkshopName)) {
+            const hasIneligibleFipSelection = data.registrationMode === 'group'
+                ? groupMembers.some((member) => Array.isArray(member.workshops)
+                    && member.workshops.includes(fipVaccinationWorkshopName)
+                    && member.fipVaccinationEligibility !== 'Yes')
+                : String(data.fipVaccinationEligibility || '').trim() !== 'Yes';
+            if (hasIneligibleFipSelection) {
+                throw inputError('FIP Vaccination Training requires a BLS Certificate or Training letter.');
+            }
         }
         if (data.hrDriveParticipation !== 'not_participating') {
             if (data.registrationMode === 'group' && !groupHrCoreAreas.length) {
@@ -2224,7 +2240,7 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
         const regNum = String(request.body?.registrationNumber || '').trim().toUpperCase();
         if (!regNum) throw inputError('Registration number is required.');
         const videoLink = String(request.body?.videoLink || '').trim();
-        if (!videoLink) throw inputError('Video link is required.');
+        if (!videoLink) throw inputError('Presentation link is required.');
 
         const rows = await sql`
             SELECT id, status, poster_video_link
@@ -2233,8 +2249,8 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
             LIMIT 1
         `;
         if (!rows.length) throw inputError('No abstract submission found for this registration number.');
-        if (rows[0].status !== 'accepted') throw inputError('Video link can only be submitted once your abstract has been accepted.');
-        if (rows[0].poster_video_link) throw inputError('A video link has already been submitted for this registration number.');
+        if (rows[0].status !== 'accepted') throw inputError('Presentation link can only be submitted once your abstract has been accepted.');
+        if (rows[0].poster_video_link) throw inputError('A presentation link has already been submitted for this registration number.');
 
         const updated = await sql`
             UPDATE abstract_submissions
@@ -2251,12 +2267,12 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
         const contact = await getRegistrationContactForMail(sql, submission.registrationNumber);
         queueStudentMail({
             to: contact?.email,
-            subject: `Poster video link received - ${submission.registrationNumber}`,
-            preview: 'Your poster video link has been received and is pending review.',
+            subject: `Presentation link received - ${submission.registrationNumber}`,
+            preview: 'Your presentation link has been received and is pending review.',
             body: [
                 `Dear ${contact?.name || 'Delegate'},`,
-                `Your poster video link for registration ${submission.registrationNumber || '-'} has been received.`,
-                'The scientific committee will review it and notify you when the video review status is updated.',
+                `Your presentation link for registration ${submission.registrationNumber || '-'} has been received.`,
+                'The scientific committee will review it and notify you when the presentation review status is updated.',
             ],
         });
         return send(response, 200, { submission });
@@ -3061,7 +3077,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             const { status, adminRemarks, videoReviewStatus, videoReviewRemarks } = request.body || {};
             if (videoReviewStatus !== undefined) {
                 if (!['pending', 'shortlisted', 'approved', 'rejected'].includes(videoReviewStatus)) {
-                    throw inputError('Invalid video review status. Must be pending, shortlisted, approved, or rejected.');
+                    throw inputError('Invalid presentation review status. Must be pending, shortlisted, approved, or rejected.');
                 }
                 const rows = await sql`
                     UPDATE abstract_submissions

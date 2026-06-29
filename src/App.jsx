@@ -89,6 +89,20 @@ const homeContentDefaults = {
     ],
 };
 
+const importantDatesMarquee = [
+    'IMPORTANT: In IMPORTANT DATES (Live) section',
+    'Early Bird registration closes on: 9th August 2026',
+    'Group Registration starts from: 03 July 2026',
+    'Regular Registration starts from: 10th August 2026',
+    'Regular Registration Closes on: 10th September 2026',
+    'Last Date of Submission of abstract: 31-07-2026',
+    'Abstract Acceptance mail date: 05-08-2026',
+    'Last date Poster/Oral presentation Video Submission: 22-08-2026',
+    'Date of Intimation of mail for Final Presentation by: 11-09-2026',
+    'POST Congress workshop DATE: 20& 21 September 2026',
+    'All Pre Congress Workshop Date: 18th September 2026.',
+];
+
 function normalizeHomeContent(data = {}) {
     const newsUpdates = Array.isArray(data.newsUpdates) ? data.newsUpdates : homeContentDefaults.newsUpdates;
     return {
@@ -376,10 +390,11 @@ const competitionOptions = [
 ];
 
 const workshopOptions = ['AI', 'FIP Vaccination Training (2 days)', '3D Printing'];
+const fipVaccinationWorkshopName = 'FIP Vaccination Training (2 days)';
 
 const workshopFees = {
     AI: 0,
-    'FIP Vaccination Training (2 days)': 0,
+    [fipVaccinationWorkshopName]: 1000,
     '3D Printing': 0,
 };
 
@@ -414,6 +429,7 @@ const initialRegistration = {
     studentCompetitions: [],
     competitionFeeAcknowledged: '',
     workshopParticipation: 'participating',
+    fipVaccinationEligibility: '',
     preConferenceWorkshop: '',
     selectedWorkshops: [],
     workshopFeeAcknowledged: '',
@@ -707,16 +723,6 @@ function Header() {
 }
 
 function Hero() {
-    const [homeContent, setHomeContent] = useState(homeContentDefaults);
-
-    useEffect(() => {
-        apiRequest('home-content')
-            .then(({ content }) => setHomeContent(normalizeHomeContent(content)))
-            .catch(() => setHomeContent(homeContentDefaults));
-    }, []);
-
-    const newsUpdates = normalizeHomeContent(homeContent).newsUpdates.filter((item) => item.title || item.copy);
-
     return (
         <section id="home" className="relative overflow-hidden bg-[#0d124f] text-white">
             <img
@@ -726,9 +732,9 @@ function Hero() {
             />
             <div className="absolute inset-0 bg-[#090d42]/48" />
             <div className="hero-sheen absolute inset-0" />
-            <div className="relative mx-auto grid min-h-[680px] max-w-7xl content-end gap-8 px-4 pb-14 pt-24 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8 lg:pb-20">
-                <div className="hero-copy max-w-3xl">
-                    <div className="mb-5 inline-flex items-center gap-2 rounded-lg bg-white/12 px-3 py-2 text-sm font-medium text-white ring-1 ring-white/25">
+            <div className="relative mx-auto min-h-[680px] max-w-7xl px-4 pb-14 pt-24 sm:px-6 lg:px-8 lg:pb-20">
+                <div className="hero-copy flex min-h-[540px] max-w-3xl flex-col justify-end">
+                    <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-lg bg-white/12 px-3 py-2 text-sm font-medium text-white ring-1 ring-white/25">
                         <span className="pulse-dot size-2 rounded-full bg-[#f4a21b]" />
                         14th IPA National Students Congress web portal
                     </div>
@@ -749,7 +755,7 @@ function Hero() {
                         <p className="text-xs font-bold uppercase tracking-wider text-[#ffd36a]">Theme</p>
                         <p className="mt-1 text-base font-semibold leading-7 text-white sm:text-lg">{eventTheme}</p>
                     </div>
-                    <p className="mt-4 inline-flex rounded-lg bg-white/12 px-4 py-2 text-sm font-bold text-white ring-1 ring-white/25">
+                    <p className="mt-4 inline-flex w-fit rounded-lg bg-white/12 px-4 py-2 text-sm font-bold text-white ring-1 ring-white/25">
                         {eventDate}
                     </p>
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -761,21 +767,109 @@ function Hero() {
                         </a>
                     </div>
                 </div>
+            </div>
+        </section>
+    );
+}
 
-                <aside id="news-and-updates" className="hero-panel self-end rounded-lg bg-white p-5 text-zinc-950 shadow-2xl">
-                    <div className="flex items-center justify-between gap-4 border-b border-zinc-200 pb-4">
-                        <h2 className="text-base font-bold">Latest News and Updates</h2>
-                        <span className="live-badge rounded-lg bg-[#e7f5ec] px-3 py-1 text-xs font-semibold text-[#00652f]">Live</span>
+function LatestNewsUpdates() {
+    const [homeContent, setHomeContent] = useState(homeContentDefaults);
+    const [activeNewsPage, setActiveNewsPage] = useState(0);
+
+    useEffect(() => {
+        apiRequest('home-content')
+            .then(({ content }) => setHomeContent(normalizeHomeContent(content)))
+            .catch(() => setHomeContent(homeContentDefaults));
+    }, []);
+
+    const newsUpdates = normalizeHomeContent(homeContent).newsUpdates.filter((item) => item.title || item.copy);
+    const displayUpdates = newsUpdates.length ? newsUpdates : homeContentDefaults.newsUpdates;
+    const newsPageSize = 3;
+    const newsPages = useMemo(() => {
+        const pages = [];
+
+        for (let index = 0; index < displayUpdates.length; index += newsPageSize) {
+            pages.push(displayUpdates.slice(index, index + newsPageSize));
+        }
+
+        return pages;
+    }, [displayUpdates]);
+    const visibleNewsItems = newsPages[activeNewsPage] || newsPages[0] || [];
+
+    useEffect(() => {
+        setActiveNewsPage(0);
+    }, [displayUpdates.length]);
+
+    useEffect(() => {
+        if (newsPages.length <= 1) {
+            return undefined;
+        }
+
+        const timer = window.setInterval(() => {
+            setActiveNewsPage((currentPage) => (currentPage + 1) % newsPages.length);
+        }, 6000);
+
+        return () => window.clearInterval(timer);
+    }, [newsPages.length]);
+
+    const showPreviousNewsPage = () => {
+        setActiveNewsPage((currentPage) => (currentPage - 1 + newsPages.length) % newsPages.length);
+    };
+
+    const showNextNewsPage = () => {
+        setActiveNewsPage((currentPage) => (currentPage + 1) % newsPages.length);
+    };
+
+    return (
+        <section id="news-and-updates" className="news-updates-section relative isolate overflow-hidden bg-white py-14 sm:py-16">
+            <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="flex flex-col gap-3 border-b border-zinc-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#df0867]">Live Updates</p>
+                        <h2 className="mt-2 text-2xl font-bold text-zinc-950 sm:text-3xl">Latest News and Updates</h2>
                     </div>
-                    <div className="mt-4 space-y-4">
-                        {newsUpdates.map((item, index) => (
-                            <div key={`${item.title}-${index}`} className="update-row rounded-lg p-2 transition duration-300 hover:bg-zinc-50">
-                                {item.title && <p className="text-sm font-semibold text-zinc-900">{item.title}</p>}
-                                {item.copy && <p className="mt-1 text-sm text-zinc-600">{item.copy}</p>}
+                    <span className="live-badge w-fit rounded-lg bg-[#e7f5ec] px-3 py-1 text-xs font-semibold text-[#00652f]">Live</span>
+                </div>
+                <div className="mt-6">
+                    <div className="news-paged-carousel">
+                        <div key={activeNewsPage} className="news-page-enter grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {visibleNewsItems.map((item, index) => {
+                                const updateNumber = activeNewsPage * newsPageSize + index + 1;
+
+                                return (
+                                    <article key={`${item.title}-${updateNumber}`} className="update-row rounded-lg border border-zinc-200 bg-white/92 p-5 shadow-sm transition duration-300 hover:border-emerald-200 hover:bg-emerald-50/50">
+                                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#00652f]">Update {String(updateNumber).padStart(2, '0')}</p>
+                                        {item.title && <h3 className="mt-3 text-base font-bold text-zinc-950">{item.title}</h3>}
+                                        {item.copy && <p className="mt-2 text-sm leading-6 text-zinc-600">{item.copy}</p>}
+                                    </article>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    {newsPages.length > 1 && (
+                        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-2" aria-label="News update slides">
+                                {newsPages.map((_, index) => (
+                                    <button
+                                        key={`news-page-${index}`}
+                                        type="button"
+                                        aria-label={`Show news slide ${index + 1}`}
+                                        className={`h-2.5 rounded-full transition-all duration-300 ${activeNewsPage === index ? 'w-8 bg-[#df0867]' : 'w-2.5 bg-zinc-300 hover:bg-[#00652f]'}`}
+                                        onClick={() => setActiveNewsPage(index)}
+                                    />
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                </aside>
+                            <div className="flex items-center gap-2">
+                                <button type="button" aria-label="Previous news updates" className="news-carousel-button" onClick={showPreviousNewsPage}>
+                                    ‹
+                                </button>
+                                <button type="button" aria-label="Next news updates" className="news-carousel-button" onClick={showNextNewsPage}>
+                                    ›
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
         </section>
     );
@@ -1082,6 +1176,9 @@ function AccommodationTravelPage() {
                             <h3 className="mt-2 text-2xl font-bold text-zinc-950">Hotel and stay list</h3>
                         </div>
                     </div>
+                    <p className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-900">
+                        Note: We are not holding any bookings at present. All services are subject to availability at the time of booking. If the mentioned hotel is not available, we will provide an alternative option.
+                    </p>
                     <div className="overflow-x-auto rounded-lg border border-zinc-200">
                         <table className="w-full min-w-[860px] text-left text-sm">
                             <thead className="bg-zinc-100 text-xs uppercase tracking-wide text-zinc-500">
@@ -1302,7 +1399,7 @@ function RegistrationPage() {
             ? programCatalog.filter((program) => program.type === 'workshop').map(priceProgramForCategory).filter(Boolean)
             : workshopOptions.map((name) => ({ name, price: workshopFees[name] || 0, description: '' })))
         : [];
-    const postCongressWorkshopNames = ['FIP Vaccination Training (2 days)'];
+    const postCongressWorkshopNames = [fipVaccinationWorkshopName];
     const preCongressWorkshopPrograms = workshopPrograms.filter((program) => !postCongressWorkshopNames.includes(program.name));
     const postCongressWorkshopPrograms = workshopPrograms.filter((program) => postCongressWorkshopNames.includes(program.name));
     const isGroupRegistration = formData.registrationMode === 'group';
@@ -1382,9 +1479,24 @@ function RegistrationPage() {
             groupMembers: current.groupMembers.map((member) => ({ ...member, competitions: [], workshops: [] })),
             studentCompetitions: [],
             selectedWorkshops: [],
+            fipVaccinationEligibility: '',
             preConferenceWorkshop: '',
         }));
         setNotice(value ? 'Category changed. Program options and prices have been refreshed.' : '');
+    }
+
+    function updateFipVaccinationEligibility(value) {
+        setFormData((current) => ({
+            ...current,
+            fipVaccinationEligibility: value,
+            selectedWorkshops: value === 'Yes'
+                ? current.selectedWorkshops
+                : current.selectedWorkshops.filter((name) => name !== fipVaccinationWorkshopName),
+            preConferenceWorkshop: value === 'Yes'
+                ? current.preConferenceWorkshop
+                : current.selectedWorkshops.filter((name) => name !== fipVaccinationWorkshopName)[0] || '',
+        }));
+        setNotice(value === 'No' ? 'FIP Vaccination Training is available only with a BLS Certificate or Training letter.' : '');
     }
 
     function downloadGroupTemplate() {
@@ -1423,6 +1535,7 @@ function RegistrationPage() {
                     ...member,
                     competitions: [],
                     workshops: [],
+                    fipVaccinationEligibility: '',
                     presentationType: 'Not Participating',
                     hrCoreArea: '',
                 })),
@@ -1473,6 +1586,13 @@ function RegistrationPage() {
 
     function toggleWorkshop(name) {
         setFormData((current) => {
+            if (name === fipVaccinationWorkshopName && current.fipVaccinationEligibility !== 'Yes') {
+                return {
+                    ...current,
+                    selectedWorkshops: current.selectedWorkshops.filter((item) => item !== fipVaccinationWorkshopName),
+                    preConferenceWorkshop: current.selectedWorkshops.filter((item) => item !== fipVaccinationWorkshopName)[0] || '',
+                };
+            }
             const selectedWorkshops = current.selectedWorkshops.includes(name)
                 ? []
                 : [name];
@@ -1488,6 +1608,9 @@ function RegistrationPage() {
                 const field = type === 'competition' ? 'competitions' : 'workshops';
                 const currentSelections = Array.isArray(member[field]) ? member[field] : [];
                 const hasProgram = currentSelections.includes(programName);
+                if (field === 'workshops' && programName === fipVaccinationWorkshopName && member.fipVaccinationEligibility !== 'Yes') {
+                    return { ...member, workshops: currentSelections.filter((name) => name !== fipVaccinationWorkshopName) };
+                }
                 const nextSelections = hasProgram
                     ? currentSelections.filter((name) => name !== programName)
                     : field === 'workshops'
@@ -1510,6 +1633,27 @@ function RegistrationPage() {
             };
         });
         setNotice('');
+    }
+
+    function updateGroupMemberFipEligibility(memberIndex, value) {
+        setFormData((current) => {
+            const groupMembers = current.groupMembers.map((member, index) => {
+                if (index !== memberIndex) return member;
+                const workshops = value === 'Yes'
+                    ? (Array.isArray(member.workshops) ? member.workshops : [])
+                    : (Array.isArray(member.workshops) ? member.workshops : []).filter((name) => name !== fipVaccinationWorkshopName);
+                return { ...member, fipVaccinationEligibility: value, workshops };
+            });
+            const selectedWorkshops = [...new Set(groupMembers.flatMap((member) => Array.isArray(member.workshops) ? member.workshops : []))];
+
+            return {
+                ...current,
+                groupMembers,
+                selectedWorkshops,
+                preConferenceWorkshop: selectedWorkshops[0] || '',
+            };
+        });
+        setNotice(value === 'No' ? 'FIP Vaccination Training is available only with a BLS Certificate or Training letter.' : '');
     }
 
     function updateGroupMemberPresentation(memberIndex, presentationType) {
@@ -2218,6 +2362,20 @@ function RegistrationPage() {
                                     <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-bold leading-6 text-red-700">
                                         {postCongressWorkshop.note}
                                     </p>
+                                    {!isGroupRegistration && (
+                                        <label className={`${labelClass} mt-4`}>
+                                            Do you have a BLS Certificate or Training letter for FIP Vaccination Training?
+                                            <select
+                                                className={fieldClass}
+                                                value={formData.fipVaccinationEligibility}
+                                                onChange={(event) => updateFipVaccinationEligibility(event.target.value)}
+                                            >
+                                                <option value="">Choose</option>
+                                                <option value="Yes">Yes</option>
+                                                <option value="No">No</option>
+                                            </select>
+                                        </label>
+                                    )}
                                     {!formData.category ? (
                                         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Select a category in the General step to view available post-congress workshops and prices.</p>
                                     ) : isGroupRegistration && !formData.groupMembers.length ? (
@@ -2238,44 +2396,73 @@ function RegistrationPage() {
                                                         {formData.groupMembers.map((member, index) => {
                                                             const workshops = Array.isArray(member.workshops) ? member.workshops : [];
                                                             const memberChecked = workshops.includes(program.name);
+                                                            const isFipWorkshop = program.name === fipVaccinationWorkshopName;
+                                                            const canSelectFipWorkshop = !isFipWorkshop || member.fipVaccinationEligibility === 'Yes';
 
                                                             return (
-                                                                <label key={`${program.name}-${member.email || member.name}-${index}`} className={`flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold ${
+                                                                <div key={`${program.name}-${member.email || member.name}-${index}`} className={`rounded-md border px-3 py-2 text-xs font-semibold ${
                                                                     memberChecked
                                                                         ? 'border-emerald-500 bg-emerald-50 text-emerald-950'
                                                                         : 'border-zinc-200 bg-white text-zinc-700'
                                                                 }`}>
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={memberChecked}
-                                                                        onChange={() => toggleGroupMemberProgram(index, 'workshop', program.name)}
-                                                                    />
-                                                                    <span>{formatStudentLabel(member, index)}</span>
-                                                                </label>
+                                                                    {isFipWorkshop && (
+                                                                        <label className="mb-2 block text-[11px] font-bold text-zinc-600">
+                                                                            BLS Certificate / Training letter
+                                                                            <select
+                                                                                className="mt-1 w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-xs font-semibold text-zinc-800 focus:border-[#df0867] focus:outline-none"
+                                                                                value={member.fipVaccinationEligibility || ''}
+                                                                                onChange={(event) => updateGroupMemberFipEligibility(index, event.target.value)}
+                                                                            >
+                                                                                <option value="">Choose</option>
+                                                                                <option value="Yes">Yes</option>
+                                                                                <option value="No">No</option>
+                                                                            </select>
+                                                                        </label>
+                                                                    )}
+                                                                    <label className={`flex items-center gap-2 ${canSelectFipWorkshop ? '' : 'cursor-not-allowed opacity-50'}`}>
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={memberChecked}
+                                                                            disabled={!canSelectFipWorkshop}
+                                                                            onChange={() => toggleGroupMemberProgram(index, 'workshop', program.name)}
+                                                                        />
+                                                                        <span>{formatStudentLabel(member, index)}</span>
+                                                                    </label>
+                                                                </div>
                                                             );
                                                         })}
                                                     </div>
                                                     <p className="mt-2 text-xs font-semibold text-zinc-500">{groupSelectionsForProgram('workshop', program.name).length} students selected</p>
                                                 </article>
                                             ) : (
+                                            (() => {
+                                                const isFipWorkshop = program.name === fipVaccinationWorkshopName;
+                                                const canSelectFipWorkshop = !isFipWorkshop || formData.fipVaccinationEligibility === 'Yes';
+                                                return (
                                             <label
                                                 key={program.name}
                                                 className={`rounded-lg border p-4 text-sm font-bold ${
                                                     formData.selectedWorkshops.includes(program.name)
                                                         ? 'border-emerald-600 bg-emerald-50 text-emerald-900'
-                                                        : 'border-zinc-200 bg-white text-zinc-700'
+                                                        : canSelectFipWorkshop
+                                                        ? 'border-zinc-200 bg-white text-zinc-700'
+                                                        : 'cursor-not-allowed border-zinc-200 bg-zinc-50 text-zinc-400'
                                                 }`}
                                             >
                                                 <input
                                                     type="checkbox"
                                                     className="mr-2"
                                                     checked={formData.selectedWorkshops.includes(program.name)}
+                                                    disabled={!canSelectFipWorkshop}
                                                     onChange={() => toggleWorkshop(program.name)}
                                                 />
                                                 <span>{program.name}</span>
                                                 <span className="ml-2 text-xs font-bold text-emerald-700">{program.price ? `Rs. ${program.price.toLocaleString('en-IN')}` : 'Free'}</span>
                                                 {program.description && <span className="mt-1 block pl-6 text-xs font-normal text-zinc-500">{program.description}</span>}
+                                                {!canSelectFipWorkshop && <span className="mt-1 block pl-6 text-xs font-semibold text-red-600">Select Yes above to activate this workshop.</span>}
                                             </label>
+                                                );
+                                            })()
                                             )
                                         ))}
                                         </div>
@@ -4161,7 +4348,7 @@ function AdminSidebarIcon({ name }) {
 
 const adminModules = [
     { id: 'dashboard', label: 'Dashboard', description: 'Overview of registrations, payments, and event operations.' },
-    { id: 'registrations', label: 'Registrations', description: 'Review delegate registrations, drafts, and contact details.' },
+    { id: 'registrations', label: 'Participants', description: 'Review delegate registrations, drafts, and contact details.' },
     { id: 'payments', label: 'Payments', description: 'Track collections, pending payments, and reconciliation.' },
     { id: 'categories', label: 'Categories', description: 'Create registration categories and configure their base registration fees.' },
     { id: 'programs', label: 'Programs', description: 'Manage event programs, schedules, and capacities.' },
@@ -4194,7 +4381,7 @@ const accommodationAdminSections = [
 ];
 
 const abstractsAdminSections = [
-    { id: 'student-abstracts', label: 'Student Abstracts', description: 'Review uploaded student abstracts, approval status, and poster video review.' },
+    { id: 'student-abstracts', label: 'Student Abstracts', description: 'Review uploaded student abstracts, approval status, and presentation review.' },
     { id: 'abstract-book', label: 'Abstract Book Submission', description: 'Upload or replace the final abstract book PDF shown on the public scientific page.' },
 ];
 
@@ -4464,7 +4651,7 @@ function AdminPage() {
                 body: JSON.stringify({ videoReviewStatus, videoReviewRemarks: videoReviewRemarksDraft }),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to update video review.');
+            if (!res.ok) throw new Error(data.error || 'Failed to update presentation review.');
             setAdminAbstracts((prev) => prev.map((a) => (a.id === id ? data.submission : a)));
             setVideoReviewing(null);
             setVideoReviewRemarksDraft('');
@@ -7588,7 +7775,7 @@ function AdminPage() {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <h3 className="text-base font-bold text-zinc-900">Abstract Submissions</h3>
-                                        <p className="mt-1 text-sm text-zinc-500">Review Vercel Blob uploaded abstracts and accept or reject submissions. Accepted participants can then submit their poster video link.</p>
+                                        <p className="mt-1 text-sm text-zinc-500">Review Vercel Blob uploaded abstracts and accept or reject submissions. Accepted participants can then submit their presentation link.</p>
                                     </div>
                                     <button
                                         type="button"
@@ -7611,7 +7798,7 @@ function AdminPage() {
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Participant</th>
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">File</th>
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Status</th>
-                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Video Link</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Presentation Link</th>
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Video Review</th>
                                                     <th className="pb-3 text-xs font-bold uppercase text-zinc-500">Actions</th>
                                                 </tr>
@@ -7964,7 +8151,7 @@ function ScientificServicePage() {
 
     async function submitVideoLink() {
         const link = vidLink.trim();
-        if (!link) { setVidLinkErr('Please paste your video link.'); return; }
+        if (!link) { setVidLinkErr('Please paste your presentation link.'); return; }
         setVidSubmitting(true);
         setVidSubmitError('');
         setVidLinkErr('');
@@ -8142,7 +8329,7 @@ function ScientificServicePage() {
                 </div>
             </section>
 
-            {/* Abstract & Video Link Submission */}
+            {/* Abstract & Presentation Link Submission */}
             <section id="submit" className="bg-white py-10 sm:py-12">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-3 border-b border-zinc-200 pb-5">
@@ -8151,7 +8338,7 @@ function ScientificServicePage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                             </svg>
                         </span>
-                        <h2 className="text-xl font-bold text-zinc-900">Submit Abstract / Poster Video Link</h2>
+                        <h2 className="text-xl font-bold text-zinc-900">Submit Abstract / Presentation Link</h2>
                     </div>
 
                     <div className="mt-6 max-w-xl space-y-5">
@@ -8284,20 +8471,20 @@ function ScientificServicePage() {
                                     </div>
                                 </div>
 
-                                {/* Accepted + video link already submitted */}
+                                {/* Accepted + presentation link already submitted */}
                                 {absRegInfo.abstractStatus === 'accepted' && absRegInfo.posterVideoLink && (
                                     <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
-                                        <p className="text-xs font-semibold text-emerald-700">Poster Presentation Video Link — Submitted</p>
+                                        <p className="text-xs font-semibold text-emerald-700">Presentation Link - Submitted</p>
                                         <a href={absRegInfo.posterVideoLink} target="_blank" rel="noopener noreferrer" className="mt-1 block truncate text-xs font-medium text-[#0d124f] underline">{absRegInfo.posterVideoLink}</a>
                                     </div>
                                 )}
 
-                                {/* Accepted + no video link yet → show link input */}
+                                {/* Accepted + no presentation link yet - show link input */}
                                 {absRegInfo.abstractStatus === 'accepted' && !absRegInfo.posterVideoLink && (
                                     <div className="space-y-4 rounded-lg border border-emerald-200 bg-emerald-50/40 px-4 py-4">
                                         <div>
-                                            <p className="text-sm font-semibold text-emerald-800">Submit Poster Presentation Video Link</p>
-                                            <p className="mt-1 text-xs text-emerald-700">Your abstract has been accepted. Paste the link to your poster presentation video (Google Drive, YouTube, etc.).</p>
+                                            <p className="text-sm font-semibold text-emerald-800">Submit Presentation Link</p>
+                                            <p className="mt-1 text-xs text-emerald-700">Your abstract has been accepted. Paste your presentation link (Google Drive, YouTube, etc.).</p>
                                         </div>
                                         <div>
                                             <input
@@ -8316,7 +8503,7 @@ function ScientificServicePage() {
                                             disabled={!vidLink.trim() || vidSubmitting}
                                             className="rounded-lg bg-[#df0867] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#bd0758] disabled:cursor-not-allowed disabled:opacity-40"
                                         >
-                                            {vidSubmitting ? 'Submitting…' : 'Submit Video Link'}
+                                            {vidSubmitting ? 'Submitting…' : 'Submit Presentation Link'}
                                         </button>
                                     </div>
                                 )}
@@ -8549,12 +8736,12 @@ export default function App() {
                             <div className="announcement-track flex w-max items-center">
                                 {[0, 1].map((copy) => (
                                     <div key={copy} className="flex shrink-0 items-center gap-5 px-6 text-sm font-medium text-white/95">
-                                        <span>
-                                            Event dates: <strong className="text-white">{eventDate}</strong>
-                                        </span>
-                                        <span className="size-1.5 rounded-full bg-[#df0867]" />
-                                        <span>Registration deadlines, accepted paper lists, and poster codes will be displayed on this portal.</span>
-                                        <span className="size-1.5 rounded-full bg-[#ffd36a]" />
+                                        {importantDatesMarquee.map((item, index) => (
+                                            <span key={`${copy}-${item}`} className="flex items-center gap-5">
+                                                <span>{item}</span>
+                                                <span className={`size-1.5 rounded-full ${index % 2 === 0 ? 'bg-[#df0867]' : 'bg-[#ffd36a]'}`} />
+                                            </span>
+                                        ))}
                                     </div>
                                 ))}
                             </div>
@@ -8562,6 +8749,7 @@ export default function App() {
                     </div>
                 </section>
                 <HomeWelcome />
+                <LatestNewsUpdates />
                 <QuickFacts />
                 <SponsorShowcase />
                 <Abstracts />

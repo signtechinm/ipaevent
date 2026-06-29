@@ -168,7 +168,7 @@ body {
 }
 
 .announcement-track {
-    animation: announcement-scroll 24s linear infinite;
+    animation: announcement-scroll 68s linear infinite;
     will-change: transform;
 }
 
@@ -565,6 +565,64 @@ body {
     animation-delay: 240ms;
 }
 
+.news-paged-carousel {
+    min-height: 190px;
+}
+
+.news-page-enter {
+    animation: news-page-in 560ms ease both;
+}
+
+.news-carousel-button {
+    display: inline-flex;
+    width: 2.25rem;
+    height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgb(212 212 216);
+    border-radius: 0.5rem;
+    background: rgb(255 255 255 / 0.88);
+    color: #11145f;
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1;
+    box-shadow: 0 8px 24px rgb(17 20 95 / 0.08);
+    transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.news-carousel-button:hover {
+    border-color: rgb(0 101 47 / 0.35);
+    background: #ffffff;
+    color: #00652f;
+    transform: translateY(-1px);
+}
+
+.news-updates-section::before,
+.news-updates-section::after {
+    position: absolute;
+    inset: 0;
+    content: '';
+    pointer-events: none;
+}
+
+.news-updates-section::before {
+    z-index: -2;
+    background:
+        linear-gradient(90deg, rgb(17 20 95 / 0.035) 1px, transparent 1px),
+        linear-gradient(180deg, rgb(0 101 47 / 0.035) 1px, transparent 1px),
+        #ffffff;
+    background-size: 44px 44px;
+}
+
+.news-updates-section::after {
+    z-index: -1;
+    background:
+        linear-gradient(115deg, transparent 0%, transparent 38%, rgb(223 8 103 / 0.055) 48%, transparent 58%, transparent 100%),
+        linear-gradient(90deg, transparent 0%, rgb(0 101 47 / 0.04) 35%, transparent 70%);
+    animation: news-background-drift 18s ease-in-out infinite alternate;
+    mask-image: linear-gradient(180deg, transparent, #000 14%, #000 86%, transparent);
+}
+
 .snapshot-flow-lines {
     overflow: hidden;
 }
@@ -887,6 +945,30 @@ body {
     70%,
     100% {
         box-shadow: 0 0 0 8px rgb(255 211 106 / 0);
+    }
+}
+
+@keyframes news-background-drift {
+    0% {
+        transform: translateX(-3%) translateY(-1%);
+        opacity: 0.72;
+    }
+
+    100% {
+        transform: translateX(3%) translateY(1%);
+        opacity: 1;
+    }
+}
+
+@keyframes news-page-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
