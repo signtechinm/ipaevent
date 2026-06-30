@@ -1012,8 +1012,8 @@ function validateAbstractUpload({ fileName, fileType, fileData, fileSize }) {
     }
 
     const extension = String(fileName || '').split('.').pop()?.toLowerCase() || '';
-    if (!['pdf', 'docx'].includes(extension)) {
-        throw inputError('Upload a text-only PDF or DOCX file. Legacy DOC files are not accepted because they cannot be validated as text-only.');
+    if (extension !== 'pdf') {
+        throw inputError('Upload a PDF file only.');
     }
 
     const buffer = Buffer.from(fileData, 'base64');
@@ -1026,20 +1026,12 @@ function validateAbstractUpload({ fileName, fileType, fileData, fileSize }) {
         }
     }
 
-    if (extension === 'docx') {
-        const hasEmbeddedMedia = /word\/media\/|word\/embeddings\//i.test(searchableContent);
-        if (hasEmbeddedMedia) {
-            throw inputError('Abstract files must contain text only. Remove images, charts, and embedded media before uploading.');
-        }
-    }
-
     const allowedTypes = new Set([
         '',
         'application/pdf',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ]);
     if (fileType && !allowedTypes.has(fileType)) {
-        throw inputError('Upload a text-only PDF or DOCX file.');
+        throw inputError('Upload a PDF file only.');
     }
 
     return { buffer, extension };
@@ -1050,9 +1042,7 @@ async function uploadAbstractToBlob({ registrationNumber, fileName, fileType, bu
         throw inputError('Vercel Blob is not configured. Add BLOB_READ_WRITE_TOKEN to the environment.');
     }
 
-    const contentType = fileType || (extension === 'pdf'
-        ? 'application/pdf'
-        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    const contentType = fileType || 'application/pdf';
     const safeRegistration = slugifyFilePart(registrationNumber, 'registration');
     const safeName = slugifyFilePart(fileName.replace(/\.[^.]+$/, ''), 'abstract');
     const pathname = `abstract-submissions/${safeRegistration}-${safeName}-${Date.now()}.${extension}`;
@@ -1567,6 +1557,9 @@ async function saveRegistration(sql, data, submit = false) {
         }
         if (data.registrationMode === 'group' && !groupMembers.length) {
             throw inputError('Upload the student roster before submitting a group registration.');
+        }
+        if (!String(data.transactionDetails || '').trim()) {
+            throw inputError('Enter the transaction ID / UPI reference number before submitting.');
         }
         const availableProgramIds = new Set(
             pricing

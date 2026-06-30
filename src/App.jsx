@@ -3,6 +3,7 @@ import { apiRequest } from './api';
 
 const eventTheme = "Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era";
 const eventDate = '19–20 September 2026';
+const registrationUpiId = 'ipakeralastate@sbi';
 
 const siteMap = [
     {
@@ -1780,6 +1781,11 @@ function RegistrationPage() {
         if (!validateGeneralFields()) {
             return;
         }
+        if (!formData.transactionDetails.trim()) {
+            setActiveTab('payment');
+            setNotice('Enter the transaction ID / UPI reference number before submitting.');
+            return;
+        }
         const hrPartiallyFilled = formData.hrCollegeWithState.trim() || formData.hrCourseOrQualification.trim()
             || formData.hrWhatsappNumber.trim() || formData.hrEmail.trim() || formData.hrCoreArea;
         if (formData.hrDriveParticipation !== 'not_participating' || hrPartiallyFilled) {
@@ -2712,22 +2718,52 @@ function RegistrationPage() {
                                         <p>Competition and workshop fees are accumulated per selected student.</p>
                                     </div>
                                 )}
-                                <label className={labelClass}>
-                                    Pay Fee
-                                    <input className={`${fieldClass} bg-zinc-100 font-bold`} value={`Rs. ${totals.total.toLocaleString('en-IN')}`} readOnly />
-                                </label>
-                                <label className={labelClass}>
-                                    Transaction Details
+                                <div className="rounded-lg border border-sky-200 bg-sky-50 p-5 md:col-span-2">
+                                    <div className="grid gap-5 lg:grid-cols-[1fr_320px] lg:items-center">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-sky-700">SBI Scan &amp; Pay</p>
+                                            <h3 className="mt-2 text-xl font-bold text-zinc-950">Pay the registration fee using UPI</h3>
+                                            <p className="mt-2 text-sm leading-6 text-zinc-700">
+                                                Scan the SBI QR shared by the organizing team or pay directly to the UPI ID below. After payment, enter the transaction ID / UPI reference number before submitting your registration.
+                                            </p>
+                                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                                <div className="rounded-lg bg-white px-4 py-3 ring-1 ring-sky-100">
+                                                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Amount Payable</p>
+                                                    <p className="mt-1 text-2xl font-black text-[#0d124f]">Rs. {totals.total.toLocaleString('en-IN')}</p>
+                                                </div>
+                                                <div className="rounded-lg bg-white px-4 py-3 ring-1 ring-sky-100">
+                                                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">UPI ID</p>
+                                                    <p className="mt-1 break-all font-mono text-base font-black text-[#0d124f]">{registrationUpiId}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="rounded-lg border border-sky-200 bg-white p-4 text-center shadow-sm">
+                                            <div className="mx-auto flex aspect-square max-w-[220px] items-center justify-center rounded-lg border-2 border-dashed border-sky-200 bg-sky-50 px-5">
+                                                <div>
+                                                    <p className="text-xs font-black uppercase tracking-[0.16em] text-sky-700">Scan &amp; Pay</p>
+                                                    <p className="mt-3 text-sm font-bold text-zinc-950">Use the SBI QR code</p>
+                                                    <p className="mt-2 break-all font-mono text-xs font-semibold text-zinc-600">{registrationUpiId}</p>
+                                                </div>
+                                            </div>
+                                            <p className="mt-3 text-xs font-semibold text-zinc-500">BHIM UPI, YONO SBI, GPay, Paytm, or WhatsApp Pay</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <label className={`${labelClass} md:col-span-2`}>
+                                    Transaction ID / UPI Reference Number
                                     <input
                                         className={fieldClass}
                                         value={formData.transactionDetails}
                                         onChange={(event) => updateField('transactionDetails', event.target.value)}
-                                        placeholder="Gateway transaction ID or manual reference"
+                                        placeholder="Enter UPI transaction ID / bank reference number"
+                                        required
                                     />
+                                    <span className="mt-1 block text-xs font-medium text-zinc-500">
+                                        This reference will be used by the admin team to verify your payment.
+                                    </span>
                                 </label>
-                                <div className="rounded-lg bg-amber-50 p-4 text-sm leading-6 text-zinc-700 md:col-span-2">
-                                    Payment gateway integration will replace manual transaction entry. PostgreSQL should store the
-                                    verified gateway transaction ID, amount, status, and response payload.
+                                <div className="rounded-lg bg-amber-50 p-4 text-sm leading-6 text-amber-900 md:col-span-2">
+                                    Payment status will remain pending until the transaction ID is verified by the admin team.
                                 </div>
                             </div>
                         )}
@@ -8107,19 +8143,16 @@ function ScientificServicePage() {
         setAbsSubmitError('');
         try {
             const extension = absFile.name.split('.').pop()?.toLowerCase();
-            if (!['pdf', 'docx'].includes(extension)) {
-                throw new Error('Upload a text-only PDF or DOCX file.');
+            if (extension !== 'pdf') {
+                throw new Error('Upload a PDF file only.');
             }
             if (absFile.size > 1 * 1024 * 1024) {
-                throw new Error('File exceeds 1 MB. Please choose a smaller text-only file.');
+                throw new Error('File exceeds 1 MB. Please choose a smaller PDF file.');
             }
             const filePreview = await absFile.arrayBuffer();
             const searchableContent = new TextDecoder('latin1').decode(filePreview);
             if (extension === 'pdf' && /\/Subtype\s*\/Image\b|\/Filter\s*\/(?:DCTDecode|JPXDecode|JBIG2Decode|CCITTFaxDecode)\b/i.test(searchableContent)) {
                 throw new Error('Abstract files must contain text only. Remove images, scanned pages, logos, charts, and embedded media before uploading.');
-            }
-            if (extension === 'docx' && /word\/media\/|word\/embeddings\//i.test(searchableContent)) {
-                throw new Error('Abstract files must contain text only. Remove images, charts, and embedded media before uploading.');
             }
             const base64 = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -8342,6 +8375,19 @@ function ScientificServicePage() {
                     </div>
 
                     <div className="mt-6 max-w-xl space-y-5">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-4">
+                                <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#df0867]">Initial Step</p>
+                                <p className="mt-2 text-sm font-semibold leading-6 text-zinc-900">After completion of primary registration, submit a single-page abstract.</p>
+                                <p className="mt-2 text-xs leading-5 text-zinc-600">Tables and figures are excluded. Supported format: PDF file only. Maximum file size: 1 MB.</p>
+                            </div>
+                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4">
+                                <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#00652f]">Final Step</p>
+                                <p className="mt-2 text-sm font-semibold leading-6 text-emerald-950">Only participants who receive an acceptance mail can submit the final link.</p>
+                                <p className="mt-2 text-xs leading-5 text-emerald-800">Submit a link of the recorded video or recorded Zoom meet of your poster or oral presentation for screening and selection by the 14th NSC Scientific Service Committee.</p>
+                            </div>
+                        </div>
+
                         {/* Registration number input */}
                         <div>
                             <label className="block text-sm font-semibold text-zinc-800">Enter your Registration Number</label>
@@ -8405,23 +8451,23 @@ function ScientificServicePage() {
                                 </div>
 
                                 <div>
-                                    <p className="text-xs text-zinc-500">Accepted formats: text-only PDF or DOCX · Max 1 MB. Do not include images, scanned pages, logos, charts, or embedded media.</p>
+                                    <p className="text-xs text-zinc-500">Single-page abstract only, excluding tables and figures. Accepted format: PDF only · Max 1 MB. Do not include images, scanned pages, logos, charts, or embedded media.</p>
                                     <label className="mt-3 flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 px-6 py-10 text-center transition hover:border-[#df0867] hover:bg-red-50/30">
                                         <svg xmlns="http://www.w3.org/2000/svg" className="size-9 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m6.75 12-3-3m0 0-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                                         </svg>
                                         <span className="text-sm font-medium text-zinc-600">{absFile ? absFile.name : 'Click to choose file or drag and drop'}</span>
-                                        <span className="text-xs text-zinc-400">Text-only PDF / DOCX · Max 1 MB</span>
+                                        <span className="text-xs text-zinc-400">PDF only · Max 1 MB</span>
                                         <input
                                             type="file"
-                                            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                            accept=".pdf,application/pdf"
                                             className="sr-only"
                                             onChange={(e) => {
                                                 const f = e.target.files[0];
                                                 if (!f) return;
                                                 const extension = f.name.split('.').pop()?.toLowerCase();
-                                                if (!['pdf', 'docx'].includes(extension)) { setAbsFileErr('Upload a text-only PDF or DOCX file. Legacy DOC files are not accepted.'); setAbsFile(null); e.target.value = ''; return; }
-                                                if (f.size > 1 * 1024 * 1024) { setAbsFileErr('File exceeds 1 MB. Please choose a smaller text-only file.'); setAbsFile(null); e.target.value = ''; return; }
+                                                if (extension !== 'pdf') { setAbsFileErr('Upload a PDF file only.'); setAbsFile(null); e.target.value = ''; return; }
+                                                if (f.size > 1 * 1024 * 1024) { setAbsFileErr('File exceeds 1 MB. Please choose a smaller PDF file.'); setAbsFile(null); e.target.value = ''; return; }
                                                 setAbsFileErr('');
                                                 setAbsFile(f);
                                             }}
@@ -8484,7 +8530,7 @@ function ScientificServicePage() {
                                     <div className="space-y-4 rounded-lg border border-emerald-200 bg-emerald-50/40 px-4 py-4">
                                         <div>
                                             <p className="text-sm font-semibold text-emerald-800">Submit Presentation Link</p>
-                                            <p className="mt-1 text-xs text-emerald-700">Your abstract has been accepted. Paste your presentation link (Google Drive, YouTube, etc.).</p>
+                                            <p className="mt-1 text-xs text-emerald-700">Your abstract has been accepted. Submit a link of the recorded video or recorded Zoom meet of your poster or oral presentation for screening and selection by the 14th NSC Scientific Service Committee.</p>
                                         </div>
                                         <div>
                                             <input
