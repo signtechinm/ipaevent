@@ -2738,13 +2738,38 @@ function RegistrationPage() {
                                             </div>
                                         </div>
                                         <div className="rounded-lg border border-sky-200 bg-white p-4 text-center shadow-sm">
-                                            <div className="mx-auto flex aspect-square max-w-[220px] items-center justify-center rounded-lg border-2 border-dashed border-sky-200 bg-sky-50 px-5">
-                                                <div>
-                                                    <p className="text-xs font-black uppercase tracking-[0.16em] text-sky-700">Scan &amp; Pay</p>
-                                                    <p className="mt-3 text-sm font-bold text-zinc-950">Use the SBI QR code</p>
-                                                    <p className="mt-2 break-all font-mono text-xs font-semibold text-zinc-600">{registrationUpiId}</p>
-                                                </div>
+                                            <div className="mx-auto aspect-square max-w-[220px] rounded-lg border border-zinc-200 bg-white p-3">
+                                                <svg viewBox="0 0 120 120" role="img" aria-label="Sample UPI QR code placeholder" className="h-full w-full">
+                                                    <rect width="120" height="120" fill="#ffffff" />
+                                                    {[
+                                                        [8, 8], [86, 8], [8, 86],
+                                                    ].map(([x, y]) => (
+                                                        <g key={`${x}-${y}`}>
+                                                            <rect x={x} y={y} width="26" height="26" fill="#111827" />
+                                                            <rect x={x + 4} y={y + 4} width="18" height="18" fill="#ffffff" />
+                                                            <rect x={x + 9} y={y + 9} width="8" height="8" fill="#111827" />
+                                                        </g>
+                                                    ))}
+                                                    {[
+                                                        [44, 10, 6, 6], [56, 10, 4, 10], [68, 8, 8, 4], [44, 22, 12, 4],
+                                                        [66, 22, 6, 6], [78, 20, 4, 12], [42, 36, 4, 8], [52, 34, 8, 4],
+                                                        [64, 34, 4, 12], [74, 36, 10, 4], [38, 48, 12, 4], [56, 46, 4, 8],
+                                                        [68, 48, 8, 8], [82, 48, 4, 10], [94, 44, 8, 4], [36, 60, 6, 6],
+                                                        [48, 58, 4, 12], [58, 62, 10, 4], [74, 60, 4, 12], [88, 60, 14, 4],
+                                                        [104, 58, 4, 10], [38, 74, 10, 4], [54, 72, 6, 12], [66, 76, 12, 4],
+                                                        [82, 74, 6, 6], [96, 72, 10, 4], [42, 88, 4, 14], [52, 90, 10, 4],
+                                                        [66, 88, 4, 8], [76, 90, 12, 4], [92, 88, 4, 12], [104, 90, 8, 8],
+                                                        [38, 106, 12, 4], [56, 104, 4, 8], [68, 106, 10, 4], [84, 104, 4, 8],
+                                                        [98, 106, 12, 4],
+                                                    ].map(([x, y, width, height], index) => (
+                                                        <rect key={index} x={x} y={y} width={width} height={height} fill="#111827" />
+                                                    ))}
+                                                    <circle cx="60" cy="60" r="15" fill="#e0f2fe" stroke="#0284c7" strokeWidth="2" />
+                                                    <text x="60" y="58" textAnchor="middle" fontSize="8" fontWeight="700" fill="#0c4a6e">SBI</text>
+                                                    <text x="60" y="68" textAnchor="middle" fontSize="5" fontWeight="700" fill="#0c4a6e">SAMPLE</text>
+                                                </svg>
                                             </div>
+                                            <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-sky-700">Sample QR</p>
                                             <p className="mt-3 text-xs font-semibold text-zinc-500">BHIM UPI, YONO SBI, GPay, Paytm, or WhatsApp Pay</p>
                                         </div>
                                     </div>
