@@ -1334,7 +1334,8 @@ async function ensureRegistrationEnhancements(sql) {
         ADD COLUMN IF NOT EXISTS hr_whatsapp_confirmation VARCHAR(25),
         ADD COLUMN IF NOT EXISTS hr_email VARCHAR(180),
         ADD COLUMN IF NOT EXISTS hr_email_confirmation VARCHAR(180),
-        ADD COLUMN IF NOT EXISTS hr_core_area VARCHAR(100)
+        ADD COLUMN IF NOT EXISTS hr_core_area VARCHAR(100),
+        ADD COLUMN IF NOT EXISTS gender VARCHAR(20)
     `;
     await sql`
         UPDATE event_registrations
@@ -1378,6 +1379,7 @@ function normalizeGroupMembers(value) {
         name: String(member?.name || '').trim(),
         email: String(member?.email || '').trim().toLowerCase(),
         whatsapp: String(member?.whatsapp || '').trim(),
+        gender: String(member?.gender || '').trim(),
         category: String(member?.category || '').trim(),
         course: String(member?.course || '').trim(),
         college: String(member?.college || '').trim(),
@@ -1422,6 +1424,7 @@ function mapRegistration(row, competitions = []) {
         stateOfResidence: row.state_of_residence || '',
         whatsappNumber: row.whatsapp_number || '',
         email: row.email || '',
+        gender: row.gender || '',
         foodPreference: row.food_preference || '',
         courseOfStudy: row.course_of_study || 'B.Pharm',
         collegeWithState: row.college_with_state || '',
@@ -1468,6 +1471,7 @@ function mapAdminRegistration(row) {
         stateOfResidence: row.state_of_residence || '',
         whatsappNumber: row.whatsapp_number || '',
         email: row.email || '',
+        gender: row.gender || '',
         foodPreference: row.food_preference || '',
         courseOfStudy: row.course_of_study || '',
         collegeWithState: row.college_with_state || '',
@@ -1545,6 +1549,7 @@ async function saveRegistration(sql, data, submit = false) {
                 ['State of Residence', data.stateOfResidence],
                 ['WhatsApp Number', data.whatsappNumber],
                 ['Email ID', data.email],
+                ['Gender', data.gender],
                 ['Food Preference', data.foodPreference],
             ];
         const missingGeneralField = generalRequiredFields.find(([, value]) => !String(value || '').trim());
@@ -1611,7 +1616,7 @@ async function saveRegistration(sql, data, submit = false) {
             draft_token, registration_mode, participant_name, institution_name,
             group_coordinator_name, group_coordinator_email, group_coordinator_whatsapp,
             expected_participants, group_members, category, state_of_residence, whatsapp_number, email,
-            food_preference, course_of_study, college_with_state,
+            gender, food_preference, course_of_study, college_with_state,
             competition_fee_acknowledged, pre_conference_workshop,
             selected_workshops, workshop_fee_acknowledged, presentation_type,
             hr_college_with_state, hr_course_or_qualification, hr_whatsapp_number,
@@ -1624,7 +1629,7 @@ async function saveRegistration(sql, data, submit = false) {
             ${data.institutionName || null}, ${data.groupCoordinatorName || null},
             ${data.groupCoordinatorEmail || null}, ${data.groupCoordinatorWhatsapp || null},
             ${expectedParticipants}, ${JSON.stringify(groupMembers)}::jsonb, ${data.category || null}, ${data.stateOfResidence || null},
-            ${data.whatsappNumber || null}, ${data.email || null}, ${data.foodPreference || null},
+            ${data.whatsappNumber || null}, ${data.email || null}, ${data.gender || null}, ${data.foodPreference || null},
             ${data.courseOfStudy || null}, ${data.collegeWithState || null},
             ${booleanValue(data.competitionFeeAcknowledged)}, ${selectedWorkshops[0] || null},
             ${JSON.stringify(selectedWorkshops)}::jsonb, ${booleanValue(data.workshopFeeAcknowledged)}, ${presentationType || null},
@@ -1648,6 +1653,7 @@ async function saveRegistration(sql, data, submit = false) {
             state_of_residence = EXCLUDED.state_of_residence,
             whatsapp_number = EXCLUDED.whatsapp_number,
             email = EXCLUDED.email,
+            gender = EXCLUDED.gender,
             food_preference = EXCLUDED.food_preference,
             course_of_study = EXCLUDED.course_of_study,
             college_with_state = EXCLUDED.college_with_state,

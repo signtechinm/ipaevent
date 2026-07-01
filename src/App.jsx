@@ -305,18 +305,55 @@ const accommodationTravelDefaults = {
 };
 
 function normalizeAccommodationCms(data = {}) {
+    const normalizeRows = (rows, defaults, fields, fallbackName) => {
+        const sourceRows = Array.isArray(rows) ? rows : defaults;
+        const normalizedRows = sourceRows
+            .map((row = {}, index) => {
+                const cleanRow = fields.reduce((draft, field) => ({
+                    ...draft,
+                    [field]: String(row[field] || '').trim(),
+                }), {});
+                const hasContent = fields.some((field) => String(cleanRow[field] || '').trim());
+                if (!hasContent) return null;
+                return {
+                    ...cleanRow,
+                    name: cleanRow.name || `${fallbackName} ${index + 1}`,
+                };
+            })
+            .filter(Boolean);
+
+        return normalizedRows.length ? normalizedRows : defaults;
+    };
+
     return {
         ...accommodationTravelDefaults,
         ...data,
-        accommodationSpaces: Array.isArray(data.accommodationSpaces) ? data.accommodationSpaces : accommodationTravelDefaults.accommodationSpaces,
-        pickupPoints: Array.isArray(data.pickupPoints) ? data.pickupPoints : accommodationTravelDefaults.pickupPoints,
-        touristAttractions: (Array.isArray(data.touristAttractions) ? data.touristAttractions : accommodationTravelDefaults.touristAttractions).map((place = {}, index) => ({
-            name: String(place.name || '').trim() || `Tour Attraction ${index + 1}`,
-            category: String(place.category || '').trim(),
-            distance: String(place.distance || '').trim(),
-            image: String(place.image || '').trim(),
-            description: String(place.description || '').trim(),
-        })),
+        pageTitle: String(data.pageTitle || '').trim() || accommodationTravelDefaults.pageTitle,
+        heading: String(data.heading || '').trim() || accommodationTravelDefaults.heading,
+        intro: String(data.intro || '').trim(),
+        assistanceTitle: String(data.assistanceTitle || '').trim() || accommodationTravelDefaults.assistanceTitle,
+        assistanceCopy: String(data.assistanceCopy || '').trim() || accommodationTravelDefaults.assistanceCopy,
+        tariffNotes: String(data.tariffNotes || '').trim() || accommodationTravelDefaults.tariffNotes,
+        contactPerson: String(data.contactPerson || '').trim() || accommodationTravelDefaults.contactPerson,
+        routeNotes: String(data.routeNotes || '').trim() || accommodationTravelDefaults.routeNotes,
+        accommodationSpaces: normalizeRows(
+            data.accommodationSpaces,
+            accommodationTravelDefaults.accommodationSpaces,
+            ['name', 'type', 'distance', 'tariff', 'contact', 'notes'],
+            'Accommodation'
+        ),
+        pickupPoints: normalizeRows(
+            data.pickupPoints,
+            accommodationTravelDefaults.pickupPoints,
+            ['name', 'type', 'distance', 'eta', 'instruction'],
+            'Transport Point'
+        ),
+        touristAttractions: normalizeRows(
+            data.touristAttractions,
+            accommodationTravelDefaults.touristAttractions,
+            ['name', 'category', 'distance', 'image', 'description'],
+            'Tour Attraction'
+        ),
     };
 }
 
@@ -324,6 +361,7 @@ const registrationDraftKey = 'ipa-nsc-2026-registration-draft-token';
 
 const groupMemberColumns = [
     ['name', 'Name'],
+    ['gender', 'Gender'],
     ['email', 'Email'],
     ['whatsapp', 'WhatsApp Number'],
     ['course', 'Course'],
@@ -423,6 +461,7 @@ const initialRegistration = {
     stateOfResidence: '',
     whatsappNumber: '',
     email: '',
+    gender: '',
     foodPreference: '',
     courseOfStudy: 'B.Pharm',
     collegeWithState: '',
@@ -1118,7 +1157,6 @@ function SponsorShowcase() {
 
 function AccommodationTravelPage() {
     const [content, setContent] = useState(accommodationTravelDefaults);
-    const [showAllHotels, setShowAllHotels] = useState(false);
 
     useEffect(() => {
         apiRequest('accommodation-travel')
@@ -1127,9 +1165,7 @@ function AccommodationTravelPage() {
     }, []);
 
     const cmsContent = normalizeAccommodationCms(content);
-    const visibleAccommodationSpaces = showAllHotels
-        ? cmsContent.accommodationSpaces
-        : cmsContent.accommodationSpaces.slice(0, 4);
+    const visibleAccommodationSpaces = cmsContent.accommodationSpaces;
 
     return (
         <>
@@ -1181,40 +1217,31 @@ function AccommodationTravelPage() {
                         Note: We are not holding any bookings at present. All services are subject to availability at the time of booking. If the mentioned hotel is not available, we will provide an alternative option.
                     </p>
                     <div className="overflow-x-auto rounded-lg border border-zinc-200">
-                        <table className="w-full min-w-[860px] text-left text-sm">
+                        <table className="w-full min-w-[1100px] table-fixed text-left text-sm">
                             <thead className="bg-zinc-100 text-xs uppercase tracking-wide text-zinc-500">
                                 <tr>
-                                    <th className="px-4 py-3">Accommodation</th>
-                                    <th className="px-4 py-3">Type</th>
-                                    <th className="px-4 py-3">Distance</th>
-                                    <th className="px-4 py-3">Tariff Plan</th>
-                                    <th className="px-4 py-3">Contact</th>
-                                    <th className="px-4 py-3">Notes</th>
+                                    <th className="w-[18%] px-4 py-3">Accommodation</th>
+                                    <th className="w-[12%] px-4 py-3">Type</th>
+                                    <th className="w-[13%] px-4 py-3">Distance</th>
+                                    <th className="w-[15%] px-4 py-3">Tariff Plan</th>
+                                    <th className="w-[14%] px-4 py-3">Contact</th>
+                                    <th className="w-[28%] px-4 py-3">Notes</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-200 bg-white">
-                                {visibleAccommodationSpaces.map((stay) => (
-                                    <tr key={stay.name}>
-                                        <td className="px-4 py-4 font-bold text-zinc-950">{stay.name}</td>
-                                        <td className="px-4 py-4 text-zinc-700">{stay.type}</td>
-                                        <td className="px-4 py-4 text-zinc-700">{stay.distance}</td>
-                                        <td className="px-4 py-4 font-semibold text-emerald-800">{stay.tariff}</td>
-                                        <td className="px-4 py-4 text-zinc-700">{stay.contact}</td>
-                                        <td className="px-4 py-4 text-zinc-600">{stay.notes}</td>
+                                {visibleAccommodationSpaces.map((stay, index) => (
+                                    <tr key={`${stay.name}-${index}`}>
+                                        <td className="whitespace-normal break-words px-4 py-4 align-top font-bold text-zinc-950">{stay.name}</td>
+                                        <td className="whitespace-normal break-words px-4 py-4 align-top text-zinc-700">{stay.type || '-'}</td>
+                                        <td className="whitespace-normal break-words px-4 py-4 align-top text-zinc-700">{stay.distance || '-'}</td>
+                                        <td className="whitespace-normal break-words px-4 py-4 align-top font-semibold text-emerald-800">{stay.tariff || '-'}</td>
+                                        <td className="whitespace-normal break-words px-4 py-4 align-top text-zinc-700">{stay.contact || '-'}</td>
+                                        <td className="whitespace-pre-wrap break-words px-4 py-4 align-top leading-6 text-zinc-600">{stay.notes || '-'}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
-                    {cmsContent.accommodationSpaces.length > 4 && (
-                        <button
-                            type="button"
-                            onClick={() => setShowAllHotels((current) => !current)}
-                            className="mt-4 rounded-lg bg-[#11145f] px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#20257d]"
-                        >
-                            {showAllHotels ? 'Show fewer hotels' : 'View all hotels and stays'}
-                        </button>
-                    )}
                     <p id="tariff-plans" className="mt-3 scroll-mt-28 text-sm leading-6 text-zinc-600">{cmsContent.tariffNotes}</p>
                 </div>
 
@@ -1224,21 +1251,19 @@ function AccommodationTravelPage() {
                     <p id="how-to-reach" className="mt-3 scroll-mt-28 text-sm leading-6 text-zinc-600">{cmsContent.routeNotes}</p>
                     <div className="mt-5 grid gap-4 md:grid-cols-2">
                         {cmsContent.pickupPoints.map((point, index) => (
-                            <Reveal key={point.name} delay={index * 80}>
-                                <article className="interactive-card rounded-lg border border-zinc-200 bg-zinc-50 p-5">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div>
-                                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">{point.type}</p>
-                                            <h4 className="mt-2 text-lg font-bold text-zinc-950">{point.name}</h4>
-                                        </div>
-                                        <span className="rounded-lg bg-white px-3 py-1 text-xs font-bold text-zinc-700 ring-1 ring-zinc-200">{point.distance}</span>
+                            <article key={`${point.name}-${index}`} className="interactive-card rounded-lg border border-zinc-200 bg-zinc-50 p-5">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">{point.type || 'Transport Point'}</p>
+                                        <h4 className="mt-2 text-lg font-bold text-zinc-950">{point.name}</h4>
                                     </div>
-                                    <div className="mt-4 grid gap-2 text-sm text-zinc-700">
-                                        <p><span className="font-bold text-zinc-950">Estimated travel:</span> {point.eta}</p>
-                                        <p><span className="font-bold text-zinc-950">Pickup note:</span> {point.instruction}</p>
-                                    </div>
-                                </article>
-                            </Reveal>
+                                    <span className="rounded-lg bg-white px-3 py-1 text-xs font-bold text-zinc-700 ring-1 ring-zinc-200">{point.distance || '-'}</span>
+                                </div>
+                                <div className="mt-4 grid gap-2 text-sm text-zinc-700">
+                                    <p><span className="font-bold text-zinc-950">Estimated travel:</span> {point.eta || '-'}</p>
+                                    <p><span className="font-bold text-zinc-950">Pickup note:</span> {point.instruction || '-'}</p>
+                                </div>
+                            </article>
                         ))}
                     </div>
                 </div>
@@ -1746,6 +1771,7 @@ function RegistrationPage() {
                 ['State of Residence', formData.stateOfResidence],
                 ['WhatsApp Number', formData.whatsappNumber],
                 ['Email ID', formData.email],
+                ['Gender', formData.gender],
                 ['Food Preference', formData.foodPreference],
             ];
         const missing = requiredFields.find(([, value]) => !String(value || '').trim());
@@ -1987,6 +2013,20 @@ function RegistrationPage() {
                                         onChange={(event) => updateField('email', event.target.value.toLowerCase())}
                                         placeholder="participant@example.com"
                                     />
+                                </label>
+                                <label className={labelClass}>
+                                    Gender
+                                    <select
+                                        className={fieldClass}
+                                        required
+                                        value={formData.gender}
+                                        onChange={(event) => updateField('gender', event.target.value)}
+                                    >
+                                        <option value="">Choose gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
                                 </label>
                                 <label className={labelClass}>
                                     Food Preference
@@ -2830,6 +2870,7 @@ function RegistrationPage() {
                                         ['Category', formData.category || 'Not selected'],
                                         ['Email', formData.email || 'Not entered'],
                                         ['WhatsApp', formData.whatsappNumber || 'Not entered'],
+                                        ['Gender', formData.gender || 'Not selected'],
                                         ['College', formData.collegeWithState || 'Not entered'],
                                         ['Student Competition Participation', formData.competitionParticipation === 'not_participating' ? 'Not participating' : 'Participating'],
                                         ['Competitions', formData.studentCompetitions.join(', ') || 'None'],
@@ -2896,6 +2937,7 @@ function RegistrationPage() {
                                             ['Email', formData.email || 'Not entered'],
                                             ['WhatsApp', formData.whatsappNumber || 'Not entered'],
                                             ['State', formData.stateOfResidence || 'Not entered'],
+                                            ['Gender', formData.gender || 'Not selected'],
                                             ['Food Preference', formData.foodPreference || 'Not selected'],
                                             ['Competitions', formData.competitionParticipation === 'not_participating' ? 'Not participating' : formData.studentCompetitions.join(', ') || 'None selected'],
                                             ['Workshop', formData.workshopParticipation === 'not_participating' ? 'Not participating' : formData.selectedWorkshops.join(', ') || 'None selected'],
@@ -5254,6 +5296,7 @@ function AdminPage() {
                     name: member.name,
                     email: member.email || registration.groupCoordinatorEmail,
                     whatsapp: member.whatsapp || registration.groupCoordinatorWhatsapp,
+                    gender: member.gender || '',
                     category: member.category || registration.category,
                     course: member.course,
                     college: member.college,
@@ -5289,6 +5332,7 @@ function AdminPage() {
                 name: registration.participantName,
                 email: registration.email,
                 whatsapp: registration.whatsappNumber,
+                gender: registration.gender,
                 category: registration.category,
                 course: registration.courseOfStudy,
                 college: registration.institutionName || registration.collegeWithState,
@@ -5399,6 +5443,7 @@ function AdminPage() {
             { label: 'State', value: (row) => row.stateOfResidence },
             { label: 'WhatsApp', value: (row) => row.whatsappNumber },
             { label: 'Email', value: (row) => row.email },
+            { label: 'Gender', value: (row) => row.gender },
             { label: 'Food Preference', value: (row) => row.foodPreference },
             { label: 'Course', value: (row) => row.courseOfStudy },
             { label: 'College With State', value: (row) => row.collegeWithState },
@@ -5421,7 +5466,7 @@ function AdminPage() {
             { label: 'Submitted At', value: (row) => formatExportDate(row.submittedAt) },
             { label: 'Created At', value: (row) => formatExportDate(row.createdAt) },
             { label: 'Updated At', value: (row) => formatExportDate(row.updatedAt) },
-            { label: 'Group Student Details', value: (row) => Array.isArray(row.groupMembers) ? row.groupMembers.map((member) => `${member.registrationNumber || ''} ${member.name || ''} | ${member.email || ''} | ${member.whatsapp || ''} | ${member.course || ''} | ${member.college || ''} | Competitions: ${(member.competitions || []).join('; ')} | Workshops: ${(member.workshops || []).join('; ')} | Presentation: ${member.presentationType || ''} | HR: ${member.hrCoreArea || ''}`).join('\n') : '' },
+            { label: 'Group Student Details', value: (row) => Array.isArray(row.groupMembers) ? row.groupMembers.map((member) => `${member.registrationNumber || ''} ${member.name || ''} | ${member.gender || ''} | ${member.email || ''} | ${member.whatsapp || ''} | ${member.course || ''} | ${member.college || ''} | Competitions: ${(member.competitions || []).join('; ')} | Workshops: ${(member.workshops || []).join('; ')} | Presentation: ${member.presentationType || ''} | HR: ${member.hrCoreArea || ''}`).join('\n') : '' },
         ];
         downloadCsv(`registrations-${new Date().toISOString().slice(0, 10)}.csv`, columns, filteredRegistrations);
     }
@@ -5437,6 +5482,7 @@ function AdminPage() {
             { label: 'Student Name', value: (row) => row.name },
             { label: 'Email', value: (row) => row.email },
             { label: 'WhatsApp', value: (row) => row.whatsapp },
+            { label: 'Gender', value: (row) => row.gender },
             { label: 'Category', value: (row) => row.category },
             { label: 'Course', value: (row) => row.course },
             { label: 'College', value: (row) => row.college },
@@ -6701,6 +6747,7 @@ function AdminPage() {
                                                         ['Participant', selectedRegistration.participantName],
                                                         ['Institution', selectedRegistration.institutionName || selectedRegistration.collegeWithState],
                                                         ['State', selectedRegistration.stateOfResidence],
+                                                        ['Gender', selectedRegistration.gender],
                                                         ['Food preference', selectedRegistration.foodPreference],
                                                         ['Course', selectedRegistration.courseOfStudy],
                                                         ['Presentation', selectedRegistration.presentationType],
