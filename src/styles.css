@@ -82,6 +82,34 @@ body {
         linear-gradient(180deg, #ffffff, #f7fbf8);
 }
 
+.themed-horizontal-scroller {
+    scrollbar-color: #df0867 #090d42;
+    scrollbar-width: thin;
+}
+
+.themed-horizontal-scroller::-webkit-scrollbar {
+    height: 0.7rem;
+}
+
+.themed-horizontal-scroller::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background:
+        linear-gradient(90deg, rgb(17 20 95 / 0.98), rgb(0 101 47 / 0.82)),
+        #090d42;
+}
+
+.themed-horizontal-scroller::-webkit-scrollbar-thumb {
+    border: 2px solid #090d42;
+    border-radius: 999px;
+    background:
+        linear-gradient(90deg, #df0867, #f4a21b);
+}
+
+.themed-horizontal-scroller::-webkit-scrollbar-thumb:hover {
+    background:
+        linear-gradient(90deg, #f4a21b, #df0867);
+}
+
 .programs-events-section {
     position: relative;
     isolation: isolate;

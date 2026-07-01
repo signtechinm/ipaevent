@@ -81,6 +81,14 @@ const pageHighlights = {
     'Partners and Sponsors': 'Showcase confirmed partners, sponsors, collaborators, and institutional supporters.',
 };
 
+const standalonePageLinks = {
+    'Student Skill Competitions': '/student-skill-competitions',
+};
+
+function pageHref(page) {
+    return standalonePageLinks[page] ?? `/#${slugify(page)}`;
+}
+
 const homeContentDefaults = {
     newsUpdates: [
         { title: 'Abstract Submission', copy: 'Last date: 31-07-2026' },
@@ -713,7 +721,7 @@ function Header() {
                                             <a
                                                 key={page}
                                                 className="block rounded-md px-3 py-2 text-sm text-zinc-700 hover:bg-emerald-50 hover:text-emerald-800"
-                                                href={`/#${slugify(page)}`}
+                                                href={pageHref(page)}
                                             >
                                                 {page}
                                             </a>
@@ -744,7 +752,7 @@ function Header() {
                                             {section.pages.map((page) => (
                                                 <a
                                                     key={page}
-                                                    href={`/#${slugify(page)}`}
+                                                    href={pageHref(page)}
                                                     className="rounded-md px-2 py-1.5 text-sm text-zinc-700 hover:bg-zinc-100"
                                                 >
                                                     {page}
@@ -945,7 +953,7 @@ function QuickFacts() {
                     </div>
                     <div className="snapshot-logo-panel grid grid-cols-[1.15fr_0.85fr] items-center gap-5 rounded-2xl border border-white/15 bg-white/8 p-5 backdrop-blur-md">
                         <img
-                            src="/new_light.png"
+                            src="/14th NSC LOGO - LIGHT.png"
                             alt="14th IPA National Students Congress logo"
                             className="snapshot-event-logo h-28 w-full object-contain sm:h-32"
                         />
@@ -3695,6 +3703,7 @@ function Abstracts() {
     const section = siteMap.find((item) => item.title === 'Programs and Events Spotlight');
     const slides = section.pages.slice(1);
     const [activeSlide, setActiveSlide] = useState(0);
+    const [carouselPaused, setCarouselPaused] = useState(false);
 
     function getSlideOffset(index) {
         let offset = index - activeSlide;
@@ -3711,12 +3720,14 @@ function Abstracts() {
     }
 
     useEffect(() => {
+        if (carouselPaused) return undefined;
+
         const timer = window.setInterval(() => {
             setActiveSlide((current) => (current + 1) % slides.length);
         }, 4500);
 
         return () => window.clearInterval(timer);
-    }, [slides.length]);
+    }, [carouselPaused, slides.length]);
 
     return (
         <section id="programs-and-events-spotlight" className="programs-events-section scroll-mt-24 py-10 text-white sm:py-12">
@@ -3778,6 +3789,10 @@ function Abstracts() {
                                         <Reveal delay={index * 60}>
                                             <article
                                                 id={slugify(item)}
+                                                onMouseEnter={() => setCarouselPaused(true)}
+                                                onMouseLeave={() => setCarouselPaused(false)}
+                                                onFocus={() => setCarouselPaused(true)}
+                                                onBlur={() => setCarouselPaused(false)}
                                                 className={`interactive-card carousel-card relative isolate w-full max-w-4xl overflow-hidden rounded-[2rem] border p-5 sm:p-7 ${
                                                     isActive
                                                         ? 'border-white/35 bg-emerald-950/90 shadow-[0_30px_90px_rgba(0,0,0,0.58)] backdrop-blur-[18px]'
@@ -3791,14 +3806,11 @@ function Abstracts() {
                                                     aria-hidden="true"
                                                 />
                                                 <div className="relative z-10">
-                                                <div className="flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-3">
                                                     <div className="flex items-center gap-3">
                                                         <span className="size-2 rounded-full bg-amber-300" />
                                                         <p className="text-xs font-bold uppercase text-amber-300">Track {index + 1}</p>
                                                     </div>
-                                                    <p className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-emerald-50">
-                                                        {isActive ? 'Active' : 'Preview'}
-                                                    </p>
                                                 </div>
                                                 <div className="mt-5 rounded-2xl bg-emerald-950/90 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] ring-1 ring-white/15 backdrop-blur-md sm:p-5">
                                                     <h3 className="text-3xl font-bold leading-tight text-white sm:text-4xl">
@@ -3807,6 +3819,14 @@ function Abstracts() {
                                                     <p className="mt-4 max-w-2xl text-base font-medium leading-7 text-white/92 sm:text-lg">
                                                         {pageHighlights[item]}
                                                     </p>
+                                                    {item === 'Student Skill Competitions' && (
+                                                        <a
+                                                            href="/student-skill-competitions"
+                                                            className="mt-5 inline-flex items-center justify-center rounded-lg bg-amber-300 px-4 py-2.5 text-sm font-black text-emerald-950 shadow-sm transition hover:bg-amber-200"
+                                                        >
+                                                            View Rules
+                                                        </a>
+                                                    )}
                                                 </div>
                                                 </div>
                                             </article>
@@ -3879,6 +3899,451 @@ function Programs() {
                 </div>
             </div>
         </section>
+    );
+}
+
+function StudentSkillCompetitionsPage() {
+    const competitions = [
+        {
+            title: 'Pharma Mastermind - 2026',
+            subtitle: 'National Pharmacy Quiz Competition',
+            sections: [
+                {
+                    heading: 'Eligibility',
+                    items: [
+                        'Open to B.Pharm, Pharm.D, D.Pharm, and M.Pharm students from recognized institutions.',
+                        'Each institution may nominate one team consisting of two students.',
+                        'Participants must carry a valid institutional identity card and registration details.',
+                        'Participants can represent only one institution/team.',
+                    ],
+                },
+                {
+                    heading: 'Registration',
+                    items: [
+                        'Name of the participants must be confirmed at the time of registration through the web portal before the last date mentioned.',
+                        'Last date: 1st September 2026.',
+                        'Participant details once submitted cannot be changed or altered at any cost.',
+                        'Each participant will receive a certificate of participation after the final rounds.',
+                        'The decision of the Quiz Committee shall be final.',
+                    ],
+                },
+            ],
+        },
+        {
+            title: 'National Patient Counselling Challenge - 2026',
+            subtitle: 'Transforming Pharmacy Students into Effective Patient Educators.',
+            objective: 'To assess and enhance communication, clinical knowledge, patient education, professionalism, and counselling skills in providing patient-centered pharmaceutical care.',
+            meta: ['Category: Clinical Pharmacy', 'Mode: Two-stage Competition'],
+            sections: [
+                {
+                    heading: 'Eligibility',
+                    items: [
+                        'Open to B.Pharm, Pharm.D, D.Pharm, and M.Pharm students from recognized institutions.',
+                        'Each institution may nominate one team comprising two students.',
+                        'Both participants shall actively participate in the challenge.',
+                        'Participants must carry a valid college identity card.',
+                        'The decision of the organizing committee and judges shall be final.',
+                        'Each participant will receive a certificate of participation after the final rounds.',
+                    ],
+                },
+                {
+                    heading: 'General Rules',
+                    items: [
+                        'Participants shall not use mobile phones, textbooks, or internet resources during the competition.',
+                        'Counselling should be delivered in simple patient-friendly language in English.',
+                        'Scientific accuracy must be maintained throughout the interaction.',
+                        'Teams exceeding the allotted time may lose marks.',
+                        'Any form of plagiarism or misconduct will result in disqualification.',
+                        "Judges' decisions shall be final and binding.",
+                    ],
+                },
+                {
+                    heading: 'Stage 1: Online Preliminary Round',
+                    items: [
+                        'Individual participation.',
+                        'Submission of a 2-minute patient counselling video.',
+                        'Language: English/Hindi/Malayalam with English subtitles preferred.',
+                        'Video format: MP4.',
+                        'Maximum duration: 2 minutes.',
+                        'Submission before the notified deadline.',
+                        'National Patient Counselling Challenge - 2026: Click and upload your video link here.',
+                    ],
+                },
+                {
+                    heading: 'Stage 2: Grand Finale at IPA National Student Congress',
+                    items: [
+                        'Top 3 participants selected by judges.',
+                        'Live role-play counselling session during Congress.',
+                        'Simulated patient provided by organizers.',
+                        'Counselling time: 5 minutes.',
+                        'Question and Answer: 2 minutes.',
+                    ],
+                },
+                {
+                    heading: 'Prize Categories',
+                    items: [
+                        'Best Patient Counsellor - Winner.',
+                        'Best Patient Counsellor - Runner-up.',
+                        'Best Patient Counsellor - Second Runner-up.',
+                    ],
+                },
+            ],
+        },
+        {
+            title: 'ClinRx Case Challenge',
+            subtitle: 'National Clinical Case Challenge',
+            objective: 'Designed to evaluate clinical knowledge, problem-solving ability, evidence-based decision-making, pharmaceutical care planning, and presentation skills through patient case analysis and management.',
+            sections: [
+                {
+                    heading: 'Eligibility',
+                    items: [
+                        'Open to B.Pharm, Pharm.D, and M.Pharm students from recognized institutions.',
+                        'Each institution may nominate one team consisting of two students.',
+                        'Both participants should actively participate in case analysis and presentation.',
+                        'Participants must carry a valid institutional identity card.',
+                        'The decision of the organizing committee and judges shall be final.',
+                        'Each participant will receive a certificate of participation after the final rounds.',
+                    ],
+                },
+                {
+                    heading: 'Format',
+                    items: [
+                        'Team event.',
+                        'Case will be provided 30 minutes before presentation.',
+                    ],
+                },
+            ],
+        },
+        {
+            title: 'Error Hunters',
+            subtitle: 'National Medication Error Challenge',
+            theme: 'Detect. Prevent. Protect.',
+            objective: 'Develops student skills in identifying, analysing, preventing, and managing medication errors through real-life clinical scenarios while promoting patient safety, pharmacovigilance, and quality use of medicines.',
+            sections: [
+                {
+                    heading: 'Eligibility',
+                    items: [
+                        'Open to B.Pharm, Pharm.D, D.Pharm, and M.Pharm students from recognized institutions.',
+                        'Each institution may nominate one team consisting of two students.',
+                        'Participants must carry a valid college identity card.',
+                        'The decision of the organizing committee and judges shall be final.',
+                        'Each participant will receive a certificate of participation after the final rounds.',
+                    ],
+                },
+                {
+                    heading: 'Focus',
+                    items: ['Identify, classify, and prevent medication errors.'],
+                },
+            ],
+        },
+        {
+            title: 'National Pharmacy Debate Competition',
+            subtitle: 'Voices of Pharmacy: Debating the Future of Healthcare',
+            objective: 'Develops critical thinking, scientific reasoning, public speaking, evidence-based argumentation, and professional communication skills among pharmacy students.',
+            sections: [
+                {
+                    heading: 'Eligibility',
+                    items: [
+                        'Open to B.Pharm, Pharm.D, D.Pharm, and M.Pharm students from recognized institutions.',
+                        'Each institution may nominate one team consisting of two participants.',
+                        'One participant shall speak for the motion and the other against the motion, assigned by draw of lots.',
+                        'Participants must carry a valid institutional identity card.',
+                        'The decision of the judges and organizing committee shall be final.',
+                        'Each participant will receive a certificate of participation after the final rounds.',
+                    ],
+                },
+            ],
+        },
+        {
+            title: 'National Pharmacy Reels Competition',
+            subtitle: 'Pharmacy in 60 Seconds: Educate, Inspire, Innovate',
+            theme: 'Pharmacy for Better Health through Digital Awareness',
+            meta: ['Category: Public Health Awareness / Community Pharmacy / Digital Health'],
+            objective: 'Encourages pharmacy students to creatively communicate healthcare, pharmaceutical sciences, patient education, innovation, and public health messages through engaging short-form videos.',
+            sections: [
+                {
+                    heading: 'Format',
+                    items: [
+                        'Individual or team participation with a maximum of 3 participants.',
+                        'Submit an original Instagram/Facebook/YouTube Shorts-style video.',
+                        'Duration: 30-90 seconds.',
+                        'Vertical format: 9:16.',
+                        'MP4 format.',
+                        'Language: English/Hindi/Malayalam/Regional language.',
+                        'English subtitles preferred.',
+                        'Background music permitted, copyright-free only.',
+                        'Submit before the notified deadline.',
+                    ],
+                },
+                {
+                    heading: 'Eligibility',
+                    items: [
+                        'Open to B.Pharm, Pharm.D, D.Pharm, and M.Pharm students from recognized institutions.',
+                        'Participation may be individual or team-based, maximum 3 members.',
+                        'Each participant/team may submit only one reel.',
+                        'The reel must be original and created by the participant(s).',
+                        'Participants must own the rights to all content used in the reel.',
+                    ],
+                },
+                {
+                    heading: 'Technical Specifications',
+                    items: [
+                        'Minimum duration: 30 seconds.',
+                        'Maximum duration: 90 seconds.',
+                        'MP4 format.',
+                        'Vertical 9:16 ratio.',
+                        'HD quality, minimum 720p.',
+                        'English, Hindi, or regional languages are allowed.',
+                        'English subtitles are mandatory for regional language entries.',
+                    ],
+                },
+                {
+                    heading: 'Submission',
+                    items: [
+                        'Submit through a video link to download or view the file.',
+                        'File name format: Registration number.mp4.',
+                        'National Pharmacy Reels Competition: Click and upload your video link here.',
+                    ],
+                },
+                {
+                    heading: 'Competition Rules',
+                    items: [
+                        'Video must be original.',
+                        'AI-generated avatars or fully AI-generated videos are not permitted.',
+                        'AI may be used only for editing, captions, animations, or subtitles.',
+                        'Copyright infringement will lead to disqualification.',
+                        'Maximum duration: 90 seconds.',
+                        'Participants may submit only one entry.',
+                        'Pharmacy students must appear in the video.',
+                        'Offensive, misleading, or unscientific content is prohibited.',
+                        'Organizers may use selected videos for educational and promotional purposes with due acknowledgement.',
+                        "Judges' decision shall be final.",
+                    ],
+                },
+            ],
+        },
+        {
+            title: 'Startup Pitch Competition',
+            subtitle: 'Innovating Healthcare for a Better Tomorrow',
+            objective: 'Invites innovators and students to submit healthcare-focused business ideas that solve real medical and health challenges and demonstrate strong potential to scale into viable, sustainable startups.',
+            sections: [
+                {
+                    heading: 'Rules and Guidelines',
+                    items: [
+                        'Only registered participants of the 14th IPA National Student Congress are eligible.',
+                        'It is an individual competition.',
+                        'All submitted ideas must demonstrate clear business viability.',
+                        'Participants should present ideas in an engaging and attractive manner with strong emphasis on business and growth potential.',
+                        'A clear, structured vision and roadmap for establishing the startup will be an advantage during evaluation.',
+                    ],
+                },
+                {
+                    heading: 'Stage 1: Preliminary Pitch',
+                    items: [
+                        'Submit a 3-minute pitch video through the application form on the official website of the 14th IPA National Student Congress.',
+                        'Highlight the core healthcare solution, business model, and path to profitability.',
+                        'Startup Pitch Competition: Click and upload your video link here.',
+                    ],
+                },
+                {
+                    heading: 'Stage 2: The Grand Finale',
+                    items: [
+                        'The top 6 participants will advance to the final round.',
+                        'Finalists will present their ideas live on stage during the National Student Congress.',
+                    ],
+                },
+            ],
+        },
+    ];
+
+    const videoSteps = [
+        'Download and install the Zoom app.',
+        "Open Zoom. Sign up if you do not have an account, or sign in if you already have one.",
+        'Enable audio and video, then open the PowerPoint presentation if you are using slides.',
+        'In Zoom, click Home, then New Meeting.',
+        'Share the presentation or screen content.',
+        'In the Zoom bar, click More, then Record.',
+        'Present and move through the slides or content.',
+        'After completing the presentation, click More, then Stop Recording.',
+        'Stop sharing by clicking Stop Share, then end the meeting for all.',
+        'Wait for Zoom to convert the recording into a video file.',
+        'Go to My Documents, then Zoom, and open the recording folder.',
+        'Upload the video to YouTube or Google Drive and ensure anyone with the link can view it.',
+        'Copy the shareable link and paste it below.',
+    ];
+
+    return (
+        <main className="bg-zinc-50 text-zinc-950">
+            <section className="sci-service-hero py-16 text-white sm:py-20">
+                <img
+                    src="/images/nsc-kerala-hero.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="sci-service-hero-image absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="sci-service-hero-overlay absolute inset-0" />
+                <div className="sci-service-hero-grid absolute inset-0" />
+                <div className="hero-sheen absolute inset-0" />
+
+                <span className="sci-hero-particle" style={{ top: '12%', left: '6%', width: 72, height: 72, '--dur': '9s', '--delay': '0s', '--lift': '-14px', '--op-lo': 0.14, '--op-hi': 0.38 }} />
+                <span className="sci-hero-particle" style={{ top: '8%', right: '10%', width: 110, height: 110, '--dur': '11s', '--delay': '1.4s', '--lift': '-20px', '--op-lo': 0.10, '--op-hi': 0.28 }} />
+                <span className="sci-hero-particle" style={{ top: '42%', left: '2%', width: 52, height: 52, '--dur': '7s', '--delay': '2.8s', '--lift': '-10px', '--op-lo': 0.18, '--op-hi': 0.45 }} />
+                <span className="sci-hero-particle" style={{ top: '55%', right: '5%', width: 88, height: 88, '--dur': '10s', '--delay': '0.6s', '--lift': '-18px', '--op-lo': 0.12, '--op-hi': 0.34 }} />
+                <span className="sci-hero-particle" style={{ bottom: '14%', left: '18%', width: 60, height: 60, '--dur': '8.5s', '--delay': '3.2s', '--lift': '-12px', '--op-lo': 0.15, '--op-hi': 0.40 }} />
+                <span className="sci-hero-particle" style={{ bottom: '8%', right: '22%', width: 44, height: 44, '--dur': '6.5s', '--delay': '1.9s', '--lift': '-9px', '--op-lo': 0.20, '--op-hi': 0.50 }} />
+                <span className="sci-hero-particle" style={{ top: '28%', left: '42%', width: 34, height: 34, '--dur': '7.5s', '--delay': '4.0s', '--lift': '-8px', '--op-lo': 0.16, '--op-hi': 0.36 }} />
+                <span className="sci-hero-particle" style={{ top: '68%', left: '60%', width: 58, height: 58, '--dur': '9.5s', '--delay': '0.2s', '--lift': '-15px', '--op-lo': 0.12, '--op-hi': 0.30 }} />
+
+                <div className="snapshot-flow-lines pointer-events-none absolute inset-0" aria-hidden="true">
+                    {[
+                        { top: '22%', delay: '0s', duration: '13s' },
+                        { top: '46%', delay: '4.5s', duration: '10s' },
+                        { top: '70%', delay: '8s', duration: '14s' },
+                    ].map((line, i) => (
+                        <span
+                            key={i}
+                            className="snapshot-flow-line"
+                            style={{ top: line.top, animationDelay: line.delay, animationDuration: line.duration }}
+                        />
+                    ))}
+                </div>
+
+                <div className="sci-hero-copy relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-white/20">
+                        <span className="pulse-dot size-1.5 rounded-full bg-amber-300" />
+                        Programs and Events
+                    </div>
+                    <h1 className="mt-4 max-w-4xl text-3xl font-extrabold leading-tight sm:text-4xl lg:text-5xl">
+                        Student Skill Competitions
+                    </h1>
+                    <div className="mt-5 max-w-2xl border-l-4 border-[#df0867] bg-[#0d124f]/50 px-4 py-3 backdrop-blur-sm">
+                        <p className="text-base leading-7 text-blue-100">
+                            Rules and regulations for the student skill competitions conducted as part of the 14th IPA National Students Congress.
+                        </p>
+                    </div>
+                    <div className="mt-7 flex flex-wrap gap-3">
+                        <a href="/registration" className="rounded-lg bg-[#df0867] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#bd0758]">
+                            Register Now
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <section className="sticky top-[84px] z-40 border-b border-white/10 bg-[#080c38] shadow-md sm:top-[106px]">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <nav className="themed-horizontal-scroller flex overflow-x-auto pb-2" aria-label="Competition sections">
+                        {competitions.map((competition, index) => (
+                            <a
+                                key={competition.title}
+                                href={`#${slugify(competition.title)}`}
+                                className={`shrink-0 px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-white/65 transition hover:bg-white/5 hover:text-white${index < competitions.length - 1 ? ' border-r border-white/10' : ''}`}
+                            >
+                                {competition.title}
+                            </a>
+                        ))}
+                    </nav>
+                </div>
+            </section>
+
+            <section id="competition-rules" className="py-12 sm:py-14">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="grid gap-6">
+                        {competitions.map((competition, index) => (
+                            <article key={competition.title} id={slugify(competition.title)} className="scroll-mt-28 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-7">
+                                <div className="flex flex-wrap items-start justify-between gap-4 border-b border-zinc-100 pb-5">
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-[0.14em] text-[#df0867]">Competition {String(index + 1).padStart(2, '0')}</p>
+                                        <h2 className="mt-2 text-2xl font-black text-zinc-950">{competition.title}</h2>
+                                        {competition.subtitle && <p className="mt-2 text-sm font-semibold text-emerald-700">{competition.subtitle}</p>}
+                                    </div>
+                                    {competition.theme && (
+                                        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
+                                            Theme: {competition.theme}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {(competition.objective || competition.meta) && (
+                                    <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_320px]">
+                                        {competition.objective && (
+                                            <div className="rounded-lg bg-zinc-50 p-4">
+                                                <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-500">Objective</p>
+                                                <p className="mt-2 text-sm leading-6 text-zinc-700">{competition.objective}</p>
+                                            </div>
+                                        )}
+                                        {competition.meta && (
+                                            <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
+                                                <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Details</p>
+                                                <ul className="mt-2 space-y-2 text-sm font-semibold text-emerald-900">
+                                                    {competition.meta.map((item) => <li key={item}>{item}</li>)}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                                    {competition.sections.map((section) => (
+                                        <div key={section.heading} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                            <h3 className="text-sm font-black text-zinc-950">{section.heading}</h3>
+                                            <ul className="mt-3 space-y-2">
+                                                {section.items.map((item) => (
+                                                    <li key={item} className="flex items-start gap-2 text-sm leading-6 text-zinc-700">
+                                                        <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#00652f]" />
+                                                        {item.includes('Click and upload your video link here') ? (
+                                                            <span>
+                                                                {item.replace('Click and upload your video link here.', '')}
+                                                                <a href="/scientific-service#submit" className="font-bold text-[#df0867] underline decoration-[#df0867]/40 underline-offset-2 hover:text-[#bd0758]">
+                                                                    Click and upload your video link here.
+                                                                </a>
+                                                            </span>
+                                                        ) : (
+                                                            <span>{item}</span>
+                                                        )}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ))}
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            <section className="bg-white py-12 sm:py-14">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="grid gap-8 lg:grid-cols-[360px_1fr]">
+                        <div>
+                            <p className="text-sm font-bold uppercase tracking-[0.16em] text-[#df0867]">Video Submission Guide</p>
+                            <h2 className="mt-3 text-3xl font-black text-zinc-950">How to make a video presentation</h2>
+                            <p className="mt-4 text-sm leading-6 text-zinc-600">
+                                Participants may use any software or application to create presentation videos. PowerPoint slides are not mandatory, and participants are encouraged to present business ideas creatively and clearly.
+                            </p>
+                        </div>
+                        <ol className="grid gap-3 md:grid-cols-2">
+                            {videoSteps.map((step, index) => (
+                                <li key={step} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm leading-6 text-zinc-700">
+                                    <span className="mb-2 inline-flex size-7 items-center justify-center rounded-full bg-[#0d124f] text-xs font-black text-white">
+                                        {index + 1}
+                                    </span>
+                                    <p>{step}</p>
+                                </li>
+                            ))}
+                            <li className="rounded-lg border border-[#df0867]/25 bg-[#df0867]/5 p-4 text-sm leading-6 text-zinc-800 md:col-span-2">
+                                <span className="mb-2 inline-flex rounded-full bg-[#df0867] px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
+                                    Startup Pitch Competition
+                                </span>
+                                <a href="/scientific-service#submit" className="font-bold text-[#0d124f] underline decoration-[#df0867]/40 underline-offset-2 hover:text-[#df0867]">
+                                    Click and upload your video link here.
+                                </a>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </section>
+        </main>
     );
 }
 
@@ -4077,9 +4542,9 @@ function Contact() {
             <div className="relative mx-auto max-w-7xl px-4 pb-10 pt-14 sm:px-6 lg:px-8">
                 <div className="grid gap-10 lg:grid-cols-[1.35fr_0.65fr]">
                     <div>
-                        <div className="flex max-w-2xl items-center gap-6 rounded-2xl bg-white/8 p-6 backdrop-blur-md ring-1 ring-white/12">
+                        <div className="flex max-w-2xl items-center gap-6 p-6">
                             <img
-                                src="/new_light.png"
+                                src="/14th NSC LOGO - LIGHT.png"
                                 alt="14th IPA National Students Congress"
                                 className="h-28 min-w-0 flex-1 object-contain sm:h-32"
                             />
@@ -8349,7 +8814,7 @@ function ScientificServicePage() {
             </section>
 
             {/* Sticky section nav */}
-            <div className="sticky top-14 sm:top-16 z-20 border-b border-white/10 bg-[#080c38] shadow-md">
+            <div className="sticky top-[84px] z-40 border-b border-white/10 bg-[#080c38] shadow-md sm:top-[106px]">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <nav className="flex overflow-x-auto" aria-label="Page sections" style={{ scrollbarWidth: 'none' }}>
                         {[
@@ -8802,6 +9267,7 @@ export default function App() {
     const isRegistrationPage = window.location.pathname === '/registration';
     const isSponsorRegistrationPage = window.location.pathname === '/sponsor-registration';
     const isScientificServicePage = window.location.pathname === '/scientific-service';
+    const isStudentSkillCompetitionsPage = window.location.pathname === '/student-skill-competitions';
     const isAccommodationTravelPage = window.location.pathname === '/accommodation-travel';
 
     if (isAdminLoginPage) {
@@ -8841,6 +9307,16 @@ export default function App() {
                 <main>
                     <ScientificServicePage />
                 </main>
+            </div>
+        );
+    }
+
+    if (isStudentSkillCompetitionsPage) {
+        return (
+            <div className="event-theme bg-zinc-50 text-zinc-950 antialiased">
+                <Header />
+                <StudentSkillCompetitionsPage />
+                <Contact />
             </div>
         );
     }
