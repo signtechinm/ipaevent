@@ -8464,14 +8464,14 @@ function ScientificServicePage() {
                         <h2 className="text-xl font-bold text-zinc-900">Submit Your Abstract file or Presentation Video Link here</h2>
                     </div>
 
-                    <div className="mt-6 max-w-xl space-y-5">
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-4">
+                    <div className="mt-6 w-full space-y-5">
+                        <div className="grid gap-5 lg:grid-cols-2">
+                            <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-5">
                                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#df0867]">Initial Step</p>
                                 <p className="mt-2 text-sm font-semibold leading-6 text-zinc-900">After completion of primary registration, submit a single-page abstract and after checking and confirming your Registration Number below.</p>
                                 <p className="mt-2 text-xs leading-5 text-zinc-600">Tables and figures are excluded. Supported format: PDF file only. Maximum file size: 1 MB.</p>
                             </div>
-                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4">
+                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-5 py-5">
                                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#00652f]">Final Step</p>
                                 <p className="mt-2 text-sm font-semibold leading-6 text-emerald-950">Only participants who receive an acceptance mail can submit your Presentation video link here for screening and selections.</p>
                                 <p className="mt-2 text-xs leading-5 text-emerald-800">Submit a link of the recorded video or recorded Zoom meet of your poster or oral presentation for screening and selection by the 14th NSC Scientific Service Committee.</p>
