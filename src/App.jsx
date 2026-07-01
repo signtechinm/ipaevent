@@ -1247,7 +1247,7 @@ function AccommodationTravelPage() {
 
                 <div id="pick-and-drop-points" className="mt-12 scroll-mt-28">
                     <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#df0867]">Nearest Arrival &amp; Transport points</p>
-                    <h3 className="mt-2 text-2xl font-bold text-zinc-950">Nearest arrival and pickup points</h3>
+                    <h3 className="mt-2 text-2xl font-bold text-zinc-950">Nearest arrival and travel points</h3>
                     <p id="how-to-reach" className="mt-3 scroll-mt-28 text-sm leading-6 text-zinc-600">{cmsContent.routeNotes}</p>
                     <div className="mt-5 grid gap-4 md:grid-cols-2">
                         {cmsContent.pickupPoints.map((point, index) => (
