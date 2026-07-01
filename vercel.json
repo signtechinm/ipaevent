@@ -30,6 +30,10 @@
             "destination": "/index.html"
         },
         {
+            "source": "/student-skill-competitions",
+            "destination": "/index.html"
+        },
+        {
             "source": "/accommodation-travel",
             "destination": "/index.html"
         }
