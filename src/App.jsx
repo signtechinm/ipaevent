@@ -8425,9 +8425,24 @@ function ScientificServicePage() {
                                 <p>
                                     <strong>Poster acceptance letters</strong> will be sent by mail to the corresponding author after review.
                                 </p>
-                                <p>
-                                    <strong>Selected Oral acceptance list</strong> will be displayed on the IPC and SSC website. Notification will also be sent by mail as per the published schedule.
-                                </p>
+                                <div className="rounded-lg border border-emerald-200 bg-white/60 px-4 py-3">
+                                    <h4 className="text-sm font-black uppercase text-emerald-950">ABSTRACTS - KEY REQUIRMENTS</h4>
+                                    <ul className="mt-3 space-y-2">
+                                        {[
+                                            'Word Count: Keep it under 250-300 words.',
+                                            'Font and Size: Use Times New Roman or Arial at size 12.',
+                                            'File Format: Submit as a Microsoft Word document (.doc or .docx) or a PDF.',
+                                            'Author Info: List all author names and affiliations (Institution or work place).',
+                                            "Underline or star the main presenter's name.",
+                                            'Keywords: Add 3 to 5 keywords to help people search for your work.',
+                                        ].map((item) => (
+                                            <li key={item} className="flex items-start gap-2">
+                                                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-emerald-600" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
                                 <p className="rounded-lg border border-emerald-200 bg-white/60 px-4 py-3 font-medium text-emerald-900">
                                     Keep a watch on this portal and your registered email for updates.
                                 </p>
