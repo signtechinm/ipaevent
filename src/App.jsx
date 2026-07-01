@@ -55,7 +55,7 @@ const pageHighlights = {
     'Tariff Plans': 'Review room categories, approximate tariff ranges, occupancy notes, and booking terms.',
     'Contact Person': 'Find the hospitality desk contact person for accommodation, travel, and local support.',
     'How to Reach': 'Check airport, railway, bus, and local route guidance for reaching the congress venue.',
-    'Pick & Drop Points': 'View designated pickup and drop points, shuttle notes, and reporting instructions.',
+    'Nearest Arrival & Transport points': 'View designated arrival and transport points, shuttle notes, and reporting instructions.',
     'Tour Attractions': 'Explore nearby cultural, nature, shopping, and city attractions for delegates visiting Kerala.',
     'Registration Mode and Process': 'Understand the step-by-step flow for individual, group, workshop, and payment completion.',
     'Registration Link and Payment': 'Start registration and review payable fees, payment mode, and transaction capture.',
@@ -1219,7 +1219,7 @@ function AccommodationTravelPage() {
                 </div>
 
                 <div id="pick-and-drop-points" className="mt-12 scroll-mt-28">
-                    <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#df0867]">Pick &amp; Drop Points</p>
+                    <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#df0867]">Nearest Arrival &amp; Transport points</p>
                     <h3 className="mt-2 text-2xl font-bold text-zinc-950">Nearest arrival and pickup points</h3>
                     <p id="how-to-reach" className="mt-3 scroll-mt-28 text-sm leading-6 text-zinc-600">{cmsContent.routeNotes}</p>
                     <div className="mt-5 grid gap-4 md:grid-cols-2">
