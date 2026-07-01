@@ -686,7 +686,7 @@ function Header() {
             <div className={`mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 transition-all duration-300 sm:px-6 lg:px-8 ${isCompact ? 'py-0' : 'py-1'}`}>
                 <a href="/" className="group flex shrink-0 items-end gap-4">
                     <img
-                        src="/logo man.png"
+                        src="/new_dark.png"
                         alt="14th IPA National Students Congress logo"
                         className={`w-auto object-contain transition-all duration-300 ${isCompact ? 'h-14 sm:h-16' : 'h-20 sm:h-24'}`}
                     />
@@ -945,7 +945,7 @@ function QuickFacts() {
                     </div>
                     <div className="snapshot-logo-panel grid grid-cols-[1.15fr_0.85fr] items-center gap-5 rounded-2xl border border-white/15 bg-white/8 p-5 backdrop-blur-md">
                         <img
-                            src="/logo light.png"
+                            src="/new_light.png"
                             alt="14th IPA National Students Congress logo"
                             className="snapshot-event-logo h-28 w-full object-contain sm:h-32"
                         />
@@ -4079,7 +4079,7 @@ function Contact() {
                     <div>
                         <div className="flex max-w-2xl items-center gap-6 rounded-2xl bg-white/8 p-6 backdrop-blur-md ring-1 ring-white/12">
                             <img
-                                src="/logo light.png"
+                                src="/new_light.png"
                                 alt="14th IPA National Students Congress"
                                 className="h-28 min-w-0 flex-1 object-contain sm:h-32"
                             />
@@ -4233,7 +4233,7 @@ function AdminLoginPage() {
             </div>
             <div className="grid min-h-screen w-full items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
                 <div>
-                    <img src="/logo man.png" alt="14th IPA National Students Congress logo" className="admin-logo h-24 w-auto rounded-lg bg-white p-2" />
+                    <img src="/new_dark.png" alt="14th IPA National Students Congress logo" className="admin-logo h-24 w-auto rounded-lg bg-white p-2" />
                     <p className="mt-8 text-sm font-bold uppercase text-amber-300">Admin Panel</p>
                     <h1 className="mt-3 text-4xl font-bold leading-tight sm:text-5xl">Secure event operations for the 14th IPA National Students Congress 2026.</h1>
                     <p className="mt-5 max-w-xl text-base leading-7 text-zinc-300">
@@ -6198,7 +6198,7 @@ function AdminPage() {
                 <aside className="admin-sidebar border-b border-zinc-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
                     <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-4">
                         <a href="/admin/dashboard" className="flex min-w-0 items-center gap-3">
-                            <img src="/logo man.png" alt="14th IPA National Students Congress logo" className="admin-logo size-9 rounded-md border border-zinc-200 bg-white object-contain p-1" />
+                            <img src="/new_dark.png" alt="14th IPA National Students Congress logo" className="admin-logo size-9 rounded-md border border-zinc-200 bg-white object-contain p-1" />
                             <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold text-zinc-950">NSC Admin</p>
                                 <p className="truncate text-xs text-zinc-500">Event operations</p>
@@ -8114,10 +8114,13 @@ function AdminPage() {
 
 const coreAreas = [
     'Pharmaceutics & Pharmaceutical Technology',
-    'Pharmacology & Clinical Pharmacy',
+    'Pharmacology & Toxicology',
     'Pharmacognosy & Phytochemistry',
     'Medicinal Chemistry',
-    'Pharmaceutical Regulatory Affairs and Quality Assurance',
+    'Pharmaceutical Regulatory Affairs & Quality Assurance',
+    'Pharmacy Practice & Clinical Pharmacy',
+    'Pharmaceutical Analysis & Quality Control',
+    'Artificial Intelligence & Bioinformatics',
 ];
 
 const rejectionCriteria = [
