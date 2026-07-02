@@ -2,7 +2,7 @@
 
 React/Vite event portal with Vercel Functions and a shared Neon PostgreSQL database.
 
-**Event:** 14th IPA National Students Congress
+**Event:** 14th National IPA Student Congress
 
 **Date:** 19–20 September 2026
 

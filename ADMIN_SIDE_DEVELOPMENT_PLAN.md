@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-This document converts the admin-side scope from `CLIENT_PROPOSAL_EVENT_REGISTRATION_PORTAL.md` into a practical development plan for the 14th IPA National Students Congress event registration portal.
+This document converts the admin-side scope from `CLIENT_PROPOSAL_EVENT_REGISTRATION_PORTAL.md` into a practical development plan for the 14th National IPA Student Congress event registration portal.
 
 **Event Theme:** Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era
 

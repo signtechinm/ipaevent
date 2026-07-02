@@ -28,7 +28,7 @@ function SiteRoot() {
                     <div className="site-loader-content">
                         <img
                             src="/images/nsc-event-loader.gif"
-                            alt="14th IPA National Students Congress loading"
+                            alt="14th National IPA Student Congress loading"
                             className="site-loader-image"
                         />
                         <p className="site-loader-text">Preparing the congress experience</p>

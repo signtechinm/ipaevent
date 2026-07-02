@@ -69,8 +69,8 @@ const pageHighlights = {
     'Poster Presentation': 'Review poster presentation rules, display size, and scientific evaluation details.',
     'Instructions and Model Poster': 'Download author instructions, model poster layout, and formatting guidance.',
     'Accepted Papers': 'Published list area for accepted abstracts, presentation codes, and session allocation.',
-    '14th IPA National Students Congress Abstract Book': 'Download the final abstract book after scientific committee approval.',
-    '14th IPA National Students Congress Souvenir': 'Access the souvenir, sponsor acknowledgements, and event commemorative material.',
+    '14th National IPA Student Congress Abstract Book': 'Download the final abstract book after scientific committee approval.',
+    '14th National IPA Student Congress Souvenir': 'Access the souvenir, sponsor acknowledgements, and event commemorative material.',
     Patrons: 'Showcase patron messages, leadership support, and convention guidance.',
     'LOC - Core Group': 'Introduce the local organizing committee core group and operational leads.',
     'LOC - Sub Committee': 'List sub-committee teams across registration, scientific, hospitality, and events.',
@@ -695,7 +695,7 @@ function Header() {
                 <a href="/" className="group flex shrink-0 items-end gap-4">
                     <img
                         src="/new_dark.png"
-                        alt="14th IPA National Students Congress logo"
+                        alt="14th National IPA Student Congress logo"
                         className={`w-auto object-contain transition-all duration-300 ${isCompact ? 'h-14 sm:h-16' : 'h-20 sm:h-24'}`}
                     />
                     <img
@@ -784,10 +784,10 @@ function Hero() {
                 <div className="hero-copy flex min-h-[540px] max-w-3xl flex-col justify-end">
                     <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-lg bg-white/12 px-3 py-2 text-sm font-medium text-white ring-1 ring-white/25">
                         <span className="pulse-dot size-2 rounded-full bg-[#f4a21b]" />
-                        14th IPA National Students Congress web portal
+                        14th National IPA Student Congress web portal
                     </div>
                     <h1 className="max-w-3xl text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
-                        14th IPA National Students Congress
+                        14th National IPA Student Congress
                     </h1>
                     <div className="mt-5 max-w-3xl border-l-4 border-[#df0867] bg-[#0d124f]/55 px-5 py-5 backdrop-blur-sm">
                         <div className="mb-4 flex flex-wrap items-center gap-5 border-b border-white/20 pb-4 sm:gap-7">
@@ -954,7 +954,7 @@ function QuickFacts() {
                     <div className="snapshot-logo-panel grid grid-cols-[1.15fr_0.85fr] items-center gap-5 rounded-2xl border border-white/15 bg-white/8 p-5 backdrop-blur-md">
                         <img
                             src="/14th NSC LOGO - LIGHT.png"
-                            alt="14th IPA National Students Congress logo"
+                            alt="14th National IPA Student Congress logo"
                             className="snapshot-event-logo h-28 w-full object-contain sm:h-32"
                         />
                         <div className="flex h-full items-center border-l border-white/15 pl-5">
@@ -1009,7 +1009,7 @@ function QuickFacts() {
                             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">19-20 September 2026</p>
                             <h3 className="mt-1 text-2xl font-bold text-white">Main Congress Event</h3>
                         </div>
-                        <p className="text-sm text-white/70">14th IPA National Students Congress</p>
+                        <p className="text-sm text-white/70">14th National IPA Student Congress</p>
                     </div>
                     <article className="snapshot-workshop-card snapshot-main-event relative overflow-hidden rounded-xl border border-white/20 bg-white p-5 text-zinc-950 shadow-2xl sm:p-6">
                         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -1017,7 +1017,7 @@ function QuickFacts() {
                                 <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-[#df0867] text-sm font-black text-white shadow-lg">06</span>
                                 <div>
                                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#df0867]">Main Event</p>
-                                    <h3 className="mt-2 text-2xl font-bold leading-snug text-[#11145f]">14th IPA National Students Congress</h3>
+                                    <h3 className="mt-2 text-2xl font-bold leading-snug text-[#11145f]">14th National IPA Student Congress</h3>
                                     <p className="mt-2 text-sm text-zinc-600">Programs, competitions, scientific sessions, and cultural events.</p>
                                 </div>
                             </div>
@@ -1099,7 +1099,7 @@ function SponsorShowcase() {
                         Proudly supported by our event partners
                     </h2>
                     <p className="mt-4 text-base leading-7 text-zinc-600">
-                        We gratefully acknowledge the organizations supporting the 14th IPA National Students Congress.
+                        We gratefully acknowledge the organizations supporting the 14th National IPA Student Congress.
                     </p>
                 </div>
 
@@ -1347,26 +1347,26 @@ function HomeWelcome() {
                 <div>
                     <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#df0867]">Welcome Message</p>
                     <h2 className="mt-3 text-3xl font-bold leading-tight text-[#11145f] sm:text-4xl">
-                        Welcome to the 14th IPA National Students Congress
+                        Welcome to the 14th National IPA Student Congress
                     </h2>
                     <div className="mt-4 space-y-4 text-base leading-7 text-zinc-600">
                         <p>
-                            Welcome to the official web portal of the 14th IPA National Students Congress. This premier annual event is proudly hosted by the Indian Pharmaceutical Association (IPA) Kerala State Branch, alongside the IPA Students&apos; Forum (IPASF). We welcome pharmacy students, respected educators, and industry experts from across the country to connect, learn, and grow together.
+                            Welcome to the official web portal of the 14th National IPA Student Congress. This premier annual event is proudly hosted by the Indian Pharmaceutical Association (IPA) Kerala State Branch, alongside the IPA Students&apos; Forum (IPASF). We welcome pharmacy students, respected educators, and industry experts from across the country to connect, learn, and grow together.
                         </p>
                         <p>
-                            This year&apos;s congress features a dynamic scientific program, competitive student events, expert speakers, and valuable placement drives. The 14th IPA National Students Congress offers a unique space to showcase your research, test your skills, and build lifelong networks. We invite you to explore our sessions, submit your abstracts, and join us in making this event an outstanding success.
+                            This year&apos;s congress features a dynamic scientific program, competitive student events, expert speakers, and valuable placement drives. The 14th National IPA Student Congress offers a unique space to showcase your research, test your skills, and build lifelong networks. We invite you to explore our sessions, submit your abstracts, and join us in making this event an outstanding success.
                         </p>
                     </div>
                     <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
                         <span className="rounded-full bg-[#e7f5ec] px-4 py-2 text-[#00652f]">IPA Kerala</span>
-                        <span className="rounded-full bg-[#fff0f6] px-4 py-2 text-[#b70758]">14th IPA National Students Congress 2026</span>
+                        <span className="rounded-full bg-[#fff0f6] px-4 py-2 text-[#b70758]">14th National IPA Student Congress 2026</span>
                         <span className="rounded-full bg-[#fff7df] px-4 py-2 text-[#8a5700]">{eventDate}</span>
                     </div>
                 </div>
                 <div className="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-[#11145f]/10">
                     <img
                         src="/images/nsc-welcome-delegates.png"
-                        alt="Delegates and students at the 14th IPA National Students Congress"
+                        alt="Delegates and students at the 14th National IPA Student Congress"
                         className="h-full w-full object-contain"
                         loading="lazy"
                         decoding="async"
@@ -1878,14 +1878,14 @@ function RegistrationPage() {
             <section className="relative overflow-hidden bg-zinc-950 text-white">
                 <img
                     src="/images/nsc-kerala-hero.png"
-                    alt="Delegates at the 14th IPA National Students Congress registration venue"
+                    alt="Delegates at the 14th National IPA Student Congress registration venue"
                     className="absolute inset-0 h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-zinc-950/65" />
                 <div className="relative mx-auto flex min-h-[360px] max-w-7xl flex-col justify-end px-4 pb-10 pt-24 sm:px-6 lg:px-8">
                     <p className="text-sm font-bold uppercase text-amber-300">Registration</p>
                     <h1 className="mt-3 max-w-4xl text-4xl font-bold leading-tight sm:text-5xl">
-                        14th IPA National Students Congress 2026 early bird registration
+                        14th National IPA Student Congress 2026 early bird registration
                     </h1>
                     <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-100">
                         Complete each section tab by tab. Save your general details, competitions, workshops,
@@ -2909,7 +2909,7 @@ function RegistrationPage() {
                             <div className="mt-6 grid gap-5">
                                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-6">
                                     <p className="text-sm font-bold uppercase text-emerald-700">
-                                        14th IPA National Students Congress 2026 - {isGroupRegistration ? 'Group Registration' : 'Early Bird Registration'}
+                                        14th National IPA Student Congress 2026 - {isGroupRegistration ? 'Group Registration' : 'Early Bird Registration'}
                                     </p>
                                     <h3 className="mt-3 text-2xl font-bold text-emerald-950">Your response has been recorded.</h3>
                                     <div className="mt-4 grid gap-3 text-sm leading-6 text-emerald-900 sm:grid-cols-3">
@@ -3234,7 +3234,7 @@ function SponsorRegistrationPage() {
                 <div className="relative mx-auto flex min-h-[380px] max-w-7xl flex-col justify-end px-4 pb-10 pt-24 sm:px-6 lg:px-8">
                     <p className="text-sm font-bold uppercase text-amber-300">Become a Sponsor</p>
                     <h1 className="mt-3 max-w-4xl text-4xl font-bold leading-tight sm:text-5xl">
-                        Partner with the 14th IPA National Students Congress 2026
+                        Partner with the 14th National IPA Student Congress 2026
                     </h1>
                     <p className="mt-5 max-w-3xl text-base leading-7 text-zinc-100">
                         Choose premium packages, standalone opportunities, and e-Souvenir advertising, then submit
@@ -4172,6 +4172,95 @@ function StudentSkillCompetitionsPage() {
         'Copy the shareable link and paste it below.',
     ];
 
+    const [skillVideoModal, setSkillVideoModal] = useState(null);
+    const [skillVideoRegNum, setSkillVideoRegNum] = useState('');
+    const [skillVideoInfo, setSkillVideoInfo] = useState(null);
+    const [skillVideoChecking, setSkillVideoChecking] = useState(false);
+    const [skillVideoLink, setSkillVideoLink] = useState('');
+    const [skillVideoSubmitting, setSkillVideoSubmitting] = useState(false);
+    const [skillVideoError, setSkillVideoError] = useState('');
+
+    function openSkillVideoModal(competitionName) {
+        setSkillVideoModal({ competitionName });
+        setSkillVideoRegNum('');
+        setSkillVideoInfo(null);
+        setSkillVideoLink('');
+        setSkillVideoError('');
+    }
+
+    function closeSkillVideoModal() {
+        setSkillVideoModal(null);
+        setSkillVideoRegNum('');
+        setSkillVideoInfo(null);
+        setSkillVideoLink('');
+        setSkillVideoError('');
+    }
+
+    async function checkSkillVideoRegistration() {
+        if (!skillVideoModal?.competitionName || !skillVideoRegNum.trim()) return;
+        setSkillVideoChecking(true);
+        setSkillVideoError('');
+        setSkillVideoInfo(null);
+        setSkillVideoLink('');
+        try {
+            const params = new URLSearchParams({
+                registrationNumber: skillVideoRegNum.trim().toUpperCase(),
+                competitionName: skillVideoModal.competitionName,
+            });
+            const res = await fetch(`/api/skill-videos/check?${params.toString()}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Could not verify registration.');
+            setSkillVideoInfo(data);
+        } catch (err) {
+            setSkillVideoError(err.message);
+        } finally {
+            setSkillVideoChecking(false);
+        }
+    }
+
+    async function submitSkillVideoLink() {
+        if (!skillVideoModal?.competitionName || !skillVideoRegNum.trim() || !skillVideoLink.trim()) return;
+        setSkillVideoSubmitting(true);
+        setSkillVideoError('');
+        try {
+            const res = await fetch('/api/skill-videos/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    registrationNumber: skillVideoRegNum.trim().toUpperCase(),
+                    competitionName: skillVideoModal.competitionName,
+                    videoLink: skillVideoLink.trim(),
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Could not submit video link.');
+            setSkillVideoInfo((prev) => ({
+                ...(prev || {}),
+                valid: true,
+                canSubmit: true,
+                alreadySubmitted: true,
+                submission: data.submission,
+            }));
+            setSkillVideoLink('');
+        } catch (err) {
+            setSkillVideoError(err.message);
+        } finally {
+            setSkillVideoSubmitting(false);
+        }
+    }
+
+    function renderSkillVideoLink(competitionName) {
+        return (
+            <button
+                type="button"
+                onClick={() => openSkillVideoModal(competitionName)}
+                className="font-bold text-[#df0867] underline decoration-[#df0867]/40 underline-offset-2 hover:text-[#bd0758]"
+            >
+                Click and upload your video link here.
+            </button>
+        );
+    }
+
     return (
         <main className="bg-zinc-50 text-zinc-950">
             <section className="sci-service-hero py-16 text-white sm:py-20">
@@ -4218,7 +4307,7 @@ function StudentSkillCompetitionsPage() {
                     </h1>
                     <div className="mt-5 max-w-2xl border-l-4 border-[#df0867] bg-[#0d124f]/50 px-4 py-3 backdrop-blur-sm">
                         <p className="text-base leading-7 text-blue-100">
-                            Rules and regulations for the student skill competitions conducted as part of the 14th IPA National Students Congress.
+                            Rules and regulations for the student skill competitions conducted as part of the 14th National IPA Student Congress.
                         </p>
                     </div>
                     <div className="mt-7 flex flex-wrap gap-3">
@@ -4293,9 +4382,7 @@ function StudentSkillCompetitionsPage() {
                                                         {item.includes('Click and upload your video link here') ? (
                                                             <span>
                                                                 {item.replace('Click and upload your video link here.', '')}
-                                                                <a href="/scientific-service#submit" className="font-bold text-[#df0867] underline decoration-[#df0867]/40 underline-offset-2 hover:text-[#bd0758]">
-                                                                    Click and upload your video link here.
-                                                                </a>
+                                                                {renderSkillVideoLink(competition.title)}
                                                             </span>
                                                         ) : (
                                                             <span>{item}</span>
@@ -4335,14 +4422,134 @@ function StudentSkillCompetitionsPage() {
                                 <span className="mb-2 inline-flex rounded-full bg-[#df0867] px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
                                     Startup Pitch Competition
                                 </span>
-                                <a href="/scientific-service#submit" className="font-bold text-[#0d124f] underline decoration-[#df0867]/40 underline-offset-2 hover:text-[#df0867]">
-                                    Click and upload your video link here.
-                                </a>
+                                {renderSkillVideoLink('Startup Pitch Competition')}
                             </li>
                         </ol>
                     </div>
                 </div>
             </section>
+
+            {skillVideoModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/60 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="skill-video-modal-title">
+                    <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-lg bg-white shadow-2xl">
+                        <div className="flex items-start justify-between gap-4 border-b border-zinc-200 px-5 py-4">
+                            <div>
+                                <p className="text-xs font-black uppercase tracking-[0.14em] text-[#df0867]">Video Submission</p>
+                                <h2 id="skill-video-modal-title" className="mt-1 text-lg font-black text-zinc-950">{skillVideoModal.competitionName}</h2>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={closeSkillVideoModal}
+                                className="rounded-md border border-zinc-200 px-2.5 py-1 text-sm font-bold text-zinc-500 hover:bg-zinc-50"
+                                aria-label="Close video submission popup"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div className="space-y-5 px-5 py-5">
+                            <div>
+                                <label className="block text-sm font-semibold text-zinc-800">Enter your Registration Number</label>
+                                <p className="mt-1 text-xs text-zinc-500">The video field unlocks only for approved registrations enrolled in this competition.</p>
+                                <div className="mt-3 flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={skillVideoRegNum}
+                                        onChange={(e) => {
+                                            setSkillVideoRegNum(e.target.value.toUpperCase());
+                                            setSkillVideoInfo(null);
+                                            setSkillVideoLink('');
+                                            setSkillVideoError('');
+                                        }}
+                                        placeholder="NSC26-000001"
+                                        className="min-w-0 flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono uppercase placeholder-zinc-400 focus:border-[#df0867] focus:outline-none"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={checkSkillVideoRegistration}
+                                        disabled={skillVideoChecking || !skillVideoRegNum.trim()}
+                                        className="rounded-lg bg-[#0d124f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1a2070] disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        {skillVideoChecking ? 'Checking...' : 'Check'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {skillVideoError && <p className="text-sm font-medium text-red-600">{skillVideoError}</p>}
+
+                            {skillVideoInfo && !skillVideoInfo.valid && (
+                                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                                    <p className="text-sm font-semibold text-red-700">Registration number not found.</p>
+                                    <p className="mt-1 text-xs text-red-600">Only registered participants can submit competition videos.</p>
+                                </div>
+                            )}
+
+                            {skillVideoInfo && skillVideoInfo.valid && !skillVideoInfo.canSubmit && (
+                                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                                    <p className="text-sm font-semibold text-amber-900">{skillVideoInfo.participantName}</p>
+                                    <p className="mt-1 text-xs text-amber-800">{skillVideoInfo.eligibilityReason || 'This registration is not eligible for this video submission.'}</p>
+                                    <p className="mt-2 text-xs text-amber-700">
+                                        Payment: <span className="font-bold capitalize">{(skillVideoInfo.paymentStatus || '-').replaceAll('_', ' ')}</span>
+                                        <span className="mx-2">•</span>
+                                        Approval: <span className="font-bold capitalize">{(skillVideoInfo.approvalStatus || '-').replaceAll('_', ' ')}</span>
+                                    </p>
+                                </div>
+                            )}
+
+                            {skillVideoInfo && skillVideoInfo.valid && skillVideoInfo.canSubmit && (
+                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+                                    <p className="text-sm font-semibold text-emerald-800">{skillVideoInfo.participantName}</p>
+                                    <p className="text-xs text-emerald-700">{skillVideoInfo.institutionName}</p>
+                                    <p className="mt-1 text-xs text-emerald-600">Registration verified for this competition.</p>
+                                </div>
+                            )}
+
+                            {skillVideoInfo?.alreadySubmitted && skillVideoInfo.submission && (
+                                <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Video Link Submitted</p>
+                                    <a href={skillVideoInfo.submission.videoLink} target="_blank" rel="noopener noreferrer" className="mt-1 block truncate text-sm font-semibold text-[#0d124f] underline">
+                                        {skillVideoInfo.submission.videoLink}
+                                    </a>
+                                    <p className="mt-2 text-xs font-bold uppercase text-zinc-600">Status: {formatAdminStatus(skillVideoInfo.submission.reviewStatus)}</p>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-sm font-semibold text-zinc-800">Video Link</label>
+                                <input
+                                    type="url"
+                                    value={skillVideoLink}
+                                    onChange={(e) => {
+                                        setSkillVideoLink(e.target.value);
+                                        setSkillVideoError('');
+                                    }}
+                                    disabled={!skillVideoInfo?.canSubmit || skillVideoInfo?.alreadySubmitted}
+                                    placeholder="https://drive.google.com/..."
+                                    className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm placeholder-zinc-400 focus:border-[#df0867] focus:outline-none disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
+                                />
+                            </div>
+
+                            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                                <button
+                                    type="button"
+                                    onClick={closeSkillVideoModal}
+                                    className="rounded-lg border border-zinc-300 px-5 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+                                >
+                                    Close
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={submitSkillVideoLink}
+                                    disabled={!skillVideoInfo?.canSubmit || skillVideoInfo?.alreadySubmitted || !skillVideoLink.trim() || skillVideoSubmitting}
+                                    className="rounded-lg bg-[#df0867] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#bd0758] disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    {skillVideoSubmitting ? 'Submitting...' : 'Submit Video Link'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </main>
     );
 }
@@ -4380,7 +4587,7 @@ function OrganizingTeam() {
                         Committee, advisors, IPA groups, partners, and sponsors.
                     </h2>
                     <p className="mt-4 text-base leading-7 text-zinc-600">
-                        Key leadership groups and support teams helping coordinate the 14th IPA National Students Congress.
+                        Key leadership groups and support teams helping coordinate the 14th National IPA Student Congress.
                     </p>
                 </div>
                 <div className="mt-8">
@@ -4488,7 +4695,7 @@ function SponsorSection() {
                             Put your brand in front of India&apos;s next generation of pharmacy leaders.
                         </h2>
                         <p className="mt-5 text-base leading-8 text-zinc-600">
-                            Partner with the 14th IPA National Students Congress to connect with pharmacy students,
+                            Partner with the 14th National IPA Student Congress to connect with pharmacy students,
                             educators, researchers, and industry professionals through exhibition visibility,
                             delegate engagement, session support, and event branding opportunities.
                         </p>
@@ -4545,7 +4752,7 @@ function Contact() {
                         <div className="flex max-w-2xl items-center gap-6 p-6">
                             <img
                                 src="/14th NSC LOGO - LIGHT.png"
-                                alt="14th IPA National Students Congress"
+                                alt="14th National IPA Student Congress"
                                 className="h-28 min-w-0 flex-1 object-contain sm:h-32"
                             />
                             <span className="h-28 w-px shrink-0 bg-white/15" />
@@ -4644,7 +4851,7 @@ function Contact() {
                 </div>
 
                 <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between">
-                    <p>&copy; 2026 14th IPA National Students Congress. All rights reserved.</p>
+                    <p>&copy; 2026 14th National IPA Student Congress. All rights reserved.</p>
                     <p className="inline-flex items-center gap-2">
                         Designed &amp; Developed by
                         <a
@@ -4698,9 +4905,9 @@ function AdminLoginPage() {
             </div>
             <div className="grid min-h-screen w-full items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
                 <div>
-                    <img src="/new_dark.png" alt="14th IPA National Students Congress logo" className="admin-logo h-24 w-auto rounded-lg bg-white p-2" />
+                    <img src="/new_dark.png" alt="14th National IPA Student Congress logo" className="admin-logo h-24 w-auto rounded-lg bg-white p-2" />
                     <p className="mt-8 text-sm font-bold uppercase text-amber-300">Admin Panel</p>
-                    <h1 className="mt-3 text-4xl font-bold leading-tight sm:text-5xl">Secure event operations for the 14th IPA National Students Congress 2026.</h1>
+                    <h1 className="mt-3 text-4xl font-bold leading-tight sm:text-5xl">Secure event operations for the 14th National IPA Student Congress 2026.</h1>
                     <p className="mt-5 max-w-xl text-base leading-7 text-zinc-300">
                         Manage registrations, payments, programs, users, roles, permissions, reports, and winner publishing from one protected backend.
                     </p>
@@ -4879,6 +5086,13 @@ function AdminSidebarIcon({ name }) {
                 <path d="M9 16h6" />
             </>
         ),
+        'skill-competitions': (
+            <>
+                <path d="M8 4h8l1 4h4l-3 3 1 5-4-2.5L12 16l-3-2.5L5 16l1-5-3-3h4l1-4Z" />
+                <path d="M12 16v5" />
+                <path d="M8 21h8" />
+            </>
+        ),
         users: (
             <>
                 <path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
@@ -4930,13 +5144,14 @@ const adminModules = [
     { id: 'audit', label: 'Audit Logs', description: 'Review important administrative activity.' },
     { id: 'scientific', label: 'Scientific Content', description: 'Manage scientific page content and resources.' },
     { id: 'abstracts', label: 'Abstracts CMS', description: 'Manage student abstracts and the published abstract book.' },
+    { id: 'skill-competitions', label: 'Student Skill Competitions', description: 'Review video submissions for each student skill competition.' },
 ];
 
 const adminNavigationGroups = [
     { label: 'Overview', modules: ['dashboard'] },
     { label: 'Registration', modules: ['registrations', 'students'] },
     { label: 'Event Setup', modules: ['categories', 'programs', 'pricing'] },
-    { label: 'Content', modules: ['home-content', 'abstracts', 'scientific', 'winners', 'accommodation'] },
+    { label: 'Content', modules: ['home-content', 'abstracts', 'skill-competitions', 'scientific', 'winners', 'accommodation'] },
     { label: 'Reports', modules: ['reports', 'payments'] },
     { label: 'Administration', modules: ['users', 'audit'] },
 ];
@@ -4953,7 +5168,17 @@ const abstractsAdminSections = [
     { id: 'abstract-book', label: 'Abstract Book Submission', description: 'Upload or replace the final abstract book PDF shown on the public scientific page.' },
 ];
 
-const implementedAdminModules = new Set(['dashboard', 'registrations', 'students', 'payments', 'categories', 'pricing', 'programs', 'users', 'home-content', 'accommodation', 'scientific', 'abstracts']);
+const skillCompetitionAdminSections = [
+    { id: 'pharma-mastermind-2026', label: 'Pharma Mastermind - 2026', description: 'Review submitted links for Pharma Mastermind.' },
+    { id: 'national-patient-counselling-challenge-2026', label: 'National Patient Counselling Challenge - 2026', description: 'Review submitted patient counselling videos.' },
+    { id: 'clinrx-case-challenge', label: 'ClinRx Case Challenge', description: 'Review submitted clinical case challenge videos.' },
+    { id: 'error-hunters', label: 'Error Hunters', description: 'Review submitted medication error challenge videos.' },
+    { id: 'national-pharmacy-debate-competition', label: 'National Pharmacy Debate Competition', description: 'Review submitted debate competition videos.' },
+    { id: 'national-pharmacy-reels-competition', label: 'National Pharmacy Reels Competition', description: 'Review submitted pharmacy reels.' },
+    { id: 'startup-pitch-competition', label: 'Startup Pitch Competition', description: 'Review submitted startup pitch videos.' },
+];
+
+const implementedAdminModules = new Set(['dashboard', 'registrations', 'students', 'payments', 'categories', 'pricing', 'programs', 'users', 'home-content', 'accommodation', 'scientific', 'abstracts', 'skill-competitions']);
 
 function registrationStatusBadgeClass(status) {
     if (status === 'submitted') return 'bg-emerald-100 text-emerald-800';
@@ -4993,13 +5218,19 @@ function getAbstractsAdminSectionFromPath() {
     return abstractsAdminSections.some((section) => section.id === requestedSection) ? requestedSection : 'student-abstracts';
 }
 
+function getSkillCompetitionsAdminSectionFromPath() {
+    const requestedSection = window.location.pathname.split('/')[3] || skillCompetitionAdminSections[0].id;
+    return skillCompetitionAdminSections.some((section) => section.id === requestedSection) ? requestedSection : skillCompetitionAdminSections[0].id;
+}
+
 function AdminPage() {
     const [theme, toggleTheme] = useAdminTheme();
     const [session, setSession] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const activeModule = getAdminModuleFromPath();
     const activeAbstractsSection = activeModule === 'abstracts' ? getAbstractsAdminSectionFromPath() : 'student-abstracts';
-    const [openAdminDropdown, setOpenAdminDropdown] = useState(['accommodation', 'abstracts'].includes(activeModule) ? activeModule : '');
+    const activeSkillCompetitionSection = activeModule === 'skill-competitions' ? getSkillCompetitionsAdminSectionFromPath() : skillCompetitionAdminSections[0].id;
+    const [openAdminDropdown, setOpenAdminDropdown] = useState(['accommodation', 'abstracts', 'skill-competitions'].includes(activeModule) ? activeModule : '');
     const [userModuleTab, setUserModuleTab] = useState('users');
     const [userSearch, setUserSearch] = useState('');
     const [roles, setRoles] = useState([]);
@@ -5163,6 +5394,11 @@ function AdminPage() {
     const [abstractRemarksDraft, setAbstractRemarksDraft] = useState('');
     const [videoReviewing, setVideoReviewing] = useState(null);
     const [videoReviewRemarksDraft, setVideoReviewRemarksDraft] = useState('');
+    const [skillVideos, setSkillVideos] = useState([]);
+    const [skillVideosLoading, setSkillVideosLoading] = useState(false);
+    const [skillVideosError, setSkillVideosError] = useState('');
+    const [skillVideoReviewing, setSkillVideoReviewing] = useState(null);
+    const [skillVideoReviewRemarksDraft, setSkillVideoReviewRemarksDraft] = useState('');
 
     useEffect(() => {
         if (window.location.pathname === '/admin') {
@@ -5185,14 +5421,32 @@ function AdminPage() {
         }
     }
 
+    async function loadAdminSkillVideos() {
+        setSkillVideosLoading(true);
+        setSkillVideosError('');
+        try {
+            const res = await fetch('/api/admin/skill-videos');
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to load skill videos.');
+            setSkillVideos(data.submissions || []);
+        } catch (err) {
+            setSkillVideosError(err.message);
+        } finally {
+            setSkillVideosLoading(false);
+        }
+    }
+
     useEffect(() => {
         if (activeModule === 'abstracts' && activeAbstractsSection === 'student-abstracts' && session) {
             loadAdminAbstracts();
         }
+        if (activeModule === 'skill-competitions' && session) {
+            loadAdminSkillVideos();
+        }
         if (activeModule === 'abstracts' && activeAbstractsSection === 'abstract-book' && session) {
             loadAbstractBookAdmin();
         }
-    }, [activeModule, activeAbstractsSection, session]);
+    }, [activeModule, activeAbstractsSection, activeSkillCompetitionSection, session]);
 
     async function reviewAbstract(id, status) {
         try {
@@ -5206,6 +5460,23 @@ function AdminPage() {
             setAdminAbstracts((prev) => prev.map((a) => (a.id === id ? data.submission : a)));
             setAbstractReviewing(null);
             setAbstractRemarksDraft('');
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function reviewSkillVideo(id, reviewStatus) {
+        try {
+            const res = await fetch(`/api/admin/skill-videos/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reviewStatus, reviewRemarks: skillVideoReviewRemarksDraft }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to update skill video review.');
+            setSkillVideos((prev) => prev.map((item) => (item.id === id ? data.submission : item)));
+            setSkillVideoReviewing(null);
+            setSkillVideoReviewRemarksDraft('');
         } catch (err) {
             alert(err.message);
         }
@@ -6001,8 +6272,18 @@ function AdminPage() {
     const activeAccommodationSection = activeModule === 'accommodation' ? getAccommodationAdminSectionFromPath() : 'settings';
     const activeAccommodationSectionMeta = accommodationAdminSections.find((section) => section.id === activeAccommodationSection) || accommodationAdminSections[3];
     const activeAbstractsSectionMeta = abstractsAdminSections.find((section) => section.id === activeAbstractsSection) || abstractsAdminSections[0];
-    const activePageLabel = activeModule === 'abstracts' ? activeAbstractsSectionMeta.label : activeModuleMeta.label;
-    const activePageDescription = activeModule === 'abstracts' ? activeAbstractsSectionMeta.description : activeModuleMeta.description;
+    const activeSkillCompetitionSectionMeta = skillCompetitionAdminSections.find((section) => section.id === activeSkillCompetitionSection) || skillCompetitionAdminSections[0];
+    const activePageLabel = activeModule === 'abstracts'
+        ? activeAbstractsSectionMeta.label
+        : activeModule === 'skill-competitions'
+            ? activeSkillCompetitionSectionMeta.label
+            : activeModuleMeta.label;
+    const activePageDescription = activeModule === 'abstracts'
+        ? activeAbstractsSectionMeta.description
+        : activeModule === 'skill-competitions'
+            ? activeSkillCompetitionSectionMeta.description
+            : activeModuleMeta.description;
+    const activeSkillCompetitionVideos = skillVideos.filter((submission) => submission.competitionName === activeSkillCompetitionSectionMeta.label);
     const paymentCollected = registrations
         .filter((registration) => registration.paymentStatus === 'success')
         .reduce((total, registration) => total + registration.totalPayableAmount, 0);
@@ -6663,7 +6944,7 @@ function AdminPage() {
                 <aside className="admin-sidebar border-b border-zinc-200 bg-white lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
                     <div className="flex h-16 items-center justify-between border-b border-zinc-200 px-4">
                         <a href="/admin/dashboard" className="flex min-w-0 items-center gap-3">
-                            <img src="/new_dark.png" alt="14th IPA National Students Congress logo" className="admin-logo size-9 rounded-md border border-zinc-200 bg-white object-contain p-1" />
+                            <img src="/new_dark.png" alt="14th National IPA Student Congress logo" className="admin-logo size-9 rounded-md border border-zinc-200 bg-white object-contain p-1" />
                             <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold text-zinc-950">NSC Admin</p>
                                 <p className="truncate text-xs text-zinc-500">Event operations</p>
@@ -6680,11 +6961,16 @@ function AdminPage() {
                                     {group.modules.map((moduleId) => {
                                         const module = adminModules.find((item) => item.id === moduleId);
                                         if (!module) return null;
-                                        if (module.id === 'accommodation' || module.id === 'abstracts') {
+                                        if (module.id === 'accommodation' || module.id === 'abstracts' || module.id === 'skill-competitions') {
                                             const isAccommodationMenu = module.id === 'accommodation';
+                                            const isSkillCompetitionsMenu = module.id === 'skill-competitions';
                                             const submenuOpen = openAdminDropdown === module.id;
                                             const submenuId = `admin-${module.id}-submenu`;
-                                            const sections = isAccommodationMenu ? accommodationAdminSections : abstractsAdminSections;
+                                            const sections = isAccommodationMenu
+                                                ? accommodationAdminSections
+                                                : isSkillCompetitionsMenu
+                                                    ? skillCompetitionAdminSections
+                                                    : abstractsAdminSections;
                                             return (
                                                 <div key={module.id} className="relative shrink-0 lg:mb-2">
                                                     <button
@@ -6711,10 +6997,14 @@ function AdminPage() {
                                                         {sections.map((section) => {
                                                             const isActiveSection = isAccommodationMenu
                                                                 ? activeAccommodationSection === section.id
-                                                                : activeAbstractsSection === section.id;
+                                                                : isSkillCompetitionsMenu
+                                                                    ? activeSkillCompetitionSection === section.id
+                                                                    : activeAbstractsSection === section.id;
                                                             const href = isAccommodationMenu
                                                                 ? `/admin/accommodation/${section.id}`
-                                                                : `/admin/abstracts/${section.id}`;
+                                                                : isSkillCompetitionsMenu
+                                                                    ? `/admin/skill-competitions/${section.id}`
+                                                                    : `/admin/abstracts/${section.id}`;
                                                             return (
                                                             <a
                                                                 key={section.id}
@@ -6783,6 +7073,12 @@ function AdminPage() {
                                 <>
                                     <span className="hidden text-zinc-300 sm:inline">/</span>
                                     <span className="hidden truncate font-medium text-zinc-500 sm:inline">{activeAbstractsSectionMeta.label}</span>
+                                </>
+                            )}
+                            {activeModule === 'skill-competitions' && (
+                                <>
+                                    <span className="hidden text-zinc-300 sm:inline">/</span>
+                                    <span className="hidden truncate font-medium text-zinc-500 sm:inline">{activeSkillCompetitionSectionMeta.label}</span>
                                 </>
                             )}
                         </div>
@@ -8488,6 +8784,108 @@ function AdminPage() {
                             </div>
                             )}
 
+                            {/* ── Skill Competition Videos ───────────────────────── */}
+                            {activeAbstractsSection === 'skill-videos' && (
+                            <div className="rounded-xl border border-zinc-200 bg-white p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-base font-bold text-zinc-900">Skill Competition Video Links</h3>
+                                        <p className="mt-1 text-sm text-zinc-500">Review submitted video links for student skill competitions and approve or reject entries.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={loadAdminSkillVideos}
+                                        disabled={skillVideosLoading}
+                                        className="rounded-lg bg-[#0d124f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1a2070] disabled:opacity-50"
+                                    >
+                                        {skillVideosLoading ? 'Loading...' : skillVideos.length ? 'Refresh' : 'Load Submissions'}
+                                    </button>
+                                </div>
+
+                                {skillVideosError && <p className="mt-3 text-sm font-medium text-red-600">{skillVideosError}</p>}
+
+                                {skillVideos.length > 0 && (
+                                    <div className="mt-5 overflow-x-auto">
+                                        <table className="w-full min-w-[760px] text-left text-sm">
+                                            <thead>
+                                                <tr className="border-b border-zinc-200">
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Reg. No.</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Participant</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Competition</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Video Link</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Status</th>
+                                                    <th className="pb-3 text-xs font-bold uppercase text-zinc-500">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-zinc-100">
+                                                {skillVideos.map((submission) => (
+                                                    <tr key={submission.id}>
+                                                        <td className="py-3 pr-4 font-mono text-xs font-medium text-zinc-700">{submission.registrationNumber}</td>
+                                                        <td className="py-3 pr-4">
+                                                            <p className="text-xs font-semibold text-zinc-800">{submission.participantName || '—'}</p>
+                                                            <p className="text-xs text-zinc-500">{submission.institutionName || ''}</p>
+                                                        </td>
+                                                        <td className="py-3 pr-4">
+                                                            <p className="max-w-[220px] text-xs font-semibold text-zinc-800">{submission.competitionName}</p>
+                                                        </td>
+                                                        <td className="max-w-[180px] py-3 pr-4">
+                                                            <a href={submission.videoLink} target="_blank" rel="noopener noreferrer" className="block truncate text-xs text-[#0d124f] underline">{submission.videoLink}</a>
+                                                        </td>
+                                                        <td className="py-3 pr-4">
+                                                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold uppercase ${
+                                                                submission.reviewStatus === 'approved'
+                                                                    ? 'bg-emerald-100 text-emerald-700'
+                                                                    : submission.reviewStatus === 'rejected'
+                                                                        ? 'bg-red-100 text-red-700'
+                                                                        : submission.reviewStatus === 'shortlisted'
+                                                                            ? 'bg-sky-100 text-sky-700'
+                                                                            : 'bg-amber-100 text-amber-700'
+                                                            }`}>
+                                                                {formatAdminStatus(submission.reviewStatus || 'pending')}
+                                                            </span>
+                                                            {submission.reviewRemarks && <p className="mt-2 max-w-[180px] text-xs text-zinc-500">{submission.reviewRemarks}</p>}
+                                                        </td>
+                                                        <td className="py-3">
+                                                            {skillVideoReviewing === submission.id ? (
+                                                                <div className="space-y-2">
+                                                                    <textarea
+                                                                        rows={2}
+                                                                        value={skillVideoReviewRemarksDraft}
+                                                                        onChange={(e) => setSkillVideoReviewRemarksDraft(e.target.value)}
+                                                                        placeholder="Review remarks (optional)"
+                                                                        className="w-52 rounded border border-zinc-300 px-2 py-1 text-xs focus:outline-none"
+                                                                    />
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        <button type="button" onClick={() => reviewSkillVideo(submission.id, 'shortlisted')} className="rounded bg-sky-600 px-2 py-1 text-xs font-semibold text-white hover:bg-sky-700">Shortlist</button>
+                                                                        <button type="button" onClick={() => reviewSkillVideo(submission.id, 'approved')} className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Approve</button>
+                                                                        <button type="button" onClick={() => reviewSkillVideo(submission.id, 'rejected')} className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-700">Reject</button>
+                                                                        <button type="button" onClick={() => reviewSkillVideo(submission.id, 'pending')} className="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100">Pending</button>
+                                                                        <button type="button" onClick={() => { setSkillVideoReviewing(null); setSkillVideoReviewRemarksDraft(''); }} className="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100">Cancel</button>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => { setSkillVideoReviewing(submission.id); setSkillVideoReviewRemarksDraft(submission.reviewRemarks || ''); }}
+                                                                    className="rounded border border-zinc-300 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100"
+                                                                >
+                                                                    Review
+                                                                </button>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+
+                                {!skillVideosLoading && skillVideos.length === 0 && (
+                                    <p className="mt-4 text-sm text-zinc-400">No skill competition video links yet. Click "Load Submissions" to fetch data.</p>
+                                )}
+                            </div>
+                            )}
+
                             {/* ── Abstract Book PDF ──────────────────────────────── */}
                             {activeAbstractsSection === 'abstract-book' && (
                             <div className="rounded-xl border border-zinc-200 bg-white p-6">
@@ -8546,6 +8944,105 @@ function AdminPage() {
                                 )}
                             </div>
                             )}
+                        </div>
+                    )}
+
+                    {activeModule === 'skill-competitions' && (
+                        <div className="mt-6 space-y-8">
+                            <div className="rounded-xl border border-zinc-200 bg-white p-6">
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h3 className="text-base font-bold text-zinc-900">{activeSkillCompetitionSectionMeta.label}</h3>
+                                        <p className="mt-1 text-sm text-zinc-500">Review submitted video links for this competition and approve or reject entries.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={loadAdminSkillVideos}
+                                        disabled={skillVideosLoading}
+                                        className="rounded-lg bg-[#0d124f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1a2070] disabled:opacity-50"
+                                    >
+                                        {skillVideosLoading ? 'Loading...' : 'Refresh'}
+                                    </button>
+                                </div>
+
+                                {skillVideosError && <p className="mt-3 text-sm font-medium text-red-600">{skillVideosError}</p>}
+
+                                {activeSkillCompetitionVideos.length > 0 && (
+                                    <div className="mt-5 overflow-x-auto">
+                                        <table className="w-full min-w-[720px] text-left text-sm">
+                                            <thead>
+                                                <tr className="border-b border-zinc-200">
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Reg. No.</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Participant</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Video Link</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Status</th>
+                                                    <th className="pb-3 text-xs font-bold uppercase text-zinc-500">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-zinc-100">
+                                                {activeSkillCompetitionVideos.map((submission) => (
+                                                    <tr key={submission.id}>
+                                                        <td className="py-3 pr-4 font-mono text-xs font-medium text-zinc-700">{submission.registrationNumber}</td>
+                                                        <td className="py-3 pr-4">
+                                                            <p className="text-xs font-semibold text-zinc-800">{submission.participantName || '-'}</p>
+                                                            <p className="text-xs text-zinc-500">{submission.institutionName || ''}</p>
+                                                        </td>
+                                                        <td className="max-w-[240px] py-3 pr-4">
+                                                            <a href={submission.videoLink} target="_blank" rel="noopener noreferrer" className="block truncate text-xs text-[#0d124f] underline">{submission.videoLink}</a>
+                                                        </td>
+                                                        <td className="py-3 pr-4">
+                                                            <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold uppercase ${
+                                                                submission.reviewStatus === 'approved'
+                                                                    ? 'bg-emerald-100 text-emerald-700'
+                                                                    : submission.reviewStatus === 'rejected'
+                                                                        ? 'bg-red-100 text-red-700'
+                                                                        : submission.reviewStatus === 'shortlisted'
+                                                                            ? 'bg-sky-100 text-sky-700'
+                                                                            : 'bg-amber-100 text-amber-700'
+                                                            }`}>
+                                                                {formatAdminStatus(submission.reviewStatus || 'pending')}
+                                                            </span>
+                                                            {submission.reviewRemarks && <p className="mt-2 max-w-[180px] text-xs text-zinc-500">{submission.reviewRemarks}</p>}
+                                                        </td>
+                                                        <td className="py-3">
+                                                            {skillVideoReviewing === submission.id ? (
+                                                                <div className="space-y-2">
+                                                                    <textarea
+                                                                        rows={2}
+                                                                        value={skillVideoReviewRemarksDraft}
+                                                                        onChange={(e) => setSkillVideoReviewRemarksDraft(e.target.value)}
+                                                                        placeholder="Review remarks (optional)"
+                                                                        className="w-52 rounded border border-zinc-300 px-2 py-1 text-xs focus:outline-none"
+                                                                    />
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        <button type="button" onClick={() => reviewSkillVideo(submission.id, 'shortlisted')} className="rounded bg-sky-600 px-2 py-1 text-xs font-semibold text-white hover:bg-sky-700">Shortlist</button>
+                                                                        <button type="button" onClick={() => reviewSkillVideo(submission.id, 'approved')} className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Approve</button>
+                                                                        <button type="button" onClick={() => reviewSkillVideo(submission.id, 'rejected')} className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-700">Reject</button>
+                                                                        <button type="button" onClick={() => reviewSkillVideo(submission.id, 'pending')} className="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100">Pending</button>
+                                                                        <button type="button" onClick={() => { setSkillVideoReviewing(null); setSkillVideoReviewRemarksDraft(''); }} className="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100">Cancel</button>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => { setSkillVideoReviewing(submission.id); setSkillVideoReviewRemarksDraft(submission.reviewRemarks || ''); }}
+                                                                    className="rounded border border-zinc-300 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100"
+                                                                >
+                                                                    Review
+                                                                </button>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+
+                                {!skillVideosLoading && activeSkillCompetitionVideos.length === 0 && (
+                                    <p className="mt-4 text-sm text-zinc-400">No video links have been submitted for {activeSkillCompetitionSectionMeta.label} yet.</p>
+                                )}
+                            </div>
                         </div>
                     )}
 
@@ -8799,7 +9296,7 @@ function ScientificServicePage() {
                 <div className="sci-hero-copy relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-white/20">
                         <span className="pulse-dot size-1.5 rounded-full bg-amber-300" />
-                        14th IPA National Students Congress 2026
+                        14th National IPA Student Congress 2026
                     </div>
                     <h1 className="mt-4 text-3xl font-extrabold leading-tight sm:text-4xl lg:text-5xl">
                         Scientific Service &amp; Abstract

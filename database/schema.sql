@@ -330,6 +330,25 @@ CREATE TABLE IF NOT EXISTS abstract_submissions (
 CREATE INDEX IF NOT EXISTS abstract_submissions_status_idx ON abstract_submissions (status);
 CREATE INDEX IF NOT EXISTS abstract_submissions_registration_idx ON abstract_submissions (registration_number);
 
+CREATE TABLE IF NOT EXISTS skill_competition_video_submissions (
+    id BIGSERIAL PRIMARY KEY,
+    registration_number VARCHAR(30) NOT NULL,
+    competition_name VARCHAR(180) NOT NULL,
+    participant_name TEXT,
+    institution_name TEXT,
+    video_link TEXT NOT NULL,
+    review_status VARCHAR(30) NOT NULL DEFAULT 'pending',
+    review_remarks TEXT,
+    reviewed_at TIMESTAMPTZ,
+    submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (registration_number, competition_name)
+);
+
+CREATE INDEX IF NOT EXISTS skill_competition_video_submissions_status_idx ON skill_competition_video_submissions (review_status);
+CREATE INDEX IF NOT EXISTS skill_competition_video_submissions_registration_idx ON skill_competition_video_submissions (registration_number);
+CREATE INDEX IF NOT EXISTS skill_competition_video_submissions_competition_idx ON skill_competition_video_submissions (competition_name);
+
 CREATE TABLE IF NOT EXISTS abstract_book_content (
     id TEXT PRIMARY KEY DEFAULT 'main',
     file_name TEXT,

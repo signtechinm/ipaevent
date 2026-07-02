@@ -2,7 +2,7 @@
 
 ## 1. Project Overview
 
-We propose to develop a complete web-based event registration and management portal for the 14th IPA National Students Congress. The system will include a public-facing website for participants and a secure backend administration panel for managing registrations, programs, pricing, users, reports, payments, and winner announcements.
+We propose to develop a complete web-based event registration and management portal for the 14th National IPA Student Congress. The system will include a public-facing website for participants and a secure backend administration panel for managing registrations, programs, pricing, users, reports, payments, and winner announcements.
 
 **Event Theme:** Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era
 
@@ -336,6 +336,6 @@ The portal will support both individual and group registrations, program-wise pr
 
 ## 10. Conclusion
 
-The proposed event registration portal will provide a complete digital solution for managing the 14th IPA National Students Congress. It will simplify participant registration, automate payment tracking, help administrators manage programs and pricing, and provide structured reports for decision-making.
+The proposed event registration portal will provide a complete digital solution for managing the 14th National IPA Student Congress. It will simplify participant registration, automate payment tracking, help administrators manage programs and pricing, and provide structured reports for decision-making.
 
 The system will be designed in a scalable way so that additional modules such as abstract submission, certificates, QR check-in, and future event editions can be added as required.

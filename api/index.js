@@ -417,7 +417,7 @@ async function sendStudentMail({ to, subject, preview, body, htmlBody, textBody 
         html: `
             <div style="display:none;max-height:0;overflow:hidden">${safePreview}</div>
             <div style="font-family:Arial,sans-serif;line-height:1.6;color:#18181b">
-                <h2 style="margin:0 0 12px;color:#0d124f">14th IPA National Students Congress 2026</h2>
+                <h2 style="margin:0 0 12px;color:#0d124f">14th National IPA Student Congress 2026</h2>
                 ${safeBody}
                 <p style="margin-top:24px;color:#52525b">Regards,<br>NSC 2026 Secretariat<br>IPA Kerala State Branch</p>
             </div>
@@ -944,6 +944,20 @@ async function notifyVideoReviewed(contact, submission) {
     }).catch((error) => console.error('notifyVideoReviewed failed:', error));
 }
 
+async function notifySkillVideoReviewed(contact, submission) {
+    if (!contact) return;
+    await sendStudentMail({
+        to: contact.email,
+        subject: `Skill competition video review update - ${submission.registrationNumber || contact.registrationNumber}`,
+        preview: `Your ${submission.competitionName || 'skill competition'} video status is now ${formatStatusLabel(submission.reviewStatus)}.`,
+        body: [
+            `Dear ${contact.name || 'Delegate'},`,
+            `Your video submission for ${submission.competitionName || 'the skill competition'} under registration ${submission.registrationNumber || contact.registrationNumber || '-'} has been updated to ${formatStatusLabel(submission.reviewStatus)}.`,
+            submission.reviewRemarks ? `Remarks: ${submission.reviewRemarks}` : 'No additional remarks were added.',
+        ],
+    }).catch((error) => console.error('notifySkillVideoReviewed failed:', error));
+}
+
 async function ensureAbstractSubmissions(sql) {
     await sql`
         CREATE TABLE IF NOT EXISTS abstract_submissions (
@@ -977,6 +991,28 @@ async function ensureAbstractSubmissions(sql) {
     await sql`ALTER TABLE abstract_submissions ADD COLUMN IF NOT EXISTS video_reviewed_at TIMESTAMPTZ`;
     await sql`CREATE INDEX IF NOT EXISTS abstract_submissions_status_idx ON abstract_submissions (status)`;
     await sql`CREATE INDEX IF NOT EXISTS abstract_submissions_registration_idx ON abstract_submissions (registration_number)`;
+}
+
+async function ensureSkillCompetitionVideoSubmissions(sql) {
+    await sql`
+        CREATE TABLE IF NOT EXISTS skill_competition_video_submissions (
+            id BIGSERIAL PRIMARY KEY,
+            registration_number VARCHAR(30) NOT NULL,
+            competition_name VARCHAR(180) NOT NULL,
+            participant_name TEXT,
+            institution_name TEXT,
+            video_link TEXT NOT NULL,
+            review_status VARCHAR(30) NOT NULL DEFAULT 'pending',
+            review_remarks TEXT,
+            reviewed_at TIMESTAMPTZ,
+            submitted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            UNIQUE (registration_number, competition_name)
+        )
+    `;
+    await sql`CREATE INDEX IF NOT EXISTS skill_competition_video_submissions_status_idx ON skill_competition_video_submissions (review_status)`;
+    await sql`CREATE INDEX IF NOT EXISTS skill_competition_video_submissions_registration_idx ON skill_competition_video_submissions (registration_number)`;
+    await sql`CREATE INDEX IF NOT EXISTS skill_competition_video_submissions_competition_idx ON skill_competition_video_submissions (competition_name)`;
 }
 
 async function ensureAbstractBookContent(sql) {
@@ -2083,6 +2119,21 @@ function mapAbstractSubmission(row) {
     };
 }
 
+function mapSkillCompetitionVideoSubmission(row) {
+    return {
+        id: row.id,
+        registrationNumber: row.registration_number,
+        competitionName: row.competition_name,
+        participantName: row.participant_name || '',
+        institutionName: row.institution_name || '',
+        videoLink: row.video_link || '',
+        reviewStatus: row.review_status || 'pending',
+        reviewRemarks: row.review_remarks || '',
+        reviewedAt: row.reviewed_at || null,
+        submittedAt: row.submitted_at,
+    };
+}
+
 async function findRegistrationForPublicNumber(sql, registrationNumber) {
     const normalized = String(registrationNumber || '').trim().toUpperCase().replace(/\s+/g, '');
     if (!normalized) return null;
@@ -2117,6 +2168,69 @@ async function findRegistrationForPublicNumber(sql, registrationNumber) {
         contactWhatsapp: member?.whatsapp || row.whatsapp_number || row.group_coordinator_whatsapp || '',
         displayInstitution: member?.college || row.institution_name || '',
         isGroupMember: Boolean(member),
+    };
+}
+
+async function findRegistrationCompetitionNames(sql, reg) {
+    const memberCompetitions = Array.isArray(reg?.group_member?.competitions)
+        ? reg.group_member.competitions
+        : Array.isArray(reg?.group_member?.studentCompetitions)
+            ? reg.group_member.studentCompetitions
+            : null;
+    if (memberCompetitions) {
+        return memberCompetitions.map((item) => String(item || '').trim()).filter(Boolean);
+    }
+
+    const rows = await sql`
+        SELECT rc.competition_name
+        FROM registration_competitions rc
+        WHERE rc.registration_id = ${reg.id}
+        ORDER BY rc.id
+    `;
+    return rows.map((item) => item.competition_name);
+}
+
+async function getSkillCompetitionEligibility(sql, registrationNumber, competitionName) {
+    const reg = await findRegistrationForPublicNumber(sql, registrationNumber);
+    if (!reg) return { valid: false };
+
+    const canonicalRegNum = reg.canonicalRegistrationNumber || registrationNumber;
+    const selectedCompetitions = await findRegistrationCompetitionNames(sql, reg);
+
+    const paymentReady = reg.payment_status === 'success';
+    const approvalReady = reg.approval_status === 'approved';
+    const registrationReady = reg.registration_status === 'submitted';
+    const canSubmit = registrationReady && paymentReady && approvalReady;
+    const eligibilityReason = !registrationReady
+        ? 'Registration must be submitted before video submission.'
+        : !paymentReady
+            ? 'Payment must be marked success before video submission.'
+            : !approvalReady
+                ? 'Registration must be approved before video submission.'
+                : '';
+
+    const existing = await sql`
+        SELECT *
+        FROM skill_competition_video_submissions
+        WHERE registration_number = ${canonicalRegNum}
+          AND competition_name = ${competitionName}
+        LIMIT 1
+    `;
+
+    return {
+        valid: true,
+        registration: reg,
+        canonicalRegNum,
+        participantName: reg.contactName || '',
+        institutionName: reg.displayInstitution || '',
+        paymentStatus: reg.payment_status || '',
+        approvalStatus: reg.approval_status || '',
+        registrationStatus: reg.registration_status || '',
+        selectedCompetitions,
+        canSubmit,
+        eligibilityReason,
+        alreadySubmitted: existing.length > 0,
+        submission: existing.length ? mapSkillCompetitionVideoSubmission(existing[0]) : null,
     };
 }
 
@@ -2280,6 +2394,84 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
     return null;
 }
 
+async function handlePublicSkillCompetitionRoute(path, request, response, sql) {
+    if (path === 'skill-videos/check' && request.method === 'GET') {
+        await ensureSkillCompetitionVideoSubmissions(sql);
+        const regNum = String(request.query.registrationNumber || '').trim().toUpperCase();
+        const competitionName = String(request.query.competitionName || '').trim();
+        if (!regNum) {
+            return send(response, 400, { error: 'Registration number is required.' });
+        }
+        if (!competitionName) {
+            return send(response, 400, { error: 'Competition name is required.' });
+        }
+
+        const eligibility = await getSkillCompetitionEligibility(sql, regNum, competitionName);
+        if (!eligibility.valid) {
+            return send(response, 200, { valid: false });
+        }
+
+        return send(response, 200, {
+            valid: true,
+            participantName: eligibility.participantName,
+            institutionName: eligibility.institutionName,
+            paymentStatus: eligibility.paymentStatus,
+            approvalStatus: eligibility.approvalStatus,
+            registrationStatus: eligibility.registrationStatus,
+            selectedCompetitions: eligibility.selectedCompetitions,
+            canSubmit: eligibility.canSubmit,
+            eligibilityReason: eligibility.eligibilityReason,
+            alreadySubmitted: eligibility.alreadySubmitted,
+            submission: eligibility.submission,
+        });
+    }
+
+    if (path === 'skill-videos/submit' && request.method === 'POST') {
+        await ensureSkillCompetitionVideoSubmissions(sql);
+        const regNum = String(request.body?.registrationNumber || '').trim().toUpperCase();
+        const competitionName = String(request.body?.competitionName || '').trim();
+        const videoLink = String(request.body?.videoLink || '').trim();
+        if (!regNum) throw inputError('Registration number is required.');
+        if (!competitionName) throw inputError('Competition name is required.');
+        if (!videoLink) throw inputError('Video link is required.');
+        if (!/^https?:\/\/\S+$/i.test(videoLink)) throw inputError('Enter a valid video URL starting with http:// or https://.');
+
+        const eligibility = await getSkillCompetitionEligibility(sql, regNum, competitionName);
+        if (!eligibility.valid) throw inputError('Registration number not found.');
+        if (!eligibility.canSubmit) throw inputError(eligibility.eligibilityReason || 'This registration is not eligible for video submission.');
+        if (eligibility.alreadySubmitted) throw inputError('A video link has already been submitted for this competition.');
+
+        const rows = await sql`
+            INSERT INTO skill_competition_video_submissions
+                (registration_number, competition_name, participant_name, institution_name, video_link, review_status)
+            VALUES (
+                ${eligibility.canonicalRegNum},
+                ${competitionName},
+                ${eligibility.participantName || null},
+                ${eligibility.institutionName || null},
+                ${videoLink},
+                'pending'
+            )
+            RETURNING *
+        `;
+        const submission = mapSkillCompetitionVideoSubmission(rows[0]);
+        const contact = await getRegistrationContactForMail(sql, submission.registrationNumber);
+        queueStudentMail({
+            to: contact?.email,
+            subject: `Skill competition video received - ${submission.registrationNumber}`,
+            preview: 'Your skill competition video link has been received and is pending review.',
+            body: [
+                `Dear ${contact?.name || eligibility.participantName || 'Delegate'},`,
+                `Your video link for ${competitionName} under registration ${submission.registrationNumber || '-'} has been received.`,
+                'The committee will review it and notify you when the review status is updated.',
+            ],
+        });
+        return send(response, 201, { submission });
+    }
+
+    return null;
+}
+
 export default async function handler(request, response) {
     response.setHeader('Cache-Control', 'no-store');
     const path = getPath(request);
@@ -2387,6 +2579,11 @@ export default async function handler(request, response) {
             return publicAbstractResponse;
         }
 
+        const publicSkillCompetitionResponse = await handlePublicSkillCompetitionRoute(path, request, response, sql);
+        if (publicSkillCompetitionResponse) {
+            return publicSkillCompetitionResponse;
+        }
+
         if (path === 'admin/auth/login' && request.method === 'POST') {
             await ensureSeedAdmin(sql);
             const login = String(request.body?.login || request.body?.email || '').trim().toLowerCase();
@@ -2445,7 +2642,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
                 preview: 'This is a test email from the NSC 2026 portal.',
                 body: [
                     `Dear ${session.name || 'Admin'},`,
-                    'This is a test email from the 14th IPA National Students Congress 2026 portal.',
+                    'This is a test email from the 14th National IPA Student Congress 2026 portal.',
                     'If you received this, SMTP is configured correctly.',
                 ],
             });
@@ -3031,6 +3228,48 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
                 ORDER BY submitted_at DESC
             `;
             return send(response, 200, { abstracts: rows.map(mapAbstractSubmission) });
+        }
+
+        // ── Admin: list skill competition video submissions ───────────
+        if (path === 'admin/skill-videos' && request.method === 'GET') {
+            await ensureSkillCompetitionVideoSubmissions(sql);
+            if (!requirePermission(session, 'registration.view')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const rows = await sql`
+                SELECT id, registration_number, competition_name, participant_name, institution_name,
+                       video_link, review_status, review_remarks, reviewed_at, submitted_at
+                FROM skill_competition_video_submissions
+                ORDER BY submitted_at DESC
+            `;
+            return send(response, 200, { submissions: rows.map(mapSkillCompetitionVideoSubmission) });
+        }
+
+        // ── Admin: review skill competition video submission ──────────
+        const skillVideoReviewMatch = path.match(/^admin\/skill-videos\/(\d+)$/);
+        if (skillVideoReviewMatch && request.method === 'PATCH') {
+            await ensureSkillCompetitionVideoSubmissions(sql);
+            if (!requirePermission(session, 'registration.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const { reviewStatus, reviewRemarks } = request.body || {};
+            if (!['pending', 'shortlisted', 'approved', 'rejected'].includes(reviewStatus)) {
+                throw inputError('Invalid review status. Must be pending, shortlisted, approved, or rejected.');
+            }
+            const rows = await sql`
+                UPDATE skill_competition_video_submissions
+                SET review_status = ${reviewStatus},
+                    review_remarks = ${reviewRemarks ? String(reviewRemarks).trim() : null},
+                    reviewed_at = NOW(),
+                    updated_at = NOW()
+                WHERE id = ${skillVideoReviewMatch[1]}
+                RETURNING *
+            `;
+            if (!rows.length) return send(response, 404, { error: 'Submission not found.' });
+            const submission = mapSkillCompetitionVideoSubmission(rows[0]);
+            const contact = await getRegistrationContactForMail(sql, rows[0].registration_number);
+            await notifySkillVideoReviewed(contact, submission);
+            return send(response, 200, { submission });
         }
 
         // ── Admin: download abstract file ────────────────────────────
