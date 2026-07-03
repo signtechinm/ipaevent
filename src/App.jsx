@@ -5136,7 +5136,7 @@ function AdminSidebarIcon({ name }) {
 
 const adminModules = [
     { id: 'dashboard', label: 'Dashboard', description: 'Overview of registrations, payments, and event operations.' },
-    { id: 'registrations', label: 'All Registration', description: 'Review delegate registrations, drafts, and contact details.' },
+    { id: 'registrations', label: 'Applicants', description: 'Review delegate registrations, drafts, and contact details.' },
     { id: 'payments', label: 'Payments', description: 'Track collections, pending payments, and reconciliation.' },
     { id: 'categories', label: 'Categories', description: 'Create registration categories and configure their base registration fees.' },
     { id: 'programs', label: 'Programs', description: 'Manage event programs, schedules, and capacities.' },
