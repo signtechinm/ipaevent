@@ -4,6 +4,7 @@ import { apiRequest } from './api';
 const eventTheme = "Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era";
 const eventDate = '19–20 September 2026';
 const registrationUpiId = 'ipakeralastate@sbi';
+const informationBrochurePdf = '/14th IPA - SC [Information Brochure]- Final_compressed.pdf';
 
 const siteMap = [
     {
@@ -810,7 +811,7 @@ function Hero() {
                         <a href="#fourteenth-ipa-national-students-congress-souvenir" className="button-pop rounded-lg bg-[#df0867] px-5 py-3 text-center text-sm font-bold text-white hover:bg-[#bd0758]">
                             Souvenir
                         </a>
-                        <a href="#fourteenth-nsc-brochures" className="button-pop rounded-lg bg-[#1b2074] px-5 py-3 text-center text-sm font-bold text-white shadow-lg shadow-black/15 hover:bg-[#1b2074]">
+                        <a href={informationBrochurePdf} target="_blank" rel="noopener noreferrer" className="button-pop rounded-lg bg-[#1b2074] px-5 py-3 text-center text-sm font-bold text-white shadow-lg shadow-black/15 hover:bg-[#1b2074]">
                             Congress Brochures
                         </a>
                     </div>
@@ -1355,6 +1356,11 @@ function HomeWelcome() {
                         </p>
                         <p>
                             This year&apos;s congress features a dynamic scientific program, competitive student events, expert speakers, and valuable placement drives. The 14th National IPA Student Congress offers a unique space to showcase your research, test your skills, and build lifelong networks. We invite you to explore our sessions, submit your abstracts, and join us in making this event an outstanding success.
+                        </p>
+                        <p className="font-semibold text-zinc-700">
+                            With Professional regards,<br />
+                            Local Organizing Committee,<br />
+                            14th National IPA Students&rsquo; Congress 20
                         </p>
                     </div>
                     <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
@@ -5130,11 +5136,11 @@ function AdminSidebarIcon({ name }) {
 
 const adminModules = [
     { id: 'dashboard', label: 'Dashboard', description: 'Overview of registrations, payments, and event operations.' },
-    { id: 'registrations', label: 'Participants', description: 'Review delegate registrations, drafts, and contact details.' },
+    { id: 'registrations', label: 'All Registration', description: 'Review delegate registrations, drafts, and contact details.' },
     { id: 'payments', label: 'Payments', description: 'Track collections, pending payments, and reconciliation.' },
     { id: 'categories', label: 'Categories', description: 'Create registration categories and configure their base registration fees.' },
     { id: 'programs', label: 'Programs', description: 'Manage event programs, schedules, and capacities.' },
-    { id: 'students', label: 'Students', description: 'Maintain student and institution records.' },
+    { id: 'students', label: 'Participants', description: 'Maintain student and institution records.' },
     { id: 'pricing', label: 'Pricing', description: 'Configure registration, competition, and workshop fees.' },
     { id: 'winners', label: 'Winners', description: 'Prepare and publish competition results.' },
     { id: 'reports', label: 'Reports', description: 'Generate operational and financial reports.' },
