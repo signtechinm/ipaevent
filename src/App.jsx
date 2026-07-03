@@ -521,8 +521,8 @@ const registrationTabs = [
     { id: 'workshop', label: 'Workshop' },
     { id: 'presentation', label: 'Presentation' },
     { id: 'hr-drive', label: 'HR Drive' },
-    { id: 'payment', label: 'Payment' },
     { id: 'review', label: 'Review' },
+    { id: 'payment', label: 'Payment' },
     { id: 'confirmation', label: 'Confirmation' },
 ];
 
@@ -2039,9 +2039,6 @@ function RegistrationPage() {
                                             onChange={(event) => updateField('ipaMemberId', event.target.value.toUpperCase())}
                                             placeholder="Enter IPA Member ID"
                                         />
-                                        {formData.ipaMemberId && !ipaMemberIdPattern.test(formData.ipaMemberId.trim().toUpperCase()) && (
-                                            <span className="mt-1 block text-xs font-semibold text-red-600">Format must be KER/THIR/ON/LM/000078.</span>
-                                        )}
                                     </label>
                                 )}
                                 <label className={labelClass}>
@@ -2196,9 +2193,6 @@ function RegistrationPage() {
                                             onChange={(event) => updateField('ipaMemberId', event.target.value.toUpperCase())}
                                             placeholder="Enter IPA Member ID"
                                         />
-                                        {formData.ipaMemberId && !ipaMemberIdPattern.test(formData.ipaMemberId.trim().toUpperCase()) && (
-                                            <span className="mt-1 block text-xs font-semibold text-red-600">Format must be KER/THIR/ON/LM/000078.</span>
-                                        )}
                                     </label>
                                 )}
                                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 md:col-span-2">
@@ -2835,12 +2829,12 @@ function RegistrationPage() {
                                     </div>
                                 )}
                                 <div className="rounded-lg border border-sky-200 bg-sky-50 p-5 md:col-span-2">
-                                    <div className="grid gap-5 lg:grid-cols-[1fr_320px] lg:items-center">
+                                    <div className="grid gap-5 lg:grid-cols-[1fr_430px] lg:items-start">
                                         <div>
-                                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-sky-700">SBI Scan &amp; Pay</p>
+                                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-sky-700">Scan &amp; Pay</p>
                                             <h3 className="mt-2 text-xl font-bold text-zinc-950">Pay the registration fee using UPI</h3>
                                             <p className="mt-2 text-sm leading-6 text-zinc-700">
-                                                Scan the SBI QR shared by the organizing team or pay directly to the UPI ID below. After payment, enter the transaction ID / UPI reference number before submitting your registration.
+                                                Scan the QR code or transfer the amount to the bank account below. After payment, enter the transaction ID / UPI reference number before submitting your registration.
                                             </p>
                                             <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                                 <div className="rounded-lg bg-white px-4 py-3 ring-1 ring-sky-100">
@@ -2852,40 +2846,34 @@ function RegistrationPage() {
                                                     <p className="mt-1 break-all font-mono text-base font-black text-[#0d124f]">{registrationUpiId}</p>
                                                 </div>
                                             </div>
+                                            <div className="mt-4 rounded-lg border border-sky-100 bg-white p-4">
+                                                <p className="text-xs font-bold uppercase tracking-[0.14em] text-sky-700">Bank details for Account Transfer of Fees</p>
+                                                <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+                                                    {[
+                                                        ['Account Name', '14TH NATIONAL IPA STUDENTS CONGRESS 2026'],
+                                                        ['Account Number', '0423073000000937'],
+                                                        ['Bank Name', 'SOUTH INDIAN BANK'],
+                                                        ['IFSC', 'SIBL0000423'],
+                                                        ['Branch', 'ERNAKULAM VENNALA'],
+                                                    ].map(([label, value]) => (
+                                                        <div key={label} className={label === 'Account Name' ? 'sm:col-span-2' : ''}>
+                                                            <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">{label}</dt>
+                                                            <dd className="mt-1 font-semibold text-zinc-950">{value}</dd>
+                                                        </div>
+                                                    ))}
+                                                </dl>
+                                            </div>
                                         </div>
                                         <div className="rounded-lg border border-sky-200 bg-white p-4 text-center shadow-sm">
-                                            <div className="mx-auto aspect-square max-w-[220px] rounded-lg border border-zinc-200 bg-white p-3">
-                                                <svg viewBox="0 0 120 120" role="img" aria-label="Sample UPI QR code placeholder" className="h-full w-full">
-                                                    <rect width="120" height="120" fill="#ffffff" />
-                                                    {[
-                                                        [8, 8], [86, 8], [8, 86],
-                                                    ].map(([x, y]) => (
-                                                        <g key={`${x}-${y}`}>
-                                                            <rect x={x} y={y} width="26" height="26" fill="#111827" />
-                                                            <rect x={x + 4} y={y + 4} width="18" height="18" fill="#ffffff" />
-                                                            <rect x={x + 9} y={y + 9} width="8" height="8" fill="#111827" />
-                                                        </g>
-                                                    ))}
-                                                    {[
-                                                        [44, 10, 6, 6], [56, 10, 4, 10], [68, 8, 8, 4], [44, 22, 12, 4],
-                                                        [66, 22, 6, 6], [78, 20, 4, 12], [42, 36, 4, 8], [52, 34, 8, 4],
-                                                        [64, 34, 4, 12], [74, 36, 10, 4], [38, 48, 12, 4], [56, 46, 4, 8],
-                                                        [68, 48, 8, 8], [82, 48, 4, 10], [94, 44, 8, 4], [36, 60, 6, 6],
-                                                        [48, 58, 4, 12], [58, 62, 10, 4], [74, 60, 4, 12], [88, 60, 14, 4],
-                                                        [104, 58, 4, 10], [38, 74, 10, 4], [54, 72, 6, 12], [66, 76, 12, 4],
-                                                        [82, 74, 6, 6], [96, 72, 10, 4], [42, 88, 4, 14], [52, 90, 10, 4],
-                                                        [66, 88, 4, 8], [76, 90, 12, 4], [92, 88, 4, 12], [104, 90, 8, 8],
-                                                        [38, 106, 12, 4], [56, 104, 4, 8], [68, 106, 10, 4], [84, 104, 4, 8],
-                                                        [98, 106, 12, 4],
-                                                    ].map(([x, y, width, height], index) => (
-                                                        <rect key={index} x={x} y={y} width={width} height={height} fill="#111827" />
-                                                    ))}
-                                                    <circle cx="60" cy="60" r="15" fill="#e0f2fe" stroke="#0284c7" strokeWidth="2" />
-                                                    <text x="60" y="58" textAnchor="middle" fontSize="8" fontWeight="700" fill="#0c4a6e">SBI</text>
-                                                    <text x="60" y="68" textAnchor="middle" fontSize="5" fontWeight="700" fill="#0c4a6e">SAMPLE</text>
-                                                </svg>
+                                            <div className="mx-auto aspect-square max-w-[380px] rounded-lg border border-zinc-200 bg-white p-3">
+                                                <img
+                                                    src="/WhatsApp Image 2026-07-03 at 17.56.48.jpeg"
+                                                    alt="Registration payment QR code"
+                                                    className="h-full w-full rounded-md object-contain"
+                                                    loading="lazy"
+                                                />
                                             </div>
-                                            <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-sky-700">Sample QR</p>
+                                            <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-sky-700">Payment QR</p>
                                             <p className="mt-3 text-xs font-semibold text-zinc-500">BHIM UPI, YONO SBI, GPay, Paytm, or WhatsApp Pay</p>
                                         </div>
                                     </div>
@@ -3067,7 +3055,7 @@ function RegistrationPage() {
                                         {isSaving ? 'Saving...' : 'Save Section'}
                                     </button>
                                 )}
-                                {activeTab === 'review' ? (
+                                {activeTab === 'payment' ? (
                                     <button
                                         type="button"
                                         onClick={submitRegistration}
@@ -6239,12 +6227,108 @@ function AdminPage() {
         URL.revokeObjectURL(url);
     }
 
+    function pdfEscape(value) {
+        return String(value ?? '')
+            .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, ' ')
+            .replace(/\\/g, '\\\\')
+            .replace(/\(/g, '\\(')
+            .replace(/\)/g, '\\)');
+    }
+
+    function wrapPdfText(value, maxLength = 118) {
+        const text = String(value ?? '').replace(/\s+/g, ' ').trim();
+        if (!text) return ['-'];
+        const words = text.split(' ');
+        const lines = [];
+        let line = '';
+        for (const word of words) {
+            if ((line ? `${line} ${word}` : word).length > maxLength) {
+                if (line) lines.push(line);
+                line = word;
+            } else {
+                line = line ? `${line} ${word}` : word;
+            }
+        }
+        if (line) lines.push(line);
+        return lines.length ? lines : ['-'];
+    }
+
+    function downloadPdf(filename, title, columns, rows) {
+        const pageWidth = 842;
+        const pageHeight = 595;
+        const margin = 36;
+        const lineHeight = 11;
+        const linesPerPage = Math.floor((pageHeight - margin * 2) / lineHeight);
+        const reportDate = new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date());
+        const lines = [
+            title,
+            `Generated: ${reportDate}`,
+            `Records: ${rows.length}`,
+            '',
+        ];
+
+        rows.forEach((row, index) => {
+            lines.push(`Record ${index + 1}`);
+            columns.forEach((column) => {
+                const rawValue = Array.isArray(column.value(row)) ? column.value(row).join(', ') : column.value(row);
+                wrapPdfText(`${column.label}: ${rawValue}`).forEach((line) => lines.push(line));
+            });
+            lines.push('');
+        });
+
+        const pages = [];
+        for (let index = 0; index < lines.length; index += linesPerPage) {
+            pages.push(lines.slice(index, index + linesPerPage));
+        }
+
+        const objects = [];
+        const addObject = (content) => {
+            objects.push(content);
+            return objects.length;
+        };
+        const catalogId = addObject('<< /Type /Catalog /Pages 2 0 R >>');
+        const pagesId = addObject('');
+        const pageIds = [];
+        pages.forEach((pageLines) => {
+            const content = pageLines.map((line, index) => {
+                const y = pageHeight - margin - index * lineHeight;
+                const fontSize = index === 0 && pageLines[0] === title ? 11 : 8;
+                return `BT /F1 ${fontSize} Tf ${margin} ${y} Td (${pdfEscape(line)}) Tj ET`;
+            }).join('\n');
+            const contentId = addObject(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+            const pageId = addObject(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents ${contentId} 0 R >>`);
+            pageIds.push(pageId);
+        });
+        objects[pagesId - 1] = `<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageIds.length} >>`;
+
+        let pdf = '%PDF-1.4\n';
+        const offsets = [0];
+        objects.forEach((object, index) => {
+            offsets.push(pdf.length);
+            pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+        });
+        const xrefOffset = pdf.length;
+        pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+        offsets.slice(1).forEach((offset) => {
+            pdf += `${String(offset).padStart(10, '0')} 00000 n \n`;
+        });
+        pdf += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+        const blob = new Blob([pdf], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
     function formatExportDate(value) {
         return value ? new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '';
     }
 
-    function exportRegistrations() {
-        const columns = [
+    function registrationExportColumns() {
+        return [
             { label: 'Registration Number', value: (row) => row.registrationNumber },
             { label: 'Registration Mode', value: (row) => row.registrationMode },
             { label: 'Registration Status', value: (row) => row.registrationStatus },
@@ -6287,11 +6371,19 @@ function AdminPage() {
             { label: 'Updated At', value: (row) => formatExportDate(row.updatedAt) },
             { label: 'Group Student Details', value: (row) => Array.isArray(row.groupMembers) ? row.groupMembers.map((member) => `${member.registrationNumber || ''} ${member.name || ''} | ${member.gender || ''} | ${member.email || ''} | ${member.whatsapp || ''} | ${member.course || ''} | ${member.college || ''} | Competitions: ${(member.competitions || []).join('; ')} | Workshops: ${(member.workshops || []).join('; ')} | Presentation: ${member.presentationType || ''} | HR: ${member.hrCoreArea || ''}`).join('\n') : '' },
         ];
+    }
+
+    function exportRegistrations() {
+        const columns = registrationExportColumns();
         downloadCsv(`registrations-${new Date().toISOString().slice(0, 10)}.csv`, columns, filteredRegistrations);
     }
 
-    function exportStudents() {
-        const columns = [
+    function exportRegistrationsPdf() {
+        downloadPdf(`registrations-${new Date().toISOString().slice(0, 10)}.pdf`, 'Applicants Export', registrationExportColumns(), filteredRegistrations);
+    }
+
+    function studentExportColumns() {
+        return [
             { label: 'Student Registration Number', value: (row) => row.registrationNumber },
             { label: 'Parent Registration Number', value: (row) => row.parentRegistrationNumber },
             { label: 'Registration Mode', value: (row) => row.registrationMode },
@@ -6324,7 +6416,15 @@ function AdminPage() {
             { label: 'Created At', value: (row) => formatExportDate(row.createdAt) },
             { label: 'Updated At', value: (row) => formatExportDate(row.updatedAt) },
         ];
+    }
+
+    function exportStudents() {
+        const columns = studentExportColumns();
         downloadCsv(`students-${new Date().toISOString().slice(0, 10)}.csv`, columns, filteredStudents);
+    }
+
+    function exportStudentsPdf() {
+        downloadPdf(`students-${new Date().toISOString().slice(0, 10)}.pdf`, 'Participants Export', studentExportColumns(), filteredStudents);
     }
     const paymentRows = registrations
         .filter((registration) => registration.registrationStatus === 'submitted' || registration.transactionDetails || registration.totalPayableAmount > 0)
@@ -7391,6 +7491,14 @@ function AdminPage() {
                                     >
                                         Export Excel
                                     </button>
+                                    <button
+                                        type="button"
+                                        onClick={exportRegistrationsPdf}
+                                        disabled={!filteredRegistrations.length}
+                                        className="rounded-lg border border-zinc-800 px-4 py-2.5 text-sm font-bold text-zinc-800 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Export PDF
+                                    </button>
                                 </div>
                             </div>
 
@@ -8160,6 +8268,14 @@ function AdminPage() {
                                     >
                                         Export Excel
                                     </button>
+                                    <button
+                                        type="button"
+                                        onClick={exportStudentsPdf}
+                                        disabled={!filteredStudents.length}
+                                        className="rounded-lg border border-zinc-800 px-4 py-2.5 text-sm font-bold text-zinc-800 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Export PDF
+                                    </button>
                                 </div>
                             </div>
 
@@ -8796,11 +8912,8 @@ function AdminPage() {
                                                                             className="w-48 rounded border border-zinc-300 px-2 py-1 text-xs focus:outline-none"
                                                                         />
                                                                         <div className="flex flex-wrap gap-1">
-                                                                            <button type="button" onClick={() => reviewAbstractVideo(abs.id, 'shortlisted')} className="rounded bg-sky-600 px-2 py-1 text-xs font-semibold text-white hover:bg-sky-700">Shortlist</button>
                                                                             <button type="button" onClick={() => reviewAbstractVideo(abs.id, 'approved')} className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Approve</button>
                                                                             <button type="button" onClick={() => reviewAbstractVideo(abs.id, 'rejected')} className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-700">Reject</button>
-                                                                            <button type="button" onClick={() => reviewAbstractVideo(abs.id, 'pending')} className="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100">Pending</button>
-                                                                            <button type="button" onClick={() => { setVideoReviewing(null); setVideoReviewRemarksDraft(''); }} className="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100">Cancel</button>
                                                                         </div>
                                                                     </div>
                                                                 ) : (
@@ -8843,7 +8956,6 @@ function AdminPage() {
                                                                     <div className="flex gap-1">
                                                                         <button type="button" onClick={() => reviewAbstract(abs.id, 'accepted')} className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Accept</button>
                                                                         <button type="button" onClick={() => reviewAbstract(abs.id, 'rejected')} className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-700">Reject</button>
-                                                                        <button type="button" onClick={() => { setAbstractReviewing(null); setAbstractRemarksDraft(''); }} className="rounded border border-zinc-300 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100">Cancel</button>
                                                                     </div>
                                                                 </div>
                                                             ) : (
@@ -9478,7 +9590,7 @@ function ScientificServicePage() {
                                         {[
                                             'Word Count: Keep it under 250-300 words.',
                                             'Font and Size: Use Times New Roman or Arial at size 12.',
-                                            'File Format: Submit as a Microsoft Word document (.doc or .docx) or a PDF.',
+                                            'File Format: Submit as a PDF.',
                                             'Author Info: List all author names and affiliations (Institution or work place).',
                                             "Underline or star the main presenter's name.",
                                             'Keywords: Add 3 to 5 keywords to help people search for your work.',

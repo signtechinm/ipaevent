@@ -3365,8 +3365,8 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             }
             const { status, adminRemarks, videoReviewStatus, videoReviewRemarks } = request.body || {};
             if (videoReviewStatus !== undefined) {
-                if (!['pending', 'shortlisted', 'approved', 'rejected'].includes(videoReviewStatus)) {
-                    throw inputError('Invalid presentation review status. Must be pending, shortlisted, approved, or rejected.');
+                if (!['approved', 'rejected'].includes(videoReviewStatus)) {
+                    throw inputError('Invalid presentation review status. Must be approved or rejected.');
                 }
                 const rows = await sql`
                     UPDATE abstract_submissions
