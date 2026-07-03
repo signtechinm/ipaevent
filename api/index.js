@@ -32,7 +32,24 @@ const standaloneSponsorFees = {
     'cultural-event': 10000,
 };
 const quantityBasedSponsorItems = new Set(['session', 'cultural-event']);
-const fipVaccinationWorkshopName = 'FIP Vaccination Training (2 days)';
+const fipVaccinationWorkshopName = 'FIP IPA Vaccination Training (2 days)';
+const ipaMemberIdPattern = /^[A-Z]{3}\/[A-Z]{4}\/[A-Z]{2}\/[A-Z]{2}\/\d{6}$/;
+const ipaMemberCategoryKeys = new Set([
+    'studentdelegateipamember',
+    'studentdelegateipasfmember',
+    'delegateipamemberfaculty',
+    'delegateipamembernonfacultycategory',
+    'delegateipamembernonfaculty',
+    'delegateipamemberothers',
+]);
+
+function normalizeCategoryKey(value) {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function requiresIpaMemberId(categoryName) {
+    return ipaMemberCategoryKeys.has(normalizeCategoryKey(categoryName));
+}
 const souvenirAdvertisementFees = {
     'outer-back-cover': 50000,
     'inside-front-cover': 50000,
@@ -51,7 +68,7 @@ const defaultPrograms = [
     ['AI', 'workshop', 0, 10],
     [fipVaccinationWorkshopName, 'workshop', 1000, 20],
     ['3D Printing', 'workshop', 0, 30],
-    ['NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization', 'workshop', 0, 40],
+    ['NDDS (Nano/Micro Drug Delivery Systems) - Formulation and Characterization', 'workshop', 0, 40],
 ];
 
 const defaultHomeContent = {
@@ -1208,12 +1225,12 @@ async function ensureProgramCatalog(sql) {
     }
     await sql`
         INSERT INTO event_programs (name, program_type, description, price, sort_order)
-        VALUES ('NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization', 'workshop', 'Workshop session', 0, 40)
+        VALUES ('NDDS (Nano/Micro Drug Delivery Systems) - Formulation and Characterization', 'workshop', 'Workshop session', 0, 40)
         ON CONFLICT (program_type, name) DO NOTHING
     `;
     await sql`
         UPDATE event_programs
-        SET name = 'NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization',
+        SET name = 'NDDS (Nano/Micro Drug Delivery Systems) - Formulation and Characterization',
             updated_at = NOW()
         WHERE program_type = 'workshop'
             AND name = 'NDDS Formulation and Characterization'
@@ -1221,12 +1238,12 @@ async function ensureProgramCatalog(sql) {
                 SELECT 1
                 FROM event_programs existing
                 WHERE existing.program_type = 'workshop'
-                    AND existing.name = 'NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization'
+                    AND existing.name = 'NDDS (Nano/Micro Drug Delivery Systems) - Formulation and Characterization'
             )
     `;
     await sql`
         UPDATE event_programs
-        SET name = 'FIP Vaccination Training (2 days)',
+        SET name = 'FIP IPA Vaccination Training (2 days)',
             description = 'Post-congress workshop, 21-22 September 2026',
             price = 1000,
             sort_order = 20,
@@ -1238,12 +1255,12 @@ async function ensureProgramCatalog(sql) {
                 SELECT 1
                 FROM event_programs existing
                 WHERE existing.program_type = 'workshop'
-                    AND existing.name = 'FIP Vaccination Training (2 days)'
+                    AND existing.name = 'FIP IPA Vaccination Training (2 days)'
             )
     `;
     await sql`
         INSERT INTO event_programs (name, program_type, description, price, sort_order)
-        VALUES ('FIP Vaccination Training (2 days)', 'workshop', 'Post-congress workshop, 21-22 September 2026', 1000, 20)
+        VALUES ('FIP IPA Vaccination Training (2 days)', 'workshop', 'Post-congress workshop, 21-22 September 2026', 1000, 20)
         ON CONFLICT (program_type, name) DO UPDATE
         SET description = EXCLUDED.description,
             price = EXCLUDED.price,
@@ -1371,7 +1388,8 @@ async function ensureRegistrationEnhancements(sql) {
         ADD COLUMN IF NOT EXISTS hr_email VARCHAR(180),
         ADD COLUMN IF NOT EXISTS hr_email_confirmation VARCHAR(180),
         ADD COLUMN IF NOT EXISTS hr_core_area VARCHAR(100),
-        ADD COLUMN IF NOT EXISTS gender VARCHAR(20)
+        ADD COLUMN IF NOT EXISTS gender VARCHAR(20),
+        ADD COLUMN IF NOT EXISTS ipa_member_id VARCHAR(30)
     `;
     await sql`
         UPDATE event_registrations
@@ -1382,6 +1400,11 @@ async function ensureRegistrationEnhancements(sql) {
         UPDATE event_registrations
         SET approval_status = 'pending_review'
         WHERE registration_status = 'submitted' AND approval_status = 'not_submitted'
+    `;
+    await sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS event_registrations_ipa_member_id_key
+        ON event_registrations (ipa_member_id)
+        WHERE ipa_member_id IS NOT NULL AND ipa_member_id <> ''
     `;
     await sql`
         UPDATE event_registrations r
@@ -1457,6 +1480,7 @@ function mapRegistration(row, competitions = []) {
         expectedParticipants: row.expected_participants?.toString() || '',
         groupMembers: normalizeGroupMembers(row.group_members),
         category: row.category || '',
+        ipaMemberId: row.ipa_member_id || '',
         stateOfResidence: row.state_of_residence || '',
         whatsappNumber: row.whatsapp_number || '',
         email: row.email || '',
@@ -1504,6 +1528,7 @@ function mapAdminRegistration(row) {
         expectedParticipants: row.expected_participants,
         groupMembers: normalizeGroupMembers(row.group_members),
         category: row.category || '',
+        ipaMemberId: row.ipa_member_id || '',
         stateOfResidence: row.state_of_residence || '',
         whatsappNumber: row.whatsapp_number || '',
         email: row.email || '',
@@ -1558,6 +1583,9 @@ async function saveRegistration(sql, data, submit = false) {
     const hrCoreArea = data.registrationMode === 'group'
         ? groupHrCoreAreas.join(', ')
         : data.hrCoreArea || '';
+    const normalizedIpaMemberId = requiresIpaMemberId(data.category)
+        ? String(data.ipaMemberId || '').trim().toUpperCase()
+        : '';
     const selectedWorkshops = data.workshopParticipation === 'not_participating'
         ? []
         : data.registrationMode === 'group'
@@ -1624,7 +1652,7 @@ async function saveRegistration(sql, data, submit = false) {
                     && member.fipVaccinationEligibility !== 'Yes')
                 : String(data.fipVaccinationEligibility || '').trim() !== 'Yes';
             if (hasIneligibleFipSelection) {
-                throw inputError('FIP Vaccination Training requires a BLS Certificate or Training letter.');
+                throw inputError('FIP IPA Vaccination Training requires a BLS Certificate or Training letter.');
             }
         }
         if (data.hrDriveParticipation !== 'not_participating') {
@@ -1647,11 +1675,31 @@ async function saveRegistration(sql, data, submit = false) {
         }
     }
 
+    if (requiresIpaMemberId(data.category) && !normalizedIpaMemberId) {
+        throw inputError('IPA Member ID is required for the selected category.');
+    }
+    if (normalizedIpaMemberId && !ipaMemberIdPattern.test(normalizedIpaMemberId)) {
+        throw inputError('IPA Member ID format is wrong.');
+    }
+
+    if (normalizedIpaMemberId) {
+        const existingIpaMemberRows = await sql`
+            SELECT id
+            FROM event_registrations
+            WHERE ipa_member_id = ${normalizedIpaMemberId}
+              AND draft_token <> ${draftToken}
+            LIMIT 1
+        `;
+        if (existingIpaMemberRows.length) {
+            throw inputError('This IPA Member ID has already been used.');
+        }
+    }
+
     const rows = await sql`
         INSERT INTO event_registrations (
             draft_token, registration_mode, participant_name, institution_name,
             group_coordinator_name, group_coordinator_email, group_coordinator_whatsapp,
-            expected_participants, group_members, category, state_of_residence, whatsapp_number, email,
+            expected_participants, group_members, category, ipa_member_id, state_of_residence, whatsapp_number, email,
             gender, food_preference, course_of_study, college_with_state,
             competition_fee_acknowledged, pre_conference_workshop,
             selected_workshops, workshop_fee_acknowledged, presentation_type,
@@ -1664,7 +1712,9 @@ async function saveRegistration(sql, data, submit = false) {
             ${draftToken}, ${data.registrationMode || 'individual'}, ${data.participantName || null},
             ${data.institutionName || null}, ${data.groupCoordinatorName || null},
             ${data.groupCoordinatorEmail || null}, ${data.groupCoordinatorWhatsapp || null},
-            ${expectedParticipants}, ${JSON.stringify(groupMembers)}::jsonb, ${data.category || null}, ${data.stateOfResidence || null},
+            ${expectedParticipants}, ${JSON.stringify(groupMembers)}::jsonb, ${data.category || null},
+            ${normalizedIpaMemberId || null},
+            ${data.stateOfResidence || null},
             ${data.whatsappNumber || null}, ${data.email || null}, ${data.gender || null}, ${data.foodPreference || null},
             ${data.courseOfStudy || null}, ${data.collegeWithState || null},
             ${booleanValue(data.competitionFeeAcknowledged)}, ${selectedWorkshops[0] || null},
@@ -1686,6 +1736,7 @@ async function saveRegistration(sql, data, submit = false) {
             expected_participants = EXCLUDED.expected_participants,
             group_members = EXCLUDED.group_members,
             category = EXCLUDED.category,
+            ipa_member_id = EXCLUDED.ipa_member_id,
             state_of_residence = EXCLUDED.state_of_residence,
             whatsapp_number = EXCLUDED.whatsapp_number,
             email = EXCLUDED.email,

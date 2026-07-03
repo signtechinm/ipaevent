@@ -140,7 +140,7 @@ const preCongressWorkshops = [
         title: 'Molecular Docking & Molecular Dynamics Simulation, NDDS and Advanced in Neurological Screening Models',
         events: [
             { number: 3, name: 'Molecular Docking & Molecular Dynamics Simulation' },
-            { number: 4, name: 'NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization' },
+            { number: 4, name: 'NDDS (Nano/Micro Drug Delivery Systems) - Formulation and Characterization' },
             { number: 5, name: 'Advanced in Neurological Screening Models' },
         ],
         date: '18 September 2026',
@@ -150,9 +150,9 @@ const preCongressWorkshops = [
 
 const postCongressWorkshop = {
     number: 7,
-    title: 'FIP Vaccination Training (2 days)',
+    title: 'FIP IPA Vaccination Training (2 days)',
     copy: 'Post-congress hands-on vaccination training workshop.',
-    note: 'In post Congress session: For FIP Vaccination Training a BLS (Basic Life Support) Certificate or Training letter is mandatory. Others are not eligible to attend this workshop.',
+    note: 'In post Congress session: For FIP IPA Vaccination Training a BLS (Basic Life Support) Certificate or Training letter is mandatory. Others are not eligible to attend this workshop.',
     date: '21-22 September 2026',
     venue: 'Amrita School of Pharmacy, Ernakulam',
     host: 'IPA Kerala Branch',
@@ -428,6 +428,24 @@ const categoryFees = {
     Others: 100,
 };
 
+const ipaMemberIdPattern = /^[A-Z]{3}\/[A-Z]{4}\/[A-Z]{2}\/[A-Z]{2}\/\d{6}$/;
+const ipaMemberCategoryKeys = new Set([
+    'studentdelegateipamember',
+    'studentdelegateipasfmember',
+    'delegateipamemberfaculty',
+    'delegateipamembernonfacultycategory',
+    'delegateipamembernonfaculty',
+    'delegateipamemberothers',
+]);
+
+function normalizeCategoryKey(value) {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function requiresIpaMemberId(categoryName) {
+    return ipaMemberCategoryKeys.has(normalizeCategoryKey(categoryName));
+}
+
 const competitionOptions = [
     'Patient Counselling Competitions',
     'Extempore Preparations in Pharmaceutics',
@@ -437,8 +455,8 @@ const competitionOptions = [
     'Clinical Skill Sets',
 ];
 
-const workshopOptions = ['AI', 'FIP Vaccination Training (2 days)', '3D Printing'];
-const fipVaccinationWorkshopName = 'FIP Vaccination Training (2 days)';
+const workshopOptions = ['AI', 'FIP IPA Vaccination Training (2 days)', '3D Printing'];
+const fipVaccinationWorkshopName = 'FIP IPA Vaccination Training (2 days)';
 
 const workshopFees = {
     AI: 0,
@@ -467,6 +485,7 @@ const initialRegistration = {
     expectedParticipants: '',
     groupMembers: [],
     category: '',
+    ipaMemberId: '',
     stateOfResidence: '',
     whatsappNumber: '',
     email: '',
@@ -1051,7 +1070,7 @@ function QuickFacts() {
                             <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#ffd36a]">21-22 September 2026</p>
                             <h3 className="mt-1 text-2xl font-bold text-white">Post-Congress Workshop</h3>
                         </div>
-                        <p className="text-sm text-white/70">FIP Vaccination Training</p>
+                        <p className="text-sm text-white/70">FIP IPA Vaccination Training</p>
                     </div>
                     <article className="snapshot-workshop-card snapshot-main-event relative overflow-hidden rounded-xl border border-white/20 bg-white p-5 text-zinc-950 shadow-2xl sm:p-6">
                         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -1360,7 +1379,7 @@ function HomeWelcome() {
                         <p className="font-semibold text-zinc-700">
                             With Professional regards,<br />
                             Local Organizing Committee,<br />
-                            14th National IPA Students&rsquo; Congress 20
+                            14th National IPA Students&rsquo; Congress
                         </p>
                     </div>
                     <div className="mt-6 flex flex-wrap gap-3 text-sm font-semibold">
@@ -1516,6 +1535,7 @@ function RegistrationPage() {
         setFormData((current) => ({
             ...current,
             category: value,
+            ipaMemberId: requiresIpaMemberId(value) ? current.ipaMemberId : '',
             groupMembers: current.groupMembers.map((member) => ({ ...member, competitions: [], workshops: [] })),
             studentCompetitions: [],
             selectedWorkshops: [],
@@ -1536,7 +1556,7 @@ function RegistrationPage() {
                 ? current.preConferenceWorkshop
                 : current.selectedWorkshops.filter((name) => name !== fipVaccinationWorkshopName)[0] || '',
         }));
-        setNotice(value === 'No' ? 'FIP Vaccination Training is available only with a BLS Certificate or Training letter.' : '');
+        setNotice(value === 'No' ? 'FIP IPA Vaccination Training is available only with a BLS Certificate or Training letter.' : '');
     }
 
     function downloadGroupTemplate() {
@@ -1693,7 +1713,7 @@ function RegistrationPage() {
                 preConferenceWorkshop: selectedWorkshops[0] || '',
             };
         });
-        setNotice(value === 'No' ? 'FIP Vaccination Training is available only with a BLS Certificate or Training letter.' : '');
+        setNotice(value === 'No' ? 'FIP IPA Vaccination Training is available only with a BLS Certificate or Training letter.' : '');
     }
 
     function updateGroupMemberPresentation(memberIndex, presentationType) {
@@ -1793,6 +1813,18 @@ function RegistrationPage() {
             setActiveTab('general');
             setNotice(`${missing[0]} is required.`);
             return false;
+        }
+        if (requiresIpaMemberId(formData.category)) {
+            if (!formData.ipaMemberId.trim()) {
+                setActiveTab('general');
+                setNotice('IPA Member ID is required for the selected category.');
+                return false;
+            }
+            if (!ipaMemberIdPattern.test(formData.ipaMemberId.trim().toUpperCase())) {
+                setActiveTab('general');
+                setNotice('IPA Member ID format is wrong.');
+                return false;
+            }
         }
         if (isGroupRegistration && !formData.groupMembers.length) {
             setActiveTab('general');
@@ -1997,6 +2029,21 @@ function RegistrationPage() {
                                         ))}
                                     </select>
                                 </label>
+                                {requiresIpaMemberId(formData.category) && (
+                                    <label className={labelClass}>
+                                        IPA Member ID
+                                        <input
+                                            className={fieldClass}
+                                            required
+                                            value={formData.ipaMemberId}
+                                            onChange={(event) => updateField('ipaMemberId', event.target.value.toUpperCase())}
+                                            placeholder="Enter IPA Member ID"
+                                        />
+                                        {formData.ipaMemberId && !ipaMemberIdPattern.test(formData.ipaMemberId.trim().toUpperCase()) && (
+                                            <span className="mt-1 block text-xs font-semibold text-red-600">Format must be KER/THIR/ON/LM/000078.</span>
+                                        )}
+                                    </label>
+                                )}
                                 <label className={labelClass}>
                                     State of Residence
                                     <input
@@ -2139,6 +2186,21 @@ function RegistrationPage() {
                                         ))}
                                     </select>
                                 </label>
+                                {requiresIpaMemberId(formData.category) && (
+                                    <label className={labelClass}>
+                                        IPA Member ID
+                                        <input
+                                            className={fieldClass}
+                                            required
+                                            value={formData.ipaMemberId}
+                                            onChange={(event) => updateField('ipaMemberId', event.target.value.toUpperCase())}
+                                            placeholder="Enter IPA Member ID"
+                                        />
+                                        {formData.ipaMemberId && !ipaMemberIdPattern.test(formData.ipaMemberId.trim().toUpperCase()) && (
+                                            <span className="mt-1 block text-xs font-semibold text-red-600">Format must be KER/THIR/ON/LM/000078.</span>
+                                        )}
+                                    </label>
+                                )}
                                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 md:col-span-2">
                                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
@@ -2424,7 +2486,7 @@ function RegistrationPage() {
                                     </p>
                                     {!isGroupRegistration && (
                                         <label className={`${labelClass} mt-4`}>
-                                            Do you have a BLS Certificate or Training letter for FIP Vaccination Training?
+                                            Do you have a BLS Certificate or Training letter for FIP IPA Vaccination Training?
                                             <select
                                                 className={fieldClass}
                                                 value={formData.fipVaccinationEligibility}
@@ -2860,6 +2922,7 @@ function RegistrationPage() {
                                         ['Expected Participants', formData.expectedParticipants || 'Not entered'],
                                         ['Uploaded Student Roster', `${formData.groupMembers.length} students`],
                                         ['Primary Category', formData.category || 'Not selected'],
+                                        ...(requiresIpaMemberId(formData.category) ? [['IPA Member ID', formData.ipaMemberId || 'Not entered']] : []),
                                         ['Student Competition Participation', formData.competitionParticipation === 'not_participating' ? 'Not participating' : 'Participating'],
                                         ['Competition Selections', `${formData.groupMembers.reduce((total, member) => total + (Array.isArray(member.competitions) ? member.competitions.length : 0), 0)} student entries`],
                                         ['Workshop Participation', formData.workshopParticipation === 'not_participating' ? 'Not participating' : 'Participating'],
@@ -2882,6 +2945,7 @@ function RegistrationPage() {
                                         ['Registration Type', 'Individual Registration'],
                                         ['Participant', formData.participantName || 'Not entered'],
                                         ['Category', formData.category || 'Not selected'],
+                                        ...(requiresIpaMemberId(formData.category) ? [['IPA Member ID', formData.ipaMemberId || 'Not entered']] : []),
                                         ['Email', formData.email || 'Not entered'],
                                         ['WhatsApp', formData.whatsappNumber || 'Not entered'],
                                         ['Gender', formData.gender || 'Not selected'],
@@ -2935,6 +2999,7 @@ function RegistrationPage() {
                                             ['State', formData.stateOfResidence || 'Not entered'],
                                             ['Uploaded Student Roster', `${formData.groupMembers.length} students`],
                                             ['Primary Category', formData.category || 'Not selected'],
+                                            ...(requiresIpaMemberId(formData.category) ? [['IPA Member ID', formData.ipaMemberId || 'Not entered']] : []),
                                             ['Student Competitions', formData.competitionParticipation === 'not_participating' ? 'Not participating' : groupProgramSummary('competitions') || 'None selected'],
                                             ['Workshops', formData.workshopParticipation === 'not_participating' ? 'Not participating' : groupProgramSummary('workshops') || 'None selected'],
                                             ['Presentation', groupSingleSelectionSummary('presentationType', 'Not Participating') || 'Not selected'],
@@ -2948,6 +3013,7 @@ function RegistrationPage() {
                                             ['Registration Type', 'Individual Registration'],
                                             ['Participant', formData.participantName || 'Not entered'],
                                             ['Category', formData.category || 'Not selected'],
+                                            ...(requiresIpaMemberId(formData.category) ? [['IPA Member ID', formData.ipaMemberId || 'Not entered']] : []),
                                             ['Email', formData.email || 'Not entered'],
                                             ['WhatsApp', formData.whatsappNumber || 'Not entered'],
                                             ['State', formData.stateOfResidence || 'Not entered'],
@@ -3968,7 +4034,7 @@ function StudentSkillCompetitionsPage() {
                     items: [
                         'Individual participation.',
                         'Submission of a 2-minute patient counselling video.',
-                        'Language: English/Hindi/Malayalam with English subtitles preferred.',
+                        'Language: English only.',
                         'Video format: MP4.',
                         'Maximum duration: 2 minutes.',
                         'Submission before the notified deadline.',
@@ -4075,7 +4141,7 @@ function StudentSkillCompetitionsPage() {
                         'Duration: 30-90 seconds.',
                         'Vertical format: 9:16.',
                         'MP4 format.',
-                        'Language: English/Hindi/Malayalam/Regional language.',
+                        'Language: English only.',
                         'English subtitles preferred.',
                         'Background music permitted, copyright-free only.',
                         'Submit before the notified deadline.',
@@ -4099,8 +4165,7 @@ function StudentSkillCompetitionsPage() {
                         'MP4 format.',
                         'Vertical 9:16 ratio.',
                         'HD quality, minimum 720p.',
-                        'English, Hindi, or regional languages are allowed.',
-                        'English subtitles are mandatory for regional language entries.',
+                        'English language only.',
                     ],
                 },
                 {
@@ -4177,6 +4242,13 @@ function StudentSkillCompetitionsPage() {
         'Upload the video to YouTube or Google Drive and ensure anyone with the link can view it.',
         'Copy the shareable link and paste it below.',
     ];
+
+    const skillVideoUploadCompetitions = new Set([
+        'National Patient Counselling Challenge - 2026',
+        'National Patient Counseling Challenge - 2026',
+        'National Pharmacy Reels Competition',
+        'Startup Pitch Competition',
+    ]);
 
     const [skillVideoModal, setSkillVideoModal] = useState(null);
     const [skillVideoRegNum, setSkillVideoRegNum] = useState('');
@@ -4256,6 +4328,8 @@ function StudentSkillCompetitionsPage() {
     }
 
     function renderSkillVideoLink(competitionName) {
+        if (!skillVideoUploadCompetitions.has(competitionName)) return null;
+
         return (
             <button
                 type="button"
@@ -4382,10 +4456,16 @@ function StudentSkillCompetitionsPage() {
                                         <div key={section.heading} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
                                             <h3 className="text-sm font-black text-zinc-950">{section.heading}</h3>
                                             <ul className="mt-3 space-y-2">
-                                                {section.items.map((item) => (
+                                                {section.items.map((item) => {
+                                                    const hasUploadLink = item.includes('Click and upload your video link here');
+                                                    if (hasUploadLink && !skillVideoUploadCompetitions.has(competition.title)) {
+                                                        return null;
+                                                    }
+
+                                                    return (
                                                     <li key={item} className="flex items-start gap-2 text-sm leading-6 text-zinc-700">
                                                         <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#00652f]" />
-                                                        {item.includes('Click and upload your video link here') ? (
+                                                        {hasUploadLink ? (
                                                             <span>
                                                                 {item.replace('Click and upload your video link here.', '')}
                                                                 {renderSkillVideoLink(competition.title)}
@@ -4394,7 +4474,8 @@ function StudentSkillCompetitionsPage() {
                                                             <span>{item}</span>
                                                         )}
                                                     </li>
-                                                ))}
+                                                    );
+                                                })}
                                             </ul>
                                         </div>
                                     ))}
@@ -4424,12 +4505,6 @@ function StudentSkillCompetitionsPage() {
                                     <p>{step}</p>
                                 </li>
                             ))}
-                            <li className="rounded-lg border border-[#df0867]/25 bg-[#df0867]/5 p-4 text-sm leading-6 text-zinc-800 md:col-span-2">
-                                <span className="mb-2 inline-flex rounded-full bg-[#df0867] px-3 py-1 text-xs font-black uppercase tracking-wide text-white">
-                                    Startup Pitch Competition
-                                </span>
-                                {renderSkillVideoLink('Startup Pitch Competition')}
-                            </li>
                         </ol>
                     </div>
                 </div>
@@ -5982,6 +6057,7 @@ function AdminPage() {
             registration.whatsappNumber,
             registration.groupCoordinatorWhatsapp,
             registration.category,
+            registration.ipaMemberId,
             registration.registrationStatus,
             registration.paymentStatus,
             registration.approvalStatus,
@@ -6182,6 +6258,7 @@ function AdminPage() {
             { label: 'Expected Participants', value: (row) => row.expectedParticipants },
             { label: 'Uploaded Student Count', value: (row) => Array.isArray(row.groupMembers) ? row.groupMembers.length : 0 },
             { label: 'Category', value: (row) => row.category },
+            { label: 'IPA Member ID', value: (row) => row.ipaMemberId },
             { label: 'State', value: (row) => row.stateOfResidence },
             { label: 'WhatsApp', value: (row) => row.whatsappNumber },
             { label: 'Email', value: (row) => row.email },
@@ -7419,6 +7496,7 @@ function AdminPage() {
                                                     </td>
                                                     <td className="px-4 py-4">
                                                         <p className="font-semibold text-zinc-800">{registration.category || '-'}</p>
+                                                        {registration.ipaMemberId && <p className="mt-1 font-mono text-xs font-semibold text-emerald-700">IPA ID: {registration.ipaMemberId}</p>}
                                                         <p className="mt-1 max-w-xs text-xs text-zinc-500">{registration.collegeWithState || registration.institutionName || '-'}</p>
                                                     </td>
                                                     <td className="px-4 py-4 text-xs text-zinc-600">
@@ -7511,6 +7589,7 @@ function AdminPage() {
                                                         ['Status', formatAdminStatus(selectedRegistration.registrationStatus)],
                                                         ['Approval', formatAdminStatus(selectedRegistration.approvalStatus)],
                                                         ['Category', selectedRegistration.category],
+                                                        ['IPA Member ID', selectedRegistration.ipaMemberId],
                                                         ['Participant', selectedRegistration.participantName],
                                                         ['Institution', selectedRegistration.institutionName || selectedRegistration.collegeWithState],
                                                         ['State', selectedRegistration.stateOfResidence],

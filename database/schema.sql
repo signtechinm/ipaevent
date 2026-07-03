@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS event_registrations (
     expected_participants INTEGER,
     group_members JSONB NOT NULL DEFAULT '[]'::jsonb,
     category VARCHAR(100),
+    ipa_member_id VARCHAR(30),
     state_of_residence VARCHAR(100),
     whatsapp_number VARCHAR(25),
     email VARCHAR(180),
@@ -46,6 +47,7 @@ CREATE TABLE IF NOT EXISTS event_registrations (
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS group_members JSONB NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS approval_status VARCHAR(40) NOT NULL DEFAULT 'not_submitted';
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS selected_workshops JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS ipa_member_id VARCHAR(30);
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_college_with_state TEXT;
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_course_or_qualification VARCHAR(180);
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_whatsapp_number VARCHAR(25);
@@ -94,6 +96,9 @@ CREATE INDEX IF NOT EXISTS event_registrations_whatsapp_idx ON event_registratio
 CREATE INDEX IF NOT EXISTS event_registrations_status_idx ON event_registrations (registration_status);
 CREATE INDEX IF NOT EXISTS event_registrations_payment_status_idx ON event_registrations (payment_status);
 CREATE INDEX IF NOT EXISTS event_registrations_approval_status_idx ON event_registrations (approval_status);
+CREATE UNIQUE INDEX IF NOT EXISTS event_registrations_ipa_member_id_key
+    ON event_registrations (ipa_member_id)
+    WHERE ipa_member_id IS NOT NULL AND ipa_member_id <> '';
 
 CREATE TABLE IF NOT EXISTS event_programs (
     id BIGSERIAL PRIMARY KEY,
@@ -118,19 +123,19 @@ SELECT * FROM (VALUES
     ('Elocution', 'competition', 100, 50),
     ('Clinical Skill Sets', 'competition', 100, 60),
     ('AI', 'workshop', 0, 10),
-    ('FIP Vaccination Training (2 days)', 'workshop', 1000, 20),
+    ('FIP IPA Vaccination Training (2 days)', 'workshop', 1000, 20),
     ('3D Printing', 'workshop', 0, 30),
-    ('NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization', 'workshop', 0, 40)
+    ('NDDS (Nano/Micro Drug Delivery Systems) - Formulation and Characterization', 'workshop', 0, 40)
 ) AS seed(name, program_type, price, sort_order)
 WHERE NOT EXISTS (SELECT 1 FROM event_programs)
 ON CONFLICT (program_type, name) DO NOTHING;
 
 INSERT INTO event_programs (name, program_type, description, price, sort_order)
-VALUES ('NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization', 'workshop', 'Workshop session', 0, 40)
+VALUES ('NDDS (Nano/Micro Drug Delivery Systems) - Formulation and Characterization', 'workshop', 'Workshop session', 0, 40)
 ON CONFLICT (program_type, name) DO NOTHING;
 
 UPDATE event_programs
-SET name = 'NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization',
+SET name = 'NDDS (Nano/Micro Drug Delivery Systems) - Formulation and Characterization',
     updated_at = NOW()
 WHERE program_type = 'workshop'
     AND name = 'NDDS Formulation and Characterization'
@@ -138,11 +143,11 @@ WHERE program_type = 'workshop'
         SELECT 1
         FROM event_programs existing
         WHERE existing.program_type = 'workshop'
-            AND existing.name = 'NDDSNano/Micro Drug Delivery Systems - Formulation and Characterization'
+            AND existing.name = 'NDDS (Nano/Micro Drug Delivery Systems) - Formulation and Characterization'
     );
 
 UPDATE event_programs
-SET name = 'FIP Vaccination Training (2 days)',
+SET name = 'FIP IPA Vaccination Training (2 days)',
     description = 'Post-congress workshop, 21-22 September 2026',
     price = 1000,
     sort_order = 20,
@@ -154,11 +159,11 @@ WHERE program_type = 'workshop'
         SELECT 1
         FROM event_programs existing
         WHERE existing.program_type = 'workshop'
-            AND existing.name = 'FIP Vaccination Training (2 days)'
+            AND existing.name = 'FIP IPA Vaccination Training (2 days)'
     );
 
 INSERT INTO event_programs (name, program_type, description, price, sort_order)
-VALUES ('FIP Vaccination Training (2 days)', 'workshop', 'Post-congress workshop, 21-22 September 2026', 1000, 20)
+VALUES ('FIP IPA Vaccination Training (2 days)', 'workshop', 'Post-congress workshop, 21-22 September 2026', 1000, 20)
 ON CONFLICT (program_type, name) DO UPDATE
 SET description = EXCLUDED.description,
     price = EXCLUDED.price,
