@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS event_registrations (
     workshop_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
     total_payable_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
     transaction_details TEXT,
+    transaction_date DATE,
     payment_status VARCHAR(40) NOT NULL DEFAULT 'pending',
     approval_status VARCHAR(40) NOT NULL DEFAULT 'not_submitted',
     registration_status VARCHAR(40) NOT NULL DEFAULT 'draft',
@@ -56,6 +57,7 @@ ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_email VARCHAR(180);
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_email_confirmation VARCHAR(180);
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_core_area VARCHAR(100);
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS gender VARCHAR(20);
+ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS transaction_date DATE;
 UPDATE event_registrations
 SET selected_workshops = jsonb_build_array(pre_conference_workshop)
 WHERE selected_workshops = '[]'::jsonb AND pre_conference_workshop IS NOT NULL;

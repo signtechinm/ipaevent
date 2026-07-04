@@ -3,7 +3,7 @@ import { apiRequest } from './api';
 
 const eventTheme = "Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era";
 const eventDate = '19–20 September 2026';
-const registrationUpiId = 'ipakeralastate@sbi';
+const registrationUpiId = 'qr.14ipacong@sib';
 const informationBrochurePdf = '/14th IPA - SC [Information Brochure]- Final_compressed.pdf';
 
 const siteMap = [
@@ -370,6 +370,7 @@ const registrationDraftKey = 'ipa-nsc-2026-registration-draft-token';
 
 const groupMemberColumns = [
     ['name', 'Name'],
+    ['ipaMemberId', 'IPA Member ID'],
     ['gender', 'Gender'],
     ['email', 'Email'],
     ['whatsapp', 'WhatsApp Number'],
@@ -432,10 +433,6 @@ const ipaMemberIdPattern = /^[A-Z]{3}\/[A-Z]{4}\/[A-Z]{2}\/[A-Z]{2}\/\d{6}$/;
 const ipaMemberCategoryKeys = new Set([
     'studentdelegateipamember',
     'studentdelegateipasfmember',
-    'delegateipamemberfaculty',
-    'delegateipamembernonfacultycategory',
-    'delegateipamembernonfaculty',
-    'delegateipamemberothers',
 ]);
 
 function normalizeCategoryKey(value) {
@@ -511,6 +508,7 @@ const initialRegistration = {
     hrEmailConfirmation: '',
     hrCoreArea: '',
     transactionDetails: '',
+    transactionDate: '',
     registrationNumber: '',
     submittedAt: '',
 };
@@ -1489,7 +1487,7 @@ function RegistrationPage() {
         const perStudentRegistrationFee = selectedCategory?.registrationFee || 0;
         const participantCount = isGroupRegistration ? formData.groupMembers.length : 1;
         const registrationSubtotal = perStudentRegistrationFee * participantCount;
-        const registrationDiscount = isGroupRegistration && participantCount > 20 ? registrationSubtotal * 0.2 : 0;
+        const registrationDiscount = isGroupRegistration && participantCount >= 20 ? registrationSubtotal * 0.1 : 0;
         const registrationFee = Math.max(registrationSubtotal - registrationDiscount, 0);
         const competitionFee = formData.competitionParticipation === 'not_participating'
             ? 0
@@ -1585,9 +1583,14 @@ function RegistrationPage() {
             if (headerIndexes.name < 0) throw new Error('The sheet must contain the Name column from the template.');
 
             const groupMembers = rows.slice(1).map((cells) => Object.fromEntries(
-                groupMemberColumns.map(([key]) => [key, headerIndexes[key] >= 0 ? String(cells[headerIndexes[key]] || '').trim() : ''])
+                groupMemberColumns.map(([key]) => {
+                    const value = headerIndexes[key] >= 0 ? String(cells[headerIndexes[key]] || '').trim() : '';
+                    return [key, key === 'ipaMemberId' ? value.toUpperCase() : value];
+                })
             )).filter((member) => member.name);
             if (!groupMembers.length) throw new Error('No student names were found in the uploaded sheet.');
+            const invalidIpaMember = groupMembers.find((member) => member.ipaMemberId && !ipaMemberIdPattern.test(member.ipaMemberId));
+            if (invalidIpaMember) throw new Error(`IPA Member ID format is wrong for ${invalidIpaMember.name}.`);
 
             setFormData((current) => ({
                 ...current,
@@ -1670,6 +1673,9 @@ function RegistrationPage() {
                 const hasProgram = currentSelections.includes(programName);
                 if (field === 'workshops' && programName === fipVaccinationWorkshopName && member.fipVaccinationEligibility !== 'Yes') {
                     return { ...member, workshops: currentSelections.filter((name) => name !== fipVaccinationWorkshopName) };
+                }
+                if (field === 'workshops' && !hasProgram && currentSelections.length) {
+                    return member;
                 }
                 const nextSelections = hasProgram
                     ? currentSelections.filter((name) => name !== programName)
@@ -1856,6 +1862,11 @@ function RegistrationPage() {
         if (!formData.transactionDetails.trim()) {
             setActiveTab('payment');
             setNotice('Enter the transaction ID / UPI reference number before submitting.');
+            return;
+        }
+        if (!formData.transactionDate) {
+            setActiveTab('payment');
+            setNotice('Enter the transaction date before submitting.');
             return;
         }
         const hrPartiallyFilled = formData.hrCollegeWithState.trim() || formData.hrCourseOrQualification.trim()
@@ -2104,6 +2115,9 @@ function RegistrationPage() {
 
                         {activeTab === 'general' && isGroupRegistration && (
                             <div className="mt-6 grid gap-5 md:grid-cols-2">
+                                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-900 md:col-span-2">
+                                    Bulk Registration: a 10% discount applicable to a group of 20 or more students.
+                                </div>
                                 <label className={`${labelClass} md:col-span-2`}>
                                     Institution / College Name
                                     <input
@@ -2115,7 +2129,7 @@ function RegistrationPage() {
                                     />
                                 </label>
                                 <label className={labelClass}>
-                                    Group Coordinator Name
+                                    Group Coordnator (First Participant in Excel data)
                                     <input
                                         className={fieldClass}
                                         required
@@ -2404,7 +2418,7 @@ function RegistrationPage() {
                                 ) : (
                                 <>
                                 <p className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
-                                    Each student can attend only one workshop. Selecting another workshop will replace the previous choice for that student.
+                                    Each student can attend only one workshop. Unselect the current workshop before choosing another one for that student.
                                 </p>
                                 <div>
                                     <p className={labelClass}>Pre-Conference Workshop Area</p>
@@ -2428,16 +2442,20 @@ function RegistrationPage() {
                                                         {formData.groupMembers.map((member, index) => {
                                                             const workshops = Array.isArray(member.workshops) ? member.workshops : [];
                                                             const memberChecked = workshops.includes(program.name);
+                                                            const memberAssignedElsewhere = workshops.length > 0 && !memberChecked;
 
                                                             return (
                                                                 <label key={`${program.name}-${member.email || member.name}-${index}`} className={`flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold ${
                                                                     memberChecked
                                                                         ? 'border-emerald-500 bg-emerald-50 text-emerald-950'
-                                                                        : 'border-zinc-200 bg-white text-zinc-700'
+                                                                        : memberAssignedElsewhere
+                                                                            ? 'cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400 opacity-70'
+                                                                            : 'border-zinc-200 bg-white text-zinc-700'
                                                                 }`}>
                                                                     <input
                                                                         type="checkbox"
                                                                         checked={memberChecked}
+                                                                        disabled={memberAssignedElsewhere}
                                                                         onChange={() => toggleGroupMemberProgram(index, 'workshop', program.name)}
                                                                     />
                                                                     <span>{formatStudentLabel(member, index)}</span>
@@ -2512,14 +2530,18 @@ function RegistrationPage() {
                                                         {formData.groupMembers.map((member, index) => {
                                                             const workshops = Array.isArray(member.workshops) ? member.workshops : [];
                                                             const memberChecked = workshops.includes(program.name);
+                                                            const memberAssignedElsewhere = workshops.length > 0 && !memberChecked;
                                                             const isFipWorkshop = program.name === fipVaccinationWorkshopName;
                                                             const canSelectFipWorkshop = !isFipWorkshop || member.fipVaccinationEligibility === 'Yes';
+                                                            const memberDisabled = memberAssignedElsewhere || !canSelectFipWorkshop;
 
                                                             return (
                                                                 <div key={`${program.name}-${member.email || member.name}-${index}`} className={`rounded-md border px-3 py-2 text-xs font-semibold ${
                                                                     memberChecked
                                                                         ? 'border-emerald-500 bg-emerald-50 text-emerald-950'
-                                                                        : 'border-zinc-200 bg-white text-zinc-700'
+                                                                        : memberDisabled
+                                                                            ? 'border-zinc-200 bg-zinc-100 text-zinc-400 opacity-70'
+                                                                            : 'border-zinc-200 bg-white text-zinc-700'
                                                                 }`}>
                                                                     {isFipWorkshop && (
                                                                         <label className="mb-2 block text-[11px] font-bold text-zinc-600">
@@ -2535,11 +2557,11 @@ function RegistrationPage() {
                                                                             </select>
                                                                         </label>
                                                                     )}
-                                                                    <label className={`flex items-center gap-2 ${canSelectFipWorkshop ? '' : 'cursor-not-allowed opacity-50'}`}>
+                                                                    <label className={`flex items-center gap-2 ${memberDisabled ? 'cursor-not-allowed' : ''}`}>
                                                                         <input
                                                                             type="checkbox"
                                                                             checked={memberChecked}
-                                                                            disabled={!canSelectFipWorkshop}
+                                                                            disabled={memberDisabled}
                                                                             onChange={() => toggleGroupMemberProgram(index, 'workshop', program.name)}
                                                                         />
                                                                         <span>{formatStudentLabel(member, index)}</span>
@@ -2823,7 +2845,7 @@ function RegistrationPage() {
                                         <p className="font-bold">Group fee summary</p>
                                         <p>{totals.participantCount} students x Rs. {totals.perStudentRegistrationFee.toLocaleString('en-IN')} registration fee = Rs. {totals.registrationSubtotal.toLocaleString('en-IN')}</p>
                                         {totals.registrationDiscount > 0 && (
-                                            <p>20% group discount on registration fee: -Rs. {totals.registrationDiscount.toLocaleString('en-IN')}</p>
+                                            <p>10% bulk registration discount on registration fee: -Rs. {totals.registrationDiscount.toLocaleString('en-IN')}</p>
                                         )}
                                         <p>Competition and workshop fees are accumulated per selected student.</p>
                                     </div>
@@ -2891,6 +2913,16 @@ function RegistrationPage() {
                                         This reference will be used by the admin team to verify your payment.
                                     </span>
                                 </label>
+                                <label className={labelClass}>
+                                    Transaction Date
+                                    <input
+                                        className={fieldClass}
+                                        type="date"
+                                        value={formData.transactionDate}
+                                        onChange={(event) => updateField('transactionDate', event.target.value)}
+                                        required
+                                    />
+                                </label>
                                 <div className="rounded-lg bg-amber-50 p-4 text-sm leading-6 text-amber-900 md:col-span-2">
                                     Payment status will remain pending until the transaction ID is verified by the admin team.
                                 </div>
@@ -2928,6 +2960,8 @@ function RegistrationPage() {
                                         ['Competition Fee', `Rs. ${totals.competitionFee.toLocaleString('en-IN')}`],
                                         ['Workshop Fee', `Rs. ${totals.workshopFee.toLocaleString('en-IN')}`],
                                         ['Total Payable', `Rs. ${totals.total.toLocaleString('en-IN')}`],
+                                        ['Transaction ID / UPI Reference Number', formData.transactionDetails || 'Not entered'],
+                                        ['Transaction Date', formData.transactionDate || 'Not entered'],
                                     ]
                                     : [
                                         ['Registration Type', 'Individual Registration'],
@@ -2953,6 +2987,8 @@ function RegistrationPage() {
                                         ['Competition Fee', `Rs. ${totals.competitionFee.toLocaleString('en-IN')}`],
                                         ['Workshop Fee', `Rs. ${totals.workshopFee.toLocaleString('en-IN')}`],
                                         ['Total Payable', `Rs. ${totals.total.toLocaleString('en-IN')}`],
+                                        ['Transaction ID / UPI Reference Number', formData.transactionDetails || 'Not entered'],
+                                        ['Transaction Date', formData.transactionDate || 'Not entered'],
                                     ]
                                 ).map(([label, value]) => (
                                     <div key={label} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
@@ -2996,6 +3032,8 @@ function RegistrationPage() {
                                             ['Competition Fee', `Rs. ${totals.competitionFee.toLocaleString('en-IN')}`],
                                             ['Workshop Fee', `Rs. ${totals.workshopFee.toLocaleString('en-IN')}`],
                                             ['Total Payable', `Rs. ${totals.total.toLocaleString('en-IN')}`],
+                                            ['Transaction ID / UPI Reference Number', formData.transactionDetails || 'Not entered'],
+                                            ['Transaction Date', formData.transactionDate || 'Not entered'],
                                         ]
                                         : [
                                             ['Registration Type', 'Individual Registration'],
@@ -3015,6 +3053,8 @@ function RegistrationPage() {
                                             ['Competition Fee', `Rs. ${totals.competitionFee.toLocaleString('en-IN')}`],
                                             ['Workshop Fee', `Rs. ${totals.workshopFee.toLocaleString('en-IN')}`],
                                             ['Total Payable', `Rs. ${totals.total.toLocaleString('en-IN')}`],
+                                            ['Transaction ID / UPI Reference Number', formData.transactionDetails || 'Not entered'],
+                                            ['Transaction Date', formData.transactionDate || 'Not entered'],
                                         ]
                                     ).map(([label, value]) => (
                                         <div key={label} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
@@ -6063,6 +6103,7 @@ function AdminPage() {
                 member.college,
                 member.state,
                 member.foodPreference,
+                member.ipaMemberId,
                 member.presentationType,
                 member.hrCoreArea,
                 ...(Array.isArray(member.competitions) ? member.competitions : []),
@@ -6103,6 +6144,7 @@ function AdminPage() {
                     email: member.email || registration.groupCoordinatorEmail,
                     whatsapp: member.whatsapp || registration.groupCoordinatorWhatsapp,
                     gender: member.gender || '',
+                    ipaMemberId: member.ipaMemberId || '',
                     category: member.category || registration.category,
                     course: member.course,
                     college: member.college,
@@ -6124,6 +6166,7 @@ function AdminPage() {
                     workshopFee: registration.workshopFee,
                     totalPayableAmount: registration.totalPayableAmount,
                     transactionDetails: registration.transactionDetails,
+                    transactionDate: registration.transactionDate,
                     submittedAt: registration.submittedAt,
                     createdAt: registration.createdAt,
                     updatedAt: registration.updatedAt,
@@ -6139,6 +6182,7 @@ function AdminPage() {
                 email: registration.email,
                 whatsapp: registration.whatsappNumber,
                 gender: registration.gender,
+                ipaMemberId: registration.ipaMemberId || '',
                 category: registration.category,
                 course: registration.courseOfStudy,
                 college: registration.institutionName || registration.collegeWithState,
@@ -6160,6 +6204,7 @@ function AdminPage() {
                 workshopFee: registration.workshopFee,
                 totalPayableAmount: registration.totalPayableAmount,
                 transactionDetails: registration.transactionDetails,
+                transactionDate: registration.transactionDate,
                 submittedAt: registration.submittedAt,
                 createdAt: registration.createdAt,
                 updatedAt: registration.updatedAt,
@@ -6182,6 +6227,7 @@ function AdminPage() {
             student.college,
             student.state,
             student.foodPreference,
+            student.ipaMemberId,
             student.coordinator,
             student.coordinatorEmail,
             student.presentationType,
@@ -6366,10 +6412,11 @@ function AdminPage() {
             { label: 'Workshop Fee', value: (row) => row.workshopFee },
             { label: 'Total Payable', value: (row) => row.totalPayableAmount },
             { label: 'Transaction Details', value: (row) => row.transactionDetails },
+            { label: 'Transaction Date', value: (row) => row.transactionDate },
             { label: 'Submitted At', value: (row) => formatExportDate(row.submittedAt) },
             { label: 'Created At', value: (row) => formatExportDate(row.createdAt) },
             { label: 'Updated At', value: (row) => formatExportDate(row.updatedAt) },
-            { label: 'Group Student Details', value: (row) => Array.isArray(row.groupMembers) ? row.groupMembers.map((member) => `${member.registrationNumber || ''} ${member.name || ''} | ${member.gender || ''} | ${member.email || ''} | ${member.whatsapp || ''} | ${member.course || ''} | ${member.college || ''} | Competitions: ${(member.competitions || []).join('; ')} | Workshops: ${(member.workshops || []).join('; ')} | Presentation: ${member.presentationType || ''} | HR: ${member.hrCoreArea || ''}`).join('\n') : '' },
+            { label: 'Group Student Details', value: (row) => Array.isArray(row.groupMembers) ? row.groupMembers.map((member) => `${member.registrationNumber || ''} ${member.name || ''} | IPA ID: ${member.ipaMemberId || ''} | ${member.gender || ''} | ${member.email || ''} | ${member.whatsapp || ''} | ${member.course || ''} | ${member.college || ''} | Competitions: ${(member.competitions || []).join('; ')} | Workshops: ${(member.workshops || []).join('; ')} | Presentation: ${member.presentationType || ''} | HR: ${member.hrCoreArea || ''}`).join('\n') : '' },
         ];
     }
 
@@ -6394,6 +6441,7 @@ function AdminPage() {
             { label: 'Email', value: (row) => row.email },
             { label: 'WhatsApp', value: (row) => row.whatsapp },
             { label: 'Gender', value: (row) => row.gender },
+            { label: 'IPA Member ID', value: (row) => row.ipaMemberId },
             { label: 'Category', value: (row) => row.category },
             { label: 'Course', value: (row) => row.course },
             { label: 'College', value: (row) => row.college },
@@ -6412,6 +6460,7 @@ function AdminPage() {
             { label: 'Workshop Fee', value: (row) => row.workshopFee },
             { label: 'Total Payable', value: (row) => row.totalPayableAmount },
             { label: 'Transaction Details', value: (row) => row.transactionDetails },
+            { label: 'Transaction Date', value: (row) => row.transactionDate },
             { label: 'Submitted At', value: (row) => formatExportDate(row.submittedAt) },
             { label: 'Created At', value: (row) => formatExportDate(row.createdAt) },
             { label: 'Updated At', value: (row) => formatExportDate(row.updatedAt) },
@@ -7759,6 +7808,7 @@ function AdminPage() {
                                                     <p><span className="font-semibold text-zinc-950">Competitions:</span> {selectedRegistration.studentCompetitions.length ? selectedRegistration.studentCompetitions.join(', ') : '-'}</p>
                                                     <p className="mt-2"><span className="font-semibold text-zinc-950">Workshops:</span> {selectedRegistration.selectedWorkshops.length ? selectedRegistration.selectedWorkshops.join(', ') : '-'}</p>
                                                     <p className="mt-2"><span className="font-semibold text-zinc-950">Transaction details:</span> {selectedRegistration.transactionDetails || '-'}</p>
+                                                    <p className="mt-2"><span className="font-semibold text-zinc-950">Transaction date:</span> {selectedRegistration.transactionDate || '-'}</p>
                                                     <div className="mt-4 grid gap-2 border-t border-zinc-200 pt-4 sm:grid-cols-2">
                                                         <p>Registration fee: <strong>Rs. {selectedRegistration.registrationFee.toLocaleString('en-IN')}</strong></p>
                                                         <p>Competition fee: <strong>Rs. {selectedRegistration.competitionFee.toLocaleString('en-IN')}</strong></p>
@@ -7910,6 +7960,7 @@ function AdminPage() {
                                                     </td>
                                                     <td className="px-4 py-4">
                                                         <p className="max-w-[260px] whitespace-pre-wrap text-xs font-semibold text-zinc-700">{registration.transactionDetails || '-'}</p>
+                                                        <p className="mt-1 text-xs font-semibold text-zinc-500">{registration.transactionDate || '-'}</p>
                                                     </td>
                                                     <td className="px-4 py-4">
                                                         <p className="font-bold text-zinc-950">Rs. {registration.totalPayableAmount.toLocaleString('en-IN')}</p>
@@ -8362,6 +8413,7 @@ function AdminPage() {
                                                     </td>
                                                     <td className="px-4 py-4">
                                                         <p className="font-bold text-zinc-950">{student.name || '-'}</p>
+                                                        {student.ipaMemberId && <p className="mt-1 font-mono text-xs font-semibold text-emerald-700">IPA ID: {student.ipaMemberId}</p>}
                                                         {student.coordinator && <p className="mt-1 text-xs text-zinc-500">Coordinator: {student.coordinator}</p>}
                                                     </td>
                                                     <td className="px-4 py-4 text-zinc-700">
@@ -9588,6 +9640,7 @@ function ScientificServicePage() {
                                     <h4 className="text-sm font-black uppercase text-emerald-950">ABSTRACTS - KEY REQUIRMENTS</h4>
                                     <ul className="mt-3 space-y-2">
                                         {[
+                                            'Title of Work: Must be written in Lowercase or Small Letters in English Language.',
                                             'Word Count: Keep it under 250-300 words.',
                                             'Font and Size: Use Times New Roman or Arial at size 12.',
                                             'File Format: Submit as a PDF.',

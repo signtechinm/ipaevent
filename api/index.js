@@ -37,10 +37,6 @@ const ipaMemberIdPattern = /^[A-Z]{3}\/[A-Z]{4}\/[A-Z]{2}\/[A-Z]{2}\/\d{6}$/;
 const ipaMemberCategoryKeys = new Set([
     'studentdelegateipamember',
     'studentdelegateipasfmember',
-    'delegateipamemberfaculty',
-    'delegateipamembernonfacultycategory',
-    'delegateipamembernonfaculty',
-    'delegateipamemberothers',
 ]);
 
 function normalizeCategoryKey(value) {
@@ -509,6 +505,7 @@ function buildGroupStudentRegistration(registration, member, index) {
         registrationMode: 'individual',
         registrationNumber: member.registrationNumber || groupMemberRegistrationNumber(registration.registrationNumber, index),
         participantName: member.name || `Student ${index + 1}`,
+        ipaMemberId: member.ipaMemberId || registration.ipaMemberId || '',
         email: member.email || registration.groupCoordinatorEmail || '',
         whatsappNumber: member.whatsapp || registration.groupCoordinatorWhatsapp || '',
         category: member.category || registration.category || '',
@@ -585,6 +582,7 @@ function getRegistrationMailSummary(registration) {
             ['Workshop Fee', formatMailCurrency(registration.workshopFee)],
             ['Total Payable', formatMailCurrency(registration.totalPayableAmount)],
             ['Transaction Details', registration.transactionDetails || '-'],
+            ['Transaction Date', registration.transactionDate || '-'],
             ['Payment Status', formatStatusLabel(registration.paymentStatus)],
             ['Approval Status', formatStatusLabel(registration.approvalStatus)],
         ],
@@ -608,7 +606,7 @@ function buildRegistrationSummaryHtml(registration) {
             <table style="border-collapse:collapse;width:100%;font-size:13px">
                 <thead>
                     <tr>
-                        ${['Reg. No.', 'Student', 'Email', 'WhatsApp', 'Course', 'College', 'Competitions', 'Workshop', 'Presentation', 'HR Drive'].map((label) => `<th style="padding:8px;border:1px solid #e4e4e7;background:#eef2ff;text-align:left">${escapeHtml(label)}</th>`).join('')}
+                        ${['Reg. No.', 'Student', 'IPA Member ID', 'Email', 'WhatsApp', 'Course', 'College', 'Competitions', 'Workshop', 'Presentation', 'HR Drive'].map((label) => `<th style="padding:8px;border:1px solid #e4e4e7;background:#eef2ff;text-align:left">${escapeHtml(label)}</th>`).join('')}
                     </tr>
                 </thead>
                 <tbody>
@@ -616,6 +614,7 @@ function buildRegistrationSummaryHtml(registration) {
                         <tr>
                             <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.registrationNumber || '-')}</td>
                             <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.name || '-')}</td>
+                            <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.ipaMemberId || '-')}</td>
                             <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.email || '-')}</td>
                             <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.whatsapp || '-')}</td>
                             <td style="padding:8px;border:1px solid #e4e4e7">${escapeHtml(member.course || '-')}</td>
@@ -649,7 +648,7 @@ function buildRegistrationSummaryText(registration) {
     if (summary.isGroup && summary.groupMembers.length) {
         lines.push('', 'Group Student Details');
         summary.groupMembers.forEach((member, index) => {
-            lines.push(`${index + 1}. Reg. No.: ${member.registrationNumber || '-'} | ${member.name || '-'} | Email: ${member.email || '-'} | WhatsApp: ${member.whatsapp || '-'} | Course: ${member.course || '-'} | College: ${member.college || '-'} | Competitions: ${joinMailList(member.competitions)} | Workshop: ${joinMailList(member.workshops)} | Presentation: ${member.presentationType || 'Not Participating'} | HR Drive: ${member.hrCoreArea || 'Not participating'}`);
+            lines.push(`${index + 1}. Reg. No.: ${member.registrationNumber || '-'} | ${member.name || '-'} | IPA Member ID: ${member.ipaMemberId || '-'} | Email: ${member.email || '-'} | WhatsApp: ${member.whatsapp || '-'} | Course: ${member.course || '-'} | College: ${member.college || '-'} | Competitions: ${joinMailList(member.competitions)} | Workshop: ${joinMailList(member.workshops)} | Presentation: ${member.presentationType || 'Not Participating'} | HR Drive: ${member.hrCoreArea || 'Not participating'}`);
         });
     }
     return lines.join('\n');
@@ -1164,7 +1163,7 @@ function calculateFees(data, programs = [], categories = [], pricing = []) {
     const groupMembers = data.registrationMode === 'group' ? normalizeGroupMembers(data.groupMembers) : [];
     const participantCount = data.registrationMode === 'group' ? groupMembers.length : 1;
     const registrationSubtotal = perStudentRegistrationFee * participantCount;
-    const registrationDiscount = data.registrationMode === 'group' && participantCount > 20 ? registrationSubtotal * 0.2 : 0;
+    const registrationDiscount = data.registrationMode === 'group' && participantCount >= 20 ? registrationSubtotal * 0.1 : 0;
     const registrationFee = Math.max(registrationSubtotal - registrationDiscount, 0);
     const competitions = data.competitionParticipation === 'not_participating'
         ? []
@@ -1389,7 +1388,8 @@ async function ensureRegistrationEnhancements(sql) {
         ADD COLUMN IF NOT EXISTS hr_email_confirmation VARCHAR(180),
         ADD COLUMN IF NOT EXISTS hr_core_area VARCHAR(100),
         ADD COLUMN IF NOT EXISTS gender VARCHAR(20),
-        ADD COLUMN IF NOT EXISTS ipa_member_id VARCHAR(30)
+        ADD COLUMN IF NOT EXISTS ipa_member_id VARCHAR(30),
+        ADD COLUMN IF NOT EXISTS transaction_date DATE
     `;
     await sql`
         UPDATE event_registrations
@@ -1436,6 +1436,7 @@ function normalizeGroupMembers(value) {
 
     return value.slice(0, 500).map((member) => ({
         name: String(member?.name || '').trim(),
+        ipaMemberId: String(member?.ipaMemberId || '').trim().toUpperCase(),
         email: String(member?.email || '').trim().toLowerCase(),
         whatsapp: String(member?.whatsapp || '').trim(),
         gender: String(member?.gender || '').trim(),
@@ -1503,6 +1504,7 @@ function mapRegistration(row, competitions = []) {
         hrEmailConfirmation: row.hr_email_confirmation || '',
         hrCoreArea: row.hr_core_area || '',
         transactionDetails: row.transaction_details || '',
+        transactionDate: formatDateOnly(row.transaction_date),
         registrationNumber: row.registration_number || '',
         submittedAt: row.submitted_at || '',
         registrationFee: Number(row.registration_fee) || 0,
@@ -1555,6 +1557,7 @@ function mapAdminRegistration(row) {
         workshopFee: Number(row.workshop_fee) || 0,
         totalPayableAmount: Number(row.total_payable_amount) || 0,
         transactionDetails: row.transaction_details || '',
+        transactionDate: formatDateOnly(row.transaction_date),
         paymentStatus: row.payment_status,
         approvalStatus: row.approval_status || 'not_submitted',
         registrationStatus: row.registration_status,
@@ -1627,8 +1630,15 @@ async function saveRegistration(sql, data, submit = false) {
         if (data.registrationMode === 'group' && !groupMembers.length) {
             throw inputError('Upload the student roster before submitting a group registration.');
         }
+        const invalidGroupIpaMember = groupMembers.find((member) => member.ipaMemberId && !ipaMemberIdPattern.test(member.ipaMemberId));
+        if (invalidGroupIpaMember) {
+            throw inputError(`IPA Member ID format is wrong for ${invalidGroupIpaMember.name || 'a group member'}.`);
+        }
         if (!String(data.transactionDetails || '').trim()) {
             throw inputError('Enter the transaction ID / UPI reference number before submitting.');
+        }
+        if (!String(data.transactionDate || '').trim()) {
+            throw inputError('Enter the transaction date before submitting.');
         }
         const availableProgramIds = new Set(
             pricing
@@ -1705,7 +1715,7 @@ async function saveRegistration(sql, data, submit = false) {
             selected_workshops, workshop_fee_acknowledged, presentation_type,
             hr_college_with_state, hr_course_or_qualification, hr_whatsapp_number,
             hr_whatsapp_confirmation, hr_email, hr_email_confirmation, hr_core_area, registration_fee,
-            competition_fee, workshop_fee, total_payable_amount, transaction_details,
+            competition_fee, workshop_fee, total_payable_amount, transaction_details, transaction_date,
             registration_status, approval_status, submitted_at
         )
         VALUES (
@@ -1722,7 +1732,7 @@ async function saveRegistration(sql, data, submit = false) {
             ${data.hrCollegeWithState || null}, ${data.hrCourseOrQualification || null}, ${data.hrWhatsappNumber || null},
             ${data.hrWhatsappConfirmation || null}, ${data.hrEmail || null}, ${data.hrEmailConfirmation || null}, ${hrCoreArea || null},
             ${fees.registrationFee}, ${fees.competitionFee}, ${fees.workshopFee}, ${fees.total},
-            ${data.transactionDetails || null}, ${submit ? 'submitted' : 'draft'},
+            ${data.transactionDetails || null}, ${data.transactionDate || null}, ${submit ? 'submitted' : 'draft'},
             ${submit ? 'pending_review' : 'not_submitted'},
             ${submit ? new Date().toISOString() : null}
         )
@@ -1761,6 +1771,7 @@ async function saveRegistration(sql, data, submit = false) {
             workshop_fee = EXCLUDED.workshop_fee,
             total_payable_amount = EXCLUDED.total_payable_amount,
             transaction_details = EXCLUDED.transaction_details,
+            transaction_date = EXCLUDED.transaction_date,
             registration_status = EXCLUDED.registration_status,
             approval_status = CASE
                 WHEN event_registrations.approval_status IN ('approved', 'rejected', 'cancelled')
