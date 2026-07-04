@@ -5880,6 +5880,21 @@ function AdminPage() {
         }
     }
 
+    async function deleteProgram(program) {
+        if (!window.confirm(`Delete "${program.name}" from programs? Existing registrations will keep their saved program text, but this program will no longer appear for new registrations.`)) {
+            return;
+        }
+        setProgramsError('');
+        try {
+            await apiRequest(`admin/programs/${program.id}`, { method: 'DELETE' });
+            setPrograms((current) => current.filter((item) => item.id !== program.id));
+            setPricingPrograms((current) => current.filter((item) => item.id !== program.id));
+            if (editingProgramId === program.id) resetProgramForm();
+        } catch (error) {
+            setProgramsError(error.message);
+        }
+    }
+
     async function loadPricing() {
         setPricingLoading(true);
         setPricingError('');
@@ -8204,7 +8219,7 @@ function AdminPage() {
                                                         <td className="px-4 py-3 font-semibold text-zinc-950">{program.price ? `Rs. ${program.price.toLocaleString('en-IN')}` : 'Free'}</td>
                                                         <td className="px-4 py-3 text-zinc-600">{program.capacity || 'Unlimited'}</td>
                                                         <td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${program.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-zinc-100 text-zinc-600'}`}>{program.isActive ? 'Active' : 'Hidden'}</span></td>
-                                                        <td className="px-4 py-3"><div className="flex justify-end gap-2"><button type="button" onClick={() => editProgram(program)} className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">Edit</button><button type="button" onClick={() => toggleProgramActive(program)} className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">{program.isActive ? 'Hide' : 'Activate'}</button></div></td>
+                                                        <td className="px-4 py-3"><div className="flex justify-end gap-2"><button type="button" onClick={() => editProgram(program)} className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">Edit</button><button type="button" onClick={() => toggleProgramActive(program)} className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">{program.isActive ? 'Hide' : 'Activate'}</button><button type="button" onClick={() => deleteProgram(program)} className="rounded-md border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete</button></div></td>
                                                     </tr>
                                                 ))}
                                             </tbody>

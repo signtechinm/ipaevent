@@ -818,7 +818,7 @@ async function notifyRegistrationSubmitted(registration) {
 
     await Promise.all(summaryRecipients.map((to) => sendStudentMail({
         to,
-        subject: `Registration received - ${registration.registrationNumber || 'NSC 2026'}`,
+        subject: '14th NSC - Registration details Submitted',
         preview: 'Your NSC 2026 registration has been received.',
         htmlBody,
         textBody,
@@ -836,7 +836,7 @@ async function notifyRegistrationSubmitted(registration) {
             const studentMail = buildRegistrationSubmittedMail(studentRegistration);
             return sendStudentMail({
                 to: member.email,
-                subject: `Registration received - ${studentRegistration.registrationNumber || 'NSC 2026'}`,
+                subject: '14th NSC - Registration details Submitted',
                 preview: 'Your NSC 2026 student registration has been received.',
                 htmlBody: studentMail.htmlBody,
                 textBody: studentMail.textBody,
@@ -848,7 +848,7 @@ async function notifyPaymentUpdated(registration) {
     const to = getRegistrationMailRecipient(registration);
     await sendStudentMail({
         to,
-        subject: `Payment status updated - ${registration.registrationNumber || 'NSC 2026'}`,
+        subject: '14th NSC - Registration Updates',
         preview: `Your payment status is now ${formatStatusLabel(registration.paymentStatus)}.`,
         body: [
             `Dear ${registration.participantName || registration.groupCoordinatorName || 'Delegate'},`,
@@ -869,7 +869,7 @@ async function notifyPaymentUpdated(registration) {
             const studentRegistration = buildGroupStudentRegistration(registration, member, index);
             return sendStudentMail({
                 to: member.email,
-                subject: `Payment status updated - ${studentRegistration.registrationNumber || 'NSC 2026'}`,
+                subject: '14th NSC - Registration Updates',
                 preview: `Your payment status is now ${formatStatusLabel(registration.paymentStatus)}.`,
                 body: [
                     `Dear ${studentRegistration.participantName || 'Delegate'},`,
@@ -889,7 +889,7 @@ async function notifyApprovalUpdated(registration) {
         const { htmlBody, textBody } = buildConfirmedRegistrationMail(registration);
         await Promise.all(recipients.map((to) => sendStudentMail({
             to,
-            subject: `Registration confirmed - ${registration.registrationNumber || '14th IPA NSC 2026'}`,
+            subject: '14th NSC Confirmation & WhatsApp Link for Updates.',
             preview: 'Your 14th IPA NSC 2026 registration has been verified and confirmed.',
             htmlBody,
             textBody,
@@ -904,7 +904,7 @@ async function notifyApprovalUpdated(registration) {
                     const studentMail = buildConfirmedRegistrationMail(studentRegistration);
                     return sendStudentMail({
                         to: member.email,
-                        subject: `Registration confirmed - ${studentRegistration.registrationNumber || '14th IPA NSC 2026'}`,
+                        subject: '14th NSC Confirmation & WhatsApp Link for Updates.',
                         preview: 'Your 14th IPA NSC 2026 registration has been verified and confirmed.',
                         htmlBody: studentMail.htmlBody,
                         textBody: studentMail.textBody,
@@ -931,7 +931,7 @@ async function notifyApprovalUpdated(registration) {
 
     await Promise.all(recipients.map((to) => sendStudentMail({
         to,
-        subject: `Registration approval updated - ${registration.registrationNumber || 'NSC 2026'}`,
+        subject: '14th NSC - Registration Updates',
         preview: `Your registration approval status is now ${formatStatusLabel(registration.approvalStatus)}.`,
         htmlBody,
         textBody,
@@ -962,7 +962,7 @@ async function notifyApprovalUpdated(registration) {
             ].join('\n');
             return sendStudentMail({
                 to: member.email,
-                subject: `Registration approval updated - ${studentRegistration.registrationNumber || 'NSC 2026'}`,
+                subject: '14th NSC - Registration Updates',
                 preview: `Your registration approval status is now ${formatStatusLabel(registration.approvalStatus)}.`,
                 htmlBody: studentHtmlBody,
                 textBody: studentTextBody,
@@ -2985,6 +2985,20 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
                     `;
                 }
             }
+            return send(response, 200, { program: mapProgram(rows[0]) });
+        }
+
+        if (adminProgramMatch && request.method === 'DELETE') {
+            if (!requirePermission(session, 'program.delete')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            await ensurePricingCatalog(sql);
+            const rows = await sql`
+                DELETE FROM event_programs
+                WHERE id = ${Number(adminProgramMatch[1])}
+                RETURNING *
+            `;
+            if (!rows.length) return send(response, 404, { error: 'Program not found.' });
             return send(response, 200, { program: mapProgram(rows[0]) });
         }
 
