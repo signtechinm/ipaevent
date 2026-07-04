@@ -33,6 +33,22 @@ const standaloneSponsorFees = {
 };
 const quantityBasedSponsorItems = new Set(['session', 'cultural-event']);
 const fipVaccinationWorkshopName = 'FIP IPA Vaccination Training (2 days)';
+const postCongressWorkshopNames = new Set([fipVaccinationWorkshopName]);
+
+function workshopAreaForName(name) {
+    return postCongressWorkshopNames.has(String(name || '').trim()) ? 'post' : 'pre';
+}
+
+function normalizeWorkshopSelections(value) {
+    const selectedByArea = new Map();
+    const workshops = Array.isArray(value) ? value : [];
+    workshops.map((name) => String(name || '').trim()).filter(Boolean).forEach((name) => {
+        const area = workshopAreaForName(name);
+        if (!selectedByArea.has(area)) selectedByArea.set(area, name);
+    });
+    return [...selectedByArea.values()];
+}
+
 const ipaMemberCategoryKeys = new Set([
     'studentdelegateipamember',
     'studentdelegateipasfmember',
@@ -1205,7 +1221,7 @@ function calculateFees(data, programs = [], categories = [], pricing = []) {
         : data.registrationMode === 'group'
         ? groupMembers.flatMap((member) => member.workshops)
         : Array.isArray(data.selectedWorkshops) && data.selectedWorkshops.length
-            ? [...new Set(data.selectedWorkshops.map((name) => String(name).trim()).filter(Boolean))]
+            ? normalizeWorkshopSelections(data.selectedWorkshops)
             : data.preConferenceWorkshop ? [data.preConferenceWorkshop] : [];
     const workshopFee = data.workshopParticipation === 'not_participating'
         ? 0
@@ -1477,9 +1493,7 @@ function normalizeGroupMembers(value) {
         competitions: Array.isArray(member?.competitions)
             ? [...new Set(member.competitions.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 2)
             : [],
-        workshops: Array.isArray(member?.workshops)
-            ? [...new Set(member.workshops.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 1)
-            : [],
+        workshops: normalizeWorkshopSelections(member?.workshops),
         presentationType: ['Oral Presentation', 'Poster Presentation'].includes(String(member?.presentationType || '').trim())
             ? String(member.presentationType).trim()
             : 'Not Participating',
@@ -1491,7 +1505,7 @@ function normalizeGroupMembers(value) {
 
 function normalizeSelectedWorkshops(value, fallback = '') {
     const workshops = Array.isArray(value) ? value : fallback ? [fallback] : [];
-    return [...new Set(workshops.map((name) => String(name || '').trim()).filter(Boolean))].slice(0, 1);
+    return normalizeWorkshopSelections(workshops);
 }
 
 function mapRegistration(row, competitions = []) {
@@ -1619,6 +1633,7 @@ async function saveRegistration(sql, data, submit = false) {
         : data.registrationMode === 'group'
         ? [...new Set(groupMembers.flatMap((member) => member.workshops))].slice(0, 20)
         : normalizeSelectedWorkshops(data.selectedWorkshops, data.preConferenceWorkshop);
+    const preConferenceWorkshop = selectedWorkshops.find((name) => workshopAreaForName(name) === 'pre') || '';
     const competitions = data.competitionParticipation === 'not_participating'
         ? []
         : data.registrationMode === 'group'
@@ -1755,7 +1770,7 @@ async function saveRegistration(sql, data, submit = false) {
             ${data.stateOfResidence || null},
             ${data.whatsappNumber || null}, ${data.email || null}, ${data.gender || null}, ${data.foodPreference || null},
             ${data.courseOfStudy || null}, ${data.collegeWithState || null},
-            ${booleanValue(data.competitionFeeAcknowledged)}, ${selectedWorkshops[0] || null},
+            ${booleanValue(data.competitionFeeAcknowledged)}, ${preConferenceWorkshop || null},
             ${JSON.stringify(selectedWorkshops)}::jsonb, ${booleanValue(data.workshopFeeAcknowledged)}, ${presentationType || null},
             ${data.hrCollegeWithState || null}, ${data.hrCourseOrQualification || null}, ${data.hrWhatsappNumber || null},
             ${data.hrWhatsappConfirmation || null}, ${data.hrEmail || null}, ${data.hrEmailConfirmation || null}, ${hrCoreArea || null},

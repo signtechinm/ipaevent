@@ -1460,6 +1460,16 @@ function RegistrationPage() {
             : workshopOptions.map((name) => ({ name, price: workshopFees[name] || 0, description: '' })))
         : [];
     const postCongressWorkshopNames = [fipVaccinationWorkshopName];
+    const workshopAreaForName = (name) => postCongressWorkshopNames.includes(name) ? 'post' : 'pre';
+    const normalizeWorkshopSelectionsForArea = (workshops = []) => {
+        const selectedByArea = new Map();
+        workshops.map((name) => String(name || '').trim()).filter(Boolean).forEach((name) => {
+            const area = workshopAreaForName(name);
+            if (!selectedByArea.has(area)) selectedByArea.set(area, name);
+        });
+        return [...selectedByArea.values()];
+    };
+    const firstPreConferenceWorkshop = (workshops = []) => normalizeWorkshopSelectionsForArea(workshops).find((name) => workshopAreaForName(name) === 'pre') || '';
     const preCongressWorkshopPrograms = workshopPrograms.filter((program) => !postCongressWorkshopNames.includes(program.name));
     const postCongressWorkshopPrograms = workshopPrograms.filter((program) => postCongressWorkshopNames.includes(program.name));
     const isGroupRegistration = formData.registrationMode === 'group';
@@ -1665,16 +1675,21 @@ function RegistrationPage() {
     function toggleWorkshop(name) {
         setFormData((current) => {
             if (name === fipVaccinationWorkshopName && current.fipVaccinationEligibility !== 'Yes') {
+                const selectedWorkshops = normalizeWorkshopSelectionsForArea(current.selectedWorkshops.filter((item) => item !== fipVaccinationWorkshopName));
                 return {
                     ...current,
-                    selectedWorkshops: current.selectedWorkshops.filter((item) => item !== fipVaccinationWorkshopName),
-                    preConferenceWorkshop: current.selectedWorkshops.filter((item) => item !== fipVaccinationWorkshopName)[0] || '',
+                    selectedWorkshops,
+                    preConferenceWorkshop: firstPreConferenceWorkshop(selectedWorkshops),
                 };
             }
-            const selectedWorkshops = current.selectedWorkshops.includes(name)
-                ? []
-                : [name];
-            return { ...current, selectedWorkshops, preConferenceWorkshop: selectedWorkshops[0] || '' };
+            const currentSelections = normalizeWorkshopSelectionsForArea(current.selectedWorkshops);
+            const selectedWorkshops = currentSelections.includes(name)
+                ? currentSelections.filter((item) => item !== name)
+                : normalizeWorkshopSelectionsForArea([
+                    ...currentSelections.filter((item) => workshopAreaForName(item) !== workshopAreaForName(name)),
+                    name,
+                ]);
+            return { ...current, selectedWorkshops, preConferenceWorkshop: firstPreConferenceWorkshop(selectedWorkshops) };
         });
         setNotice('');
     }
@@ -1689,13 +1704,13 @@ function RegistrationPage() {
                 if (field === 'workshops' && programName === fipVaccinationWorkshopName && member.fipVaccinationEligibility !== 'Yes') {
                     return { ...member, workshops: currentSelections.filter((name) => name !== fipVaccinationWorkshopName) };
                 }
-                if (field === 'workshops' && !hasProgram && currentSelections.length) {
+                if (field === 'workshops' && !hasProgram && currentSelections.some((name) => workshopAreaForName(name) === workshopAreaForName(programName))) {
                     return member;
                 }
                 const nextSelections = hasProgram
                     ? currentSelections.filter((name) => name !== programName)
                     : field === 'workshops'
-                        ? [programName]
+                        ? normalizeWorkshopSelectionsForArea([...currentSelections, programName])
                     : field === 'competitions' && currentSelections.length >= 2
                         ? currentSelections
                         : [...currentSelections, programName];
@@ -1710,7 +1725,7 @@ function RegistrationPage() {
                 groupMembers,
                 studentCompetitions,
                 selectedWorkshops,
-                preConferenceWorkshop: selectedWorkshops[0] || '',
+                preConferenceWorkshop: firstPreConferenceWorkshop(selectedWorkshops),
             };
         });
         setNotice('');
@@ -1731,7 +1746,7 @@ function RegistrationPage() {
                 ...current,
                 groupMembers,
                 selectedWorkshops,
-                preConferenceWorkshop: selectedWorkshops[0] || '',
+                preConferenceWorkshop: firstPreConferenceWorkshop(selectedWorkshops),
             };
         });
         setNotice(value === 'No' ? 'FIP IPA Vaccination Training is available only with a BLS Certificate or Training letter.' : '');
@@ -2433,7 +2448,7 @@ function RegistrationPage() {
                                 ) : (
                                 <>
                                 <p className="rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
-                                    Each student can attend only one workshop. Unselect the current workshop before choosing another one for that student.
+                                    Each student can attend one pre-conference workshop and one post-congress workshop. Unselect the current workshop within that area before choosing another one.
                                 </p>
                                 <div>
                                     <p className={labelClass}>Pre-Conference Workshop Area</p>
@@ -2457,7 +2472,7 @@ function RegistrationPage() {
                                                         {formData.groupMembers.map((member, index) => {
                                                             const workshops = Array.isArray(member.workshops) ? member.workshops : [];
                                                             const memberChecked = workshops.includes(program.name);
-                                                            const memberAssignedElsewhere = workshops.length > 0 && !memberChecked;
+                                                            const memberAssignedElsewhere = workshops.some((name) => workshopAreaForName(name) === workshopAreaForName(program.name) && name !== program.name);
 
                                                             return (
                                                                 <label key={`${program.name}-${member.email || member.name}-${index}`} className={`flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-semibold ${
@@ -2545,7 +2560,7 @@ function RegistrationPage() {
                                                         {formData.groupMembers.map((member, index) => {
                                                             const workshops = Array.isArray(member.workshops) ? member.workshops : [];
                                                             const memberChecked = workshops.includes(program.name);
-                                                            const memberAssignedElsewhere = workshops.length > 0 && !memberChecked;
+                                                            const memberAssignedElsewhere = workshops.some((name) => workshopAreaForName(name) === workshopAreaForName(program.name) && name !== program.name);
                                                             const isFipWorkshop = program.name === fipVaccinationWorkshopName;
                                                             const canSelectFipWorkshop = !isFipWorkshop || member.fipVaccinationEligibility === 'Yes';
                                                             const memberDisabled = memberAssignedElsewhere || !canSelectFipWorkshop;
