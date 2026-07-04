@@ -429,7 +429,6 @@ const categoryFees = {
     Others: 100,
 };
 
-const ipaMemberIdPattern = /^[A-Z]{3}\/[A-Z]{4}\/[A-Z]{2}\/[A-Z]{2}\/\d{6}$/;
 const ipaMemberCategoryKeys = new Set([
     'studentdelegateipamember',
     'studentdelegateipasfmember',
@@ -441,6 +440,10 @@ function normalizeCategoryKey(value) {
 
 function requiresIpaMemberId(categoryName) {
     return ipaMemberCategoryKeys.has(normalizeCategoryKey(categoryName));
+}
+
+function groupMemberTemplateColumns(categoryName) {
+    return groupMemberColumns.filter(([key]) => key !== 'ipaMemberId' || requiresIpaMemberId(categoryName));
 }
 
 const competitionOptions = [
@@ -1558,7 +1561,11 @@ function RegistrationPage() {
     }
 
     function downloadGroupTemplate() {
-        const csv = `${groupMemberColumns.map(([, label]) => `"${label}"`).join(',')}\r\n`;
+        if (!formData.category) {
+            setNotice('Select the primary delegate category before downloading the group template.');
+            return;
+        }
+        const csv = `${groupMemberTemplateColumns(formData.category).map(([, label]) => `"${label}"`).join(',')}\r\n`;
         const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
         const link = document.createElement('a');
         link.href = url;
@@ -1569,6 +1576,10 @@ function RegistrationPage() {
 
     async function uploadGroupSheet(file) {
         if (!file) return;
+        if (!formData.category) {
+            setNotice('Select the primary delegate category before uploading the group template.');
+            return;
+        }
         if (!file.name.toLowerCase().endsWith('.csv')) {
             setNotice('Upload the completed CSV template. Excel can save the template as CSV.');
             return;
@@ -1577,20 +1588,24 @@ function RegistrationPage() {
         try {
             const rows = parseCsv(await file.text());
             if (rows.length < 2) throw new Error('The uploaded sheet does not contain any student rows.');
+            const templateColumns = groupMemberTemplateColumns(formData.category);
             const headerIndexes = Object.fromEntries(
-                groupMemberColumns.map(([key, label]) => [key, rows[0].findIndex((header) => normalizeCsvHeader(header) === normalizeCsvHeader(label))])
+                templateColumns.map(([key, label]) => [key, rows[0].findIndex((header) => normalizeCsvHeader(header) === normalizeCsvHeader(label))])
             );
             if (headerIndexes.name < 0) throw new Error('The sheet must contain the Name column from the template.');
+            if (headerIndexes.email < 0) throw new Error('The sheet must contain the Email column from the template.');
 
             const groupMembers = rows.slice(1).map((cells) => Object.fromEntries(
-                groupMemberColumns.map(([key]) => {
+                templateColumns.map(([key]) => {
                     const value = headerIndexes[key] >= 0 ? String(cells[headerIndexes[key]] || '').trim() : '';
                     return [key, key === 'ipaMemberId' ? value.toUpperCase() : value];
                 })
             )).filter((member) => member.name);
             if (!groupMembers.length) throw new Error('No student names were found in the uploaded sheet.');
-            const invalidIpaMember = groupMembers.find((member) => member.ipaMemberId && !ipaMemberIdPattern.test(member.ipaMemberId));
-            if (invalidIpaMember) throw new Error(`IPA Member ID format is wrong for ${invalidIpaMember.name}.`);
+            const memberWithMissingEmail = groupMembers.find((member) => !member.email);
+            if (memberWithMissingEmail) throw new Error(`Email is required for ${memberWithMissingEmail.name}.`);
+            const memberWithInvalidEmail = groupMembers.find((member) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email));
+            if (memberWithInvalidEmail) throw new Error(`Enter a valid email for ${memberWithInvalidEmail.name}.`);
 
             setFormData((current) => ({
                 ...current,
@@ -1824,11 +1839,6 @@ function RegistrationPage() {
             if (!formData.ipaMemberId.trim()) {
                 setActiveTab('general');
                 setNotice('IPA Member ID is required for the selected category.');
-                return false;
-            }
-            if (!ipaMemberIdPattern.test(formData.ipaMemberId.trim().toUpperCase())) {
-                setActiveTab('general');
-                setNotice('IPA Member ID format is wrong.');
                 return false;
             }
         }
@@ -2216,12 +2226,17 @@ function RegistrationPage() {
                                             <p className="mt-1 text-sm leading-6 text-emerald-800">Download the CSV template, complete it in Excel or Google Sheets, then upload it here.</p>
                                         </div>
                                         <div className="flex shrink-0 flex-wrap gap-2">
-                                            <button type="button" onClick={downloadGroupTemplate} className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-bold text-emerald-800 hover:bg-emerald-100">
+                                            <button
+                                                type="button"
+                                                onClick={downloadGroupTemplate}
+                                                disabled={!formData.category}
+                                                className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-bold text-emerald-800 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
                                                 Download template
                                             </button>
-                                            <label className="cursor-pointer rounded-lg bg-emerald-800 px-3 py-2 text-sm font-bold text-white hover:bg-emerald-900">
+                                            <label className={`rounded-lg px-3 py-2 text-sm font-bold text-white ${formData.category ? 'cursor-pointer bg-emerald-800 hover:bg-emerald-900' : 'cursor-not-allowed bg-emerald-800 opacity-50'}`}>
                                                 Upload completed CSV
-                                                <input type="file" accept=".csv,text/csv" className="sr-only" onChange={(event) => uploadGroupSheet(event.target.files?.[0])} />
+                                                <input type="file" accept=".csv,text/csv" disabled={!formData.category} className="sr-only" onChange={(event) => uploadGroupSheet(event.target.files?.[0])} />
                                             </label>
                                         </div>
                                     </div>

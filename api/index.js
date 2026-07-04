@@ -33,7 +33,6 @@ const standaloneSponsorFees = {
 };
 const quantityBasedSponsorItems = new Set(['session', 'cultural-event']);
 const fipVaccinationWorkshopName = 'FIP IPA Vaccination Training (2 days)';
-const ipaMemberIdPattern = /^[A-Z]{3}\/[A-Z]{4}\/[A-Z]{2}\/[A-Z]{2}\/\d{6}$/;
 const ipaMemberCategoryKeys = new Set([
     'studentdelegateipamember',
     'studentdelegateipasfmember',
@@ -454,6 +453,10 @@ function getUniqueMailRecipients(values = []) {
         .filter((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)))];
 }
 
+function isValidMailRecipient(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
 function summarizeGroupProgramSelections(groupMembers = [], field) {
     if (!Array.isArray(groupMembers)) return '';
     return groupMembers
@@ -838,6 +841,28 @@ async function notifyPaymentUpdated(registration) {
             'If you believe this status is incorrect, please contact the NSC 2026 secretariat with your transaction reference.',
         ],
     }).catch((error) => console.error('notifyPaymentUpdated failed:', error));
+
+    if (registration.registrationMode !== 'group') {
+        return;
+    }
+
+    const groupMembers = Array.isArray(registration.groupMembers) ? registration.groupMembers : [];
+    await Promise.all(groupMembers
+        .filter((member) => member.email)
+        .map((member, index) => {
+            const studentRegistration = buildGroupStudentRegistration(registration, member, index);
+            return sendStudentMail({
+                to: member.email,
+                subject: `Payment status updated - ${studentRegistration.registrationNumber || 'NSC 2026'}`,
+                preview: `Your payment status is now ${formatStatusLabel(registration.paymentStatus)}.`,
+                body: [
+                    `Dear ${studentRegistration.participantName || 'Delegate'},`,
+                    `Your payment status for registration ${studentRegistration.registrationNumber || '-'} has been updated to ${formatStatusLabel(registration.paymentStatus)}.`,
+                    `Total payable amount: Rs. ${(Number(registration.totalPayableAmount) || 0).toLocaleString('en-IN')}.`,
+                    'If you believe this status is incorrect, please contact the NSC 2026 secretariat with your transaction reference.',
+                ],
+            });
+        })).catch((error) => console.error('notifyPaymentUpdated students failed:', error));
 }
 
 async function notifyApprovalUpdated(registration) {
@@ -1630,9 +1655,15 @@ async function saveRegistration(sql, data, submit = false) {
         if (data.registrationMode === 'group' && !groupMembers.length) {
             throw inputError('Upload the student roster before submitting a group registration.');
         }
-        const invalidGroupIpaMember = groupMembers.find((member) => member.ipaMemberId && !ipaMemberIdPattern.test(member.ipaMemberId));
-        if (invalidGroupIpaMember) {
-            throw inputError(`IPA Member ID format is wrong for ${invalidGroupIpaMember.name || 'a group member'}.`);
+        if (data.registrationMode === 'group') {
+            const missingEmailMember = groupMembers.find((member) => !String(member.email || '').trim());
+            if (missingEmailMember) {
+                throw inputError(`Email is required for ${missingEmailMember.name || 'each group member'}.`);
+            }
+            const invalidEmailMember = groupMembers.find((member) => !isValidMailRecipient(member.email));
+            if (invalidEmailMember) {
+                throw inputError(`Enter a valid email for ${invalidEmailMember.name || 'each group member'}.`);
+            }
         }
         if (!String(data.transactionDetails || '').trim()) {
             throw inputError('Enter the transaction ID / UPI reference number before submitting.');
@@ -1687,9 +1718,6 @@ async function saveRegistration(sql, data, submit = false) {
 
     if (requiresIpaMemberId(data.category) && !normalizedIpaMemberId) {
         throw inputError('IPA Member ID is required for the selected category.');
-    }
-    if (normalizedIpaMemberId && !ipaMemberIdPattern.test(normalizedIpaMemberId)) {
-        throw inputError('IPA Member ID format is wrong.');
     }
 
     if (normalizedIpaMemberId) {
