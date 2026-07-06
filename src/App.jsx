@@ -487,6 +487,7 @@ const initialRegistration = {
     category: '',
     ipaMemberId: '',
     stateOfResidence: '',
+    organization: '',
     whatsappNumber: '',
     email: '',
     gender: '',
@@ -1839,6 +1840,7 @@ function RegistrationPage() {
                 ['Name of Participant', formData.participantName],
                 ['Category', formData.category],
                 ['State of Residence', formData.stateOfResidence],
+                ['Organization', formData.organization],
                 ['WhatsApp Number', formData.whatsappNumber],
                 ['Email ID', formData.email],
                 ['Gender', formData.gender],
@@ -2085,6 +2087,16 @@ function RegistrationPage() {
                                         value={formData.stateOfResidence}
                                         onChange={(event) => updateField('stateOfResidence', event.target.value)}
                                         placeholder="Kerala"
+                                    />
+                                </label>
+                                <label className={labelClass}>
+                                    Organization
+                                    <input
+                                        className={fieldClass}
+                                        required
+                                        value={formData.organization}
+                                        onChange={(event) => updateField('organization', event.target.value)}
+                                        placeholder="College / Hospital / Organization name"
                                     />
                                 </label>
                                 <label className={labelClass}>
@@ -3073,6 +3085,7 @@ function RegistrationPage() {
                                             ['Email', formData.email || 'Not entered'],
                                             ['WhatsApp', formData.whatsappNumber || 'Not entered'],
                                             ['State', formData.stateOfResidence || 'Not entered'],
+                                            ['Organization', formData.organization || 'Not entered'],
                                             ['Gender', formData.gender || 'Not selected'],
                                             ['Food Preference', formData.foodPreference || 'Not selected'],
                                             ['Competitions', formData.competitionParticipation === 'not_participating' ? 'Not participating' : formData.studentCompetitions.join(', ') || 'None selected'],
@@ -5307,6 +5320,12 @@ const abstractsAdminSections = [
     { id: 'abstract-book', label: 'Abstract Book Submission', description: 'Upload or replace the final abstract book PDF shown on the public scientific page.' },
 ];
 
+const usersAdminSections = [
+    { id: 'directory', label: 'User Directory', description: 'View, edit, activate, and delete admin user accounts.' },
+    { id: 'roles', label: 'Roles', description: 'Create, edit, and delete roles with specific permission sets.' },
+    { id: 'permissions', label: 'Permission Matrix', description: 'Reference guide for all available system permissions.' },
+];
+
 const skillCompetitionAdminSections = [
     { id: 'pharma-mastermind-2026', label: 'Pharma Mastermind - 2026', description: 'Review submitted links for Pharma Mastermind.' },
     { id: 'national-patient-counselling-challenge-2026', label: 'National Patient Counselling Challenge - 2026', description: 'Review submitted patient counselling videos.' },
@@ -5362,6 +5381,11 @@ function getSkillCompetitionsAdminSectionFromPath() {
     return skillCompetitionAdminSections.some((section) => section.id === requestedSection) ? requestedSection : skillCompetitionAdminSections[0].id;
 }
 
+function getUsersAdminSectionFromPath() {
+    const requestedSection = window.location.pathname.split('/')[3] || 'directory';
+    return usersAdminSections.some((section) => section.id === requestedSection) ? requestedSection : 'directory';
+}
+
 function AdminPage() {
     const [theme, toggleTheme] = useAdminTheme();
     const [session, setSession] = useState(null);
@@ -5369,12 +5393,16 @@ function AdminPage() {
     const activeModule = getAdminModuleFromPath();
     const activeAbstractsSection = activeModule === 'abstracts' ? getAbstractsAdminSectionFromPath() : 'student-abstracts';
     const activeSkillCompetitionSection = activeModule === 'skill-competitions' ? getSkillCompetitionsAdminSectionFromPath() : skillCompetitionAdminSections[0].id;
-    const [openAdminDropdown, setOpenAdminDropdown] = useState(['accommodation', 'abstracts', 'skill-competitions'].includes(activeModule) ? activeModule : '');
-    const [userModuleTab, setUserModuleTab] = useState('users');
+    const activeUsersSection = activeModule === 'users' ? getUsersAdminSectionFromPath() : 'directory';
+    const [openAdminDropdown, setOpenAdminDropdown] = useState(['accommodation', 'abstracts', 'skill-competitions', 'users'].includes(activeModule) ? activeModule : '');
     const [userSearch, setUserSearch] = useState('');
     const [roles, setRoles] = useState([]);
     const [users, setUsers] = useState([]);
     const [roleForm, setRoleForm] = useState({ name: '', description: '', permissions: [] });
+    const [editingRoleId, setEditingRoleId] = useState(null);
+    const [roleDrawerOpen, setRoleDrawerOpen] = useState(false);
+    const [roleSaving, setRoleSaving] = useState(false);
+    const [rolesError, setRolesError] = useState('');
     const [userForm, setUserForm] = useState({
         name: '',
         email: '',
@@ -5383,6 +5411,10 @@ function AdminPage() {
         status: 'Active',
         password: '',
     });
+    const [editingUserId, setEditingUserId] = useState(null);
+    const [userDrawerOpen, setUserDrawerOpen] = useState(false);
+    const [userSaving, setUserSaving] = useState(false);
+    const [usersError, setUsersError] = useState('');
     const [notice, setNotice] = useState('');
     const [registrations, setRegistrations] = useState([]);
     const [registrationsLoading, setRegistrationsLoading] = useState(false);
@@ -6005,6 +6037,42 @@ function AdminPage() {
     }
 
     const currentRole = roles.find((role) => role.id === session.roleId);
+    const isSuperAdmin = session.roleId === 'role-super-admin';
+    const can = (permission) => isSuperAdmin || (session.permissions || []).includes(permission);
+
+    // Module → minimum permission required to VIEW that module.
+    // Super Admin bypasses all checks.
+    const moduleViewPermission = {
+        dashboard: null,            // any authenticated user
+        registrations: 'registration.view',
+        students: 'registration.view',
+        payments: 'payment.verify',
+        categories: 'program.view',
+        pricing: 'program.view',
+        programs: 'program.view',
+        winners: 'winner.view',
+        reports: 'report.view',
+        'home-content': 'content.view',
+        accommodation: 'content.view',
+        scientific: 'content.view',
+        abstracts: 'content.view',
+        'skill-competitions': 'registration.view',
+        users: 'user.view',
+        audit: 'audit.view',
+    };
+
+    // Can the current user view the given module?
+    const canViewModule = (moduleId) => {
+        if (isSuperAdmin) return true;
+        const perm = moduleViewPermission[moduleId];
+        if (!perm) return true; // dashboard — always visible
+        // abstracts also accessible with registration.view
+        if (moduleId === 'abstracts') return can('content.view') || can('registration.view');
+        // payments also viewable with registration.view
+        if (moduleId === 'payments') return can('payment.verify') || can('registration.view');
+        return can(perm);
+    };
+
     const activeUsers = users.filter((user) => user.status === 'Active').length;
     const inactiveUsers = users.length - activeUsers;
     const totalPermissions = permissionGroups.flatMap((group) => group.permissions).length;
@@ -6550,16 +6618,21 @@ function AdminPage() {
     const activeAccommodationSectionMeta = accommodationAdminSections.find((section) => section.id === activeAccommodationSection) || accommodationAdminSections[3];
     const activeAbstractsSectionMeta = abstractsAdminSections.find((section) => section.id === activeAbstractsSection) || abstractsAdminSections[0];
     const activeSkillCompetitionSectionMeta = skillCompetitionAdminSections.find((section) => section.id === activeSkillCompetitionSection) || skillCompetitionAdminSections[0];
+    const activeUsersSectionMeta = usersAdminSections.find((section) => section.id === activeUsersSection) || usersAdminSections[0];
     const activePageLabel = activeModule === 'abstracts'
         ? activeAbstractsSectionMeta.label
         : activeModule === 'skill-competitions'
             ? activeSkillCompetitionSectionMeta.label
-            : activeModuleMeta.label;
+            : activeModule === 'users'
+                ? activeUsersSectionMeta.label
+                : activeModuleMeta.label;
     const activePageDescription = activeModule === 'abstracts'
         ? activeAbstractsSectionMeta.description
         : activeModule === 'skill-competitions'
             ? activeSkillCompetitionSectionMeta.description
-            : activeModuleMeta.description;
+            : activeModule === 'users'
+                ? activeUsersSectionMeta.description
+                : activeModuleMeta.description;
     const activeSkillCompetitionVideos = skillVideos.filter((submission) => submission.competitionName === activeSkillCompetitionSectionMeta.label);
     const paymentCollected = registrations
         .filter((registration) => registration.paymentStatus === 'success')
@@ -6576,14 +6649,17 @@ function AdminPage() {
         ['Pending Payments', pendingRegistrationPayments.toLocaleString('en-IN'), 'Needs finance review', 'rose'],
         ['Active Programs', programs.filter((program) => program.isActive).length.toLocaleString('en-IN'), `${programs.filter((program) => program.capacity).length} capacity controlled`, 'sky'],
     ];
+    const registrationsWithPaymentDetails = registrations.filter((registration) => registration.transactionDetails || registration.transactionDate || registration.totalPayableAmount > 0).length;
+    const confirmedRegistrationCount = registrations.filter((registration) => registration.paymentStatus === 'success' && registration.approvalStatus === 'approved').length;
     const registrationFunnel = [
-        ['Landing Visits', 3200, '#047857'],
-        ['Started Registration', 1840, '#0f766e'],
-        ['Completed Details', 1460, '#0891b2'],
-        ['Reached Payment', 1310, '#ca8a04'],
-        ['Confirmed', 1124, '#be123c'],
+        ['Started / Drafted', registrations.length, '#047857'],
+        ['Submitted', submittedRegistrations, '#0f766e'],
+        ['Payment Details Entered', registrationsWithPaymentDetails, '#0891b2'],
+        ['Payment Success', registrations.filter((registration) => registration.paymentStatus === 'success').length, '#ca8a04'],
+        ['Confirmed', confirmedRegistrationCount, '#be123c'],
     ];
-    const maxFunnelValue = Math.max(...registrationFunnel.map((item) => item[1]));
+    const maxFunnelValue = Math.max(...registrationFunnel.map((item) => item[1]), 1);
+    const confirmedRateLabel = `${registrations.length ? ((confirmedRegistrationCount / registrations.length) * 100).toFixed(1) : '0.0'}% confirmed`;
     const paymentBreakdown = [
         ['Success', registrations.filter((registration) => registration.paymentStatus === 'success').length, 'bg-emerald-600'],
         ['Pending', registrations.filter((registration) => registration.paymentStatus === 'pending').length, 'bg-amber-500'],
@@ -6591,30 +6667,71 @@ function AdminPage() {
         ['Manual Review', registrations.filter((registration) => registration.paymentStatus === 'manual_verification_required').length, 'bg-sky-600'],
     ];
     const totalPaymentCount = paymentBreakdown.reduce((total, item) => total + item[1], 0);
-    const programRegistrations = [
-        ['Patient Counselling', 284],
-        ['Pharma Quiz', 232],
-        ['Ideation Contest', 198],
-        ['AI Workshop', 156],
-        ['Poster Presentation', 132],
-    ];
-    const maxProgramRegistrations = Math.max(...programRegistrations.map((item) => item[1]));
-    const weeklyRegistrations = [
-        ['Mon', 78],
-        ['Tue', 116],
-        ['Wed', 142],
-        ['Thu', 174],
-        ['Fri', 151],
-        ['Sat', 208],
-        ['Sun', 186],
-    ];
-    const maxWeeklyRegistration = Math.max(...weeklyRegistrations.map((item) => item[1]));
+    const programSelectionCounts = registrations.reduce((counts, registration) => {
+        const addSelection = (name) => {
+            if (!name) return;
+            counts.set(name, (counts.get(name) || 0) + 1);
+        };
+        if (registration.registrationMode === 'group' && Array.isArray(registration.groupMembers) && registration.groupMembers.length) {
+            registration.groupMembers.forEach((member) => {
+                (Array.isArray(member.competitions) ? member.competitions : []).forEach(addSelection);
+                (Array.isArray(member.workshops) ? member.workshops : []).forEach(addSelection);
+            });
+        } else {
+            (Array.isArray(registration.studentCompetitions) ? registration.studentCompetitions : []).forEach(addSelection);
+            (Array.isArray(registration.selectedWorkshops) ? registration.selectedWorkshops : []).forEach(addSelection);
+        }
+        return counts;
+    }, new Map());
+    const programRegistrations = programs
+        .map((program) => [program.name, programSelectionCounts.get(program.name) || 0])
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, 8);
+    const maxProgramRegistrations = Math.max(...programRegistrations.map((item) => item[1]), 1);
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const weeklyRegistrations = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(startOfToday);
+        date.setDate(startOfToday.getDate() - (6 - index));
+        const nextDate = new Date(date);
+        nextDate.setDate(date.getDate() + 1);
+        const value = registrations.filter((registration) => {
+            const rawDate = recordDateValue(registration);
+            if (!rawDate) return false;
+            const time = new Date(rawDate).getTime();
+            return time >= date.getTime() && time < nextDate.getTime();
+        }).length;
+        return [new Intl.DateTimeFormat('en-IN', { weekday: 'short' }).format(date), value];
+    });
+    const maxWeeklyRegistration = Math.max(...weeklyRegistrations.map((item) => item[1]), 1);
+    const activityTimeValue = (value) => {
+        const time = value ? new Date(value).getTime() : 0;
+        return Number.isFinite(time) ? time : 0;
+    };
+    const formatActivityTime = (value) => activityTimeValue(value)
+        ? new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value))
+        : '-';
     const recentAdminActivity = [
-        ['Finance Staff', 'verified 24 manual payments', '10 min ago'],
-        ['Program Coordinator', 'updated AI Workshop capacity', '35 min ago'],
-        ['Registration Staff', 'exported pending registration list', '1 hr ago'],
-        ['Result Manager', 'drafted winner records for Pharma Quiz', '2 hrs ago'],
-    ];
+        ...registrations.map((registration) => ({
+            actor: registration.registrationMode === 'group' ? 'Group Registration' : 'Registration',
+            action: `${registration.registrationNumber || `Draft #${registration.id}`} - ${formatAdminStatus(registration.registrationStatus)} / ${formatAdminStatus(registration.paymentStatus)} / ${formatAdminStatus(registration.approvalStatus)}`,
+            time: recordDateValue(registration),
+        })),
+        ...programs.map((program) => ({
+            actor: 'Program',
+            action: `${program.name} - ${program.isActive ? 'Active' : 'Hidden'}${program.capacity ? `, capacity ${program.capacity}` : ''}`,
+            time: program.updatedAt || program.createdAt,
+        })),
+        ...users.filter((user) => user.lastLogin).map((user) => ({
+            actor: 'Admin Login',
+            action: `${user.name || user.email} signed in`,
+            time: user.lastLogin,
+        })),
+    ]
+        .filter((activity) => activityTimeValue(activity.time))
+        .sort((a, b) => activityTimeValue(b.time) - activityTimeValue(a.time))
+        .slice(0, 6)
+        .map((activity) => [activity.actor, activity.action, formatActivityTime(activity.time)]);
 
     function togglePermission(permission) {
         setRoleForm((current) => ({
@@ -6625,45 +6742,117 @@ function AdminPage() {
         }));
     }
 
-    async function createRole(event) {
+    function openCreateRole() {
+        setEditingRoleId(null);
+        setRoleForm({ name: '', description: '', permissions: [] });
+        setRolesError('');
+        setRoleDrawerOpen(true);
+    }
+
+    function openEditRole(role) {
+        setEditingRoleId(role.id);
+        setRoleForm({ name: role.name, description: role.description || '', permissions: [...role.permissions] });
+        setRolesError('');
+        setRoleDrawerOpen(true);
+    }
+
+    async function saveRole(event) {
         event.preventDefault();
         if (!roleForm.name.trim()) {
-            setNotice('Role name is required.');
+            setRolesError('Role name is required.');
             return;
         }
-
+        setRoleSaving(true);
+        setRolesError('');
         try {
-            const { role } = await apiRequest('admin/roles', {
-                method: 'POST',
-                body: JSON.stringify(roleForm),
-            });
-            setRoles((current) => [...current, role]);
-            setRoleForm({ name: '', description: '', permissions: [] });
-            setUserModuleTab('roles');
-            setNotice('Role created in the database.');
+            if (editingRoleId) {
+                const { role } = await apiRequest(`admin/roles/${editingRoleId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(roleForm),
+                });
+                setRoles((current) => current.map((item) => (item.id === editingRoleId ? role : item)));
+                setNotice('Role updated.');
+            } else {
+                const { role } = await apiRequest('admin/roles', {
+                    method: 'POST',
+                    body: JSON.stringify(roleForm),
+                });
+                setRoles((current) => [...current, role]);
+                setNotice('Role created.');
+            }
+            setRoleDrawerOpen(false);
+        } catch (error) {
+            setRolesError(error.message);
+        } finally {
+            setRoleSaving(false);
+        }
+    }
+
+    async function deleteRole(roleId) {
+        if (!window.confirm('Delete this role? This cannot be undone.')) return;
+        try {
+            await apiRequest(`admin/roles/${roleId}`, { method: 'DELETE' });
+            setRoles((current) => current.filter((item) => item.id !== roleId));
+            setNotice('Role deleted.');
         } catch (error) {
             setNotice(error.message);
         }
     }
 
-    async function createUser(event) {
+    function openCreateUser() {
+        setEditingUserId(null);
+        setUserForm({ name: '', email: '', mobile: '', roleId: roles[0]?.id || 'role-registration-staff', status: 'Active', password: '' });
+        setUsersError('');
+        setUserDrawerOpen(true);
+    }
+
+    function openEditUser(user) {
+        setEditingUserId(user.id);
+        setUserForm({ name: user.name, email: user.email, mobile: user.mobile || '', roleId: user.roleId || '', status: user.status, password: '' });
+        setUsersError('');
+        setUserDrawerOpen(true);
+    }
+
+    async function saveUser(event) {
         event.preventDefault();
-        if (!userForm.name.trim() || !userForm.email.trim() || !userForm.password.trim()) {
-            setNotice('Name, email, and password are required.');
+        if (!userForm.name.trim() || !userForm.email.trim()) {
+            setUsersError('Name and email are required.');
             return;
         }
-
+        if (!editingUserId && !userForm.password.trim()) {
+            setUsersError('Password is required for new users.');
+            return;
+        }
+        setUserSaving(true);
+        setUsersError('');
         try {
-            const { user } = await apiRequest('admin/users', {
-                method: 'POST',
-                body: JSON.stringify(userForm),
-            });
-            setUsers((current) => [...current, user]);
-            setUserForm({ name: '', email: '', mobile: '', roleId: 'role-registration-staff', status: 'Active', password: '' });
-            setUserModuleTab('users');
-            setNotice('User created in the database.');
+            if (editingUserId) {
+                const payload = { action: 'profile', name: userForm.name, email: userForm.email, mobile: userForm.mobile, roleId: userForm.roleId, status: userForm.status };
+                const { user } = await apiRequest(`admin/users/${editingUserId}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(payload),
+                });
+                setUsers((current) => current.map((item) => (item.id === editingUserId ? user : item)));
+                if (userForm.password.trim()) {
+                    await apiRequest(`admin/users/${editingUserId}`, {
+                        method: 'PATCH',
+                        body: JSON.stringify({ action: 'password', password: userForm.password }),
+                    });
+                }
+                setNotice('User updated.');
+            } else {
+                const { user } = await apiRequest('admin/users', {
+                    method: 'POST',
+                    body: JSON.stringify(userForm),
+                });
+                setUsers((current) => [...current, user]);
+                setNotice('User created.');
+            }
+            setUserDrawerOpen(false);
         } catch (error) {
-            setNotice(error.message);
+            setUsersError(error.message);
+        } finally {
+            setUserSaving(false);
         }
     }
 
@@ -6682,12 +6871,24 @@ function AdminPage() {
 
     async function resetUserPassword(userId) {
         const temporaryPassword = `temp${Date.now().toString().slice(-5)}`;
+        if (!window.confirm(`Set temporary password: ${temporaryPassword}?`)) return;
         try {
             await apiRequest(`admin/users/${userId}`, {
                 method: 'PATCH',
                 body: JSON.stringify({ action: 'password', password: temporaryPassword }),
             });
             setNotice(`Temporary password set: ${temporaryPassword}`);
+        } catch (error) {
+            setNotice(error.message);
+        }
+    }
+
+    async function deleteUser(userId) {
+        if (!window.confirm('Permanently delete this user? This cannot be undone.')) return;
+        try {
+            await apiRequest(`admin/users/${userId}`, { method: 'DELETE' });
+            setUsers((current) => current.filter((item) => item.id !== userId));
+            setNotice('User deleted.');
         } catch (error) {
             setNotice(error.message);
         }
@@ -7238,16 +7439,19 @@ function AdminPage() {
                                     {group.modules.map((moduleId) => {
                                         const module = adminModules.find((item) => item.id === moduleId);
                                         if (!module) return null;
-                                        if (module.id === 'accommodation' || module.id === 'abstracts' || module.id === 'skill-competitions') {
+                                        if (module.id === 'accommodation' || module.id === 'abstracts' || module.id === 'skill-competitions' || module.id === 'users') {
                                             const isAccommodationMenu = module.id === 'accommodation';
                                             const isSkillCompetitionsMenu = module.id === 'skill-competitions';
+                                            const isUsersMenu = module.id === 'users';
                                             const submenuOpen = openAdminDropdown === module.id;
                                             const submenuId = `admin-${module.id}-submenu`;
                                             const sections = isAccommodationMenu
                                                 ? accommodationAdminSections
                                                 : isSkillCompetitionsMenu
                                                     ? skillCompetitionAdminSections
-                                                    : abstractsAdminSections;
+                                                    : isUsersMenu
+                                                        ? usersAdminSections
+                                                        : abstractsAdminSections;
                                             return (
                                                 <div key={module.id} className="relative shrink-0 lg:mb-2">
                                                     <button
@@ -7276,12 +7480,16 @@ function AdminPage() {
                                                                 ? activeAccommodationSection === section.id
                                                                 : isSkillCompetitionsMenu
                                                                     ? activeSkillCompetitionSection === section.id
-                                                                    : activeAbstractsSection === section.id;
+                                                                    : isUsersMenu
+                                                                        ? activeUsersSection === section.id
+                                                                        : activeAbstractsSection === section.id;
                                                             const href = isAccommodationMenu
                                                                 ? `/admin/accommodation/${section.id}`
                                                                 : isSkillCompetitionsMenu
                                                                     ? `/admin/skill-competitions/${section.id}`
-                                                                    : `/admin/abstracts/${section.id}`;
+                                                                    : isUsersMenu
+                                                                        ? `/admin/users/${section.id}`
+                                                                        : `/admin/abstracts/${section.id}`;
                                                             return (
                                                             <a
                                                                 key={section.id}
@@ -7301,7 +7509,9 @@ function AdminPage() {
                                                 </div>
                                             );
                                         }
-                                        return (
+                                        {
+                                            const moduleAllowed = canViewModule(module.id);
+                                            return (
                                             <div key={module.id} className="shrink-0 lg:mb-1">
                                                 <a
                                                     href={`/admin/${module.id}`}
@@ -7309,14 +7519,19 @@ function AdminPage() {
                                                     className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors lg:w-full ${
                                                         activeModule === module.id
                                                             ? 'admin-nav-active bg-zinc-900 text-white shadow-sm'
-                                                            : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950'
+                                                            : moduleAllowed
+                                                                ? 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950'
+                                                                : 'cursor-not-allowed text-zinc-400 opacity-60'
                                                     }`}
+                                                    title={moduleAllowed ? undefined : `Requires: ${moduleViewPermission[module.id]}`}
                                                 >
                                                     <AdminSidebarIcon name={module.id} />
-                                                    <span>{module.label}</span>
+                                                    <span className="min-w-0 flex-1">{module.label}</span>
+                                                    {!moduleAllowed && <span className="text-[10px] text-zinc-400" aria-label="Restricted">🔒</span>}
                                                 </a>
                                             </div>
-                                        );
+                                            );
+                                        }
                                     })}
                                 </div>
                             </div>
@@ -7358,6 +7573,12 @@ function AdminPage() {
                                     <span className="hidden truncate font-medium text-zinc-500 sm:inline">{activeSkillCompetitionSectionMeta.label}</span>
                                 </>
                             )}
+                            {activeModule === 'users' && (
+                                <>
+                                    <span className="hidden text-zinc-300 sm:inline">/</span>
+                                    <span className="hidden truncate font-medium text-zinc-500 sm:inline">{activeUsersSectionMeta.label}</span>
+                                </>
+                            )}
                         </div>
                         <div className="flex items-center gap-2">
                             <a href="/" className="admin-button-secondary hidden rounded-md px-3 py-2 text-sm font-medium sm:inline-flex">View site</a>
@@ -7379,7 +7600,21 @@ function AdminPage() {
 
                         <section className="admin-card rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6">
 
-                    {activeModule === 'dashboard' && (
+                    {!canViewModule(activeModule) && (
+                        <div className="py-12 text-center sm:py-20">
+                            <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-red-50 text-2xl">🔒</div>
+                            <h2 className="mt-4 text-xl font-bold text-zinc-950">Access Denied</h2>
+                            <p className="mt-2 text-sm text-zinc-500">
+                                You don't have permission to view this section.
+                                Contact your Super Admin to request access.
+                            </p>
+                            <p className="mt-3 rounded-lg bg-zinc-100 px-4 py-2 text-xs font-mono text-zinc-600 inline-block">
+                                Required: <strong>{moduleViewPermission[activeModule] || 'unknown'}</strong>
+                            </p>
+                        </div>
+                    )}
+
+                    {canViewModule(activeModule) && activeModule === 'dashboard' && (
                         <div className="mt-6 grid gap-6">
                             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                                 {dashboardStats.map(([label, value, note, tone]) => (
@@ -7409,9 +7644,9 @@ function AdminPage() {
                                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
                                             <h2 className="text-lg font-bold">Registration Funnel</h2>
-                                            <p className="mt-1 text-sm text-zinc-600">Demo view from website visit to confirmed payment.</p>
+                                            <p className="mt-1 text-sm text-zinc-600">Live view from saved registrations to confirmed records.</p>
                                         </div>
-                                        <span className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800">35.1% confirmed</span>
+                                        <span className="rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800">{confirmedRateLabel}</span>
                                     </div>
                                     <div className="mt-6 grid gap-3">
                                         {registrationFunnel.map(([label, value, color], index) => (
@@ -7424,11 +7659,11 @@ function AdminPage() {
                                                     <div
                                                         className="flex h-full items-center justify-end rounded-lg px-3 text-xs font-bold text-white"
                                                         style={{
-                                                            width: `${Math.max((value / maxFunnelValue) * 100, 12)}%`,
+                                                            width: `${value ? Math.max((value / maxFunnelValue) * 100, 12) : 0}%`,
                                                             backgroundColor: color,
                                                         }}
                                                     >
-                                                        {Math.round((value / maxFunnelValue) * 100)}%
+                                                        {value ? `${Math.round((value / maxFunnelValue) * 100)}%` : ''}
                                                     </div>
                                                 </div>
                                             </div>
@@ -7471,7 +7706,7 @@ function AdminPage() {
                                             <div key={day} className="flex h-full flex-1 flex-col justify-end gap-2">
                                                 <div
                                                     className="rounded-t-lg bg-emerald-700"
-                                                    style={{ height: `${Math.max((value / maxWeeklyRegistration) * 100, 10)}%` }}
+                                                    style={{ height: `${value ? Math.max((value / maxWeeklyRegistration) * 100, 10) : 0}%` }}
                                                 />
                                                 <div className="text-center">
                                                     <p className="text-xs font-bold text-zinc-500">{day}</p>
@@ -7494,7 +7729,7 @@ function AdminPage() {
                                                 <div className="h-3 overflow-hidden rounded-lg bg-white ring-1 ring-zinc-200">
                                                     <div
                                                         className="h-full rounded-lg bg-sky-600"
-                                                        style={{ width: `${(value / maxProgramRegistrations) * 100}%` }}
+                                                        style={{ width: `${value ? (value / maxProgramRegistrations) * 100 : 0}%` }}
                                                     />
                                                 </div>
                                             </div>
@@ -7525,7 +7760,7 @@ function AdminPage() {
                                 <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-5">
                                     <h2 className="text-lg font-bold">Recent Activity</h2>
                                     <div className="mt-5 divide-y divide-zinc-200 overflow-hidden rounded-lg bg-white ring-1 ring-zinc-200">
-                                        {recentAdminActivity.map(([actor, action, time]) => (
+                                        {recentAdminActivity.length ? recentAdminActivity.map(([actor, action, time]) => (
                                             <div key={`${actor}-${action}`} className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                                                 <div>
                                                     <p className="text-sm font-bold text-zinc-900">{actor}</p>
@@ -7533,14 +7768,16 @@ function AdminPage() {
                                                 </div>
                                                 <span className="text-xs font-bold uppercase text-zinc-500">{time}</span>
                                             </div>
-                                        ))}
+                                        )) : (
+                                            <p className="px-4 py-6 text-sm font-semibold text-zinc-500">No recent activity found.</p>
+                                        )}
                                     </div>
                                 </section>
                             </div>
                         </div>
                     )}
 
-                    {activeModule === 'registrations' && (
+                    {canViewModule('registrations') && activeModule === 'registrations' && (
                         <div className="mt-6">
                             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                                 {[
@@ -7795,6 +8032,7 @@ function AdminPage() {
                                                         ['Participant', selectedRegistration.participantName],
                                                         ['Institution', selectedRegistration.institutionName || selectedRegistration.collegeWithState],
                                                         ['State', selectedRegistration.stateOfResidence],
+                                                        ['Organization', selectedRegistration.organization],
                                                         ['Gender', selectedRegistration.gender],
                                                         ['Food preference', selectedRegistration.foodPreference],
                                                         ['Course', selectedRegistration.courseOfStudy],
@@ -7918,7 +8156,7 @@ function AdminPage() {
                         </div>
                     )}
 
-                    {activeModule === 'payments' && (
+                    {canViewModule('payments') && activeModule === 'payments' && (
                         <div className="mt-6">
                             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                                 {[
@@ -8045,7 +8283,7 @@ function AdminPage() {
                         </div>
                     )}
 
-                    {['categories', 'pricing'].includes(activeModule) && (
+                    {['categories', 'pricing'].includes(activeModule) && canViewModule(activeModule) && (
                         <div className="mt-2">
                             {activeModule === 'categories' && (
                             <div>
@@ -8178,14 +8416,14 @@ function AdminPage() {
                         </div>
                     )}
 
-                    {activeModule === 'programs' && (
+                    {canViewModule('programs') && activeModule === 'programs' && (
                         <div className="mt-2">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <h2 className="text-lg font-semibold text-zinc-950">Event programs</h2>
                                     <p className="mt-1 text-sm text-zinc-500">Manage competitions, workshops, capacity, order, and visibility.</p>
                                 </div>
-                                <button type="button" onClick={addProgram} className="rounded-md bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-900">Add New Program</button>
+                                {can('program.create') && <button type="button" onClick={addProgram} className="rounded-md bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-900">Add New Program</button>}
                             </div>
 
                             <div className="mt-5 min-w-0">
@@ -8219,7 +8457,7 @@ function AdminPage() {
                                                         <td className="px-4 py-3 font-semibold text-zinc-950">{program.price ? `Rs. ${program.price.toLocaleString('en-IN')}` : 'Free'}</td>
                                                         <td className="px-4 py-3 text-zinc-600">{program.capacity || 'Unlimited'}</td>
                                                         <td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${program.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-zinc-100 text-zinc-600'}`}>{program.isActive ? 'Active' : 'Hidden'}</span></td>
-                                                        <td className="px-4 py-3"><div className="flex justify-end gap-2"><button type="button" onClick={() => editProgram(program)} className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">Edit</button><button type="button" onClick={() => toggleProgramActive(program)} className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">{program.isActive ? 'Hide' : 'Activate'}</button><button type="button" onClick={() => deleteProgram(program)} className="rounded-md border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete</button></div></td>
+                                                        <td className="px-4 py-3"><div className="flex justify-end gap-2">{can('program.update') && <button type="button" onClick={() => editProgram(program)} className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">Edit</button>}{can('program.update') && <button type="button" onClick={() => toggleProgramActive(program)} className="rounded-md border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">{program.isActive ? 'Hide' : 'Activate'}</button>}{can('program.delete') && <button type="button" onClick={() => deleteProgram(program)} className="rounded-md border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50">Delete</button>}</div></td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -8318,7 +8556,7 @@ function AdminPage() {
                         </div>
                     )}
 
-                    {activeModule === 'students' && (
+                    {canViewModule('students') && activeModule === 'students' && (
                         <div className="mt-6">
                             <div className="grid gap-4 md:grid-cols-3">
                                 <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
@@ -8499,9 +8737,10 @@ function AdminPage() {
                         </div>
                     )}
 
-                    {activeModule === 'users' && (
+                    {canViewModule('users') && activeModule === 'users' && (
                         <div className="mt-6">
-                            <div className="grid gap-4 md:grid-cols-4">
+                            {/* Stats */}
+                            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                                 {[
                                     ['Total Users', users.length],
                                     ['Active Users', activeUsers],
@@ -8515,42 +8754,51 @@ function AdminPage() {
                                 ))}
                             </div>
 
+                            {/* Section navigation */}
                             <div className="mt-6 flex flex-wrap gap-2 border-b border-zinc-200 pb-3">
-                                {[
-                                    ['users', 'User Directory'],
-                                    ['create-user', 'Create User'],
-                                    ['roles', 'Roles'],
-                                    ['permissions', 'Permission Matrix'],
-                                ].map(([id, label]) => (
-                                    <button
-                                        key={id}
-                                        type="button"
-                                        onClick={() => setUserModuleTab(id)}
-                                        className={`rounded-lg px-3 py-2 text-sm font-bold ${
-                                            userModuleTab === id
+                                {usersAdminSections.map((section) => (
+                                    <a
+                                        key={section.id}
+                                        href={`/admin/users/${section.id}`}
+                                        className={`rounded-lg px-3 py-2 text-sm font-bold transition-colors ${
+                                            activeUsersSection === section.id
                                                 ? 'bg-emerald-800 text-white'
                                                 : 'bg-zinc-100 text-zinc-700 hover:bg-emerald-50 hover:text-emerald-800'
                                         }`}
                                     >
-                                        {label}
-                                    </button>
+                                        {section.label}
+                                    </a>
                                 ))}
                             </div>
 
-                            {userModuleTab === 'users' && (
+                            {/* User Directory */}
+                            {activeUsersSection === 'directory' && (
                                 <div className="mt-6">
-                                    <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                         <div>
                                             <h2 className="text-lg font-bold">Admin User Directory</h2>
-                                            <p className="mt-1 text-sm text-zinc-600">Search users, review role access, and manage account status.</p>
+                                            <p className="mt-1 text-sm text-zinc-600">Search, edit, and manage all admin accounts.</p>
                                         </div>
-                                        <input
-                                            className="admin-input w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100 md:max-w-xs"
-                                            value={userSearch}
-                                            onChange={(event) => setUserSearch(event.target.value)}
-                                            placeholder="Search users, roles, email"
-                                        />
+                                        <div className="flex gap-2">
+                                            <input
+                                                className="admin-input w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100 sm:max-w-xs"
+                                                value={userSearch}
+                                                onChange={(event) => setUserSearch(event.target.value)}
+                                                placeholder="Search name, email, role…"
+                                            />
+                                            {can('user.create') && (
+                                            <button
+                                                type="button"
+                                                onClick={openCreateUser}
+                                                className="admin-button shrink-0 rounded-lg bg-emerald-800 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-900"
+                                            >
+                                                + Add User
+                                            </button>
+                                            )}
+                                        </div>
                                     </div>
+
+                                    {usersError && <p className="mb-3 rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{usersError}</p>}
 
                                     <div className="overflow-x-auto rounded-lg border border-zinc-200">
                                         <table className="w-full min-w-[860px] text-left text-sm">
@@ -8565,14 +8813,19 @@ function AdminPage() {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-zinc-200">
+                                                {filteredUsers.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan={6} className="px-4 py-8 text-center text-sm text-zinc-500">No users found.</td>
+                                                    </tr>
+                                                )}
                                                 {filteredUsers.map((user) => (
-                                                    <tr key={user.id}>
+                                                    <tr key={user.id} className="hover:bg-zinc-50">
                                                         <td className="px-4 py-3">
                                                             <p className="font-bold text-zinc-900">{user.name}</p>
                                                             <p className="text-xs text-zinc-500">{user.email}</p>
-                                                            <p className="text-xs text-zinc-500">{user.mobile || 'No mobile'}</p>
+                                                            {user.mobile && <p className="text-xs text-zinc-400">{user.mobile}</p>}
                                                         </td>
-                                                        <td className="px-4 py-3 font-semibold">{getRoleName(user.roleId)}</td>
+                                                        <td className="px-4 py-3 font-semibold text-zinc-800">{getRoleName(user.roleId)}</td>
                                                         <td className="px-4 py-3">
                                                             <span className="rounded-lg bg-zinc-100 px-2 py-1 text-xs font-bold text-zinc-700">
                                                                 {getRolePermissions(user.roleId).length} permissions
@@ -8587,23 +8840,37 @@ function AdminPage() {
                                                                 {user.status}
                                                             </span>
                                                         </td>
-                                                        <td className="px-4 py-3 text-zinc-600">{user.lastLogin || 'Never'}</td>
+                                                        <td className="px-4 py-3 text-sm text-zinc-600">{user.lastLogin || 'Never'}</td>
                                                         <td className="px-4 py-3">
                                                             <div className="flex flex-wrap gap-2">
-                                                                <button
+                                                                {can('user.update') && <button
+                                                                    type="button"
+                                                                    onClick={() => openEditUser(user)}
+                                                                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-100"
+                                                                >
+                                                                    Edit
+                                                                </button>}
+                                                                {can('user.update') && <button
                                                                     type="button"
                                                                     onClick={() => updateUserStatus(user.id, user.status === 'Active' ? 'Inactive' : 'Active')}
                                                                     className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-100"
                                                                 >
                                                                     {user.status === 'Active' ? 'Deactivate' : 'Activate'}
-                                                                </button>
-                                                                <button
+                                                                </button>}
+                                                                {can('user.update') && <button
                                                                     type="button"
                                                                     onClick={() => resetUserPassword(user.id)}
-                                                                    className="rounded-lg border border-emerald-700 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-50"
+                                                                    className="rounded-lg border border-amber-400 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-50"
                                                                 >
-                                                                    Reset Password
-                                                                </button>
+                                                                    Reset Pwd
+                                                                </button>}
+                                                                {can('user.update') && <button
+                                                                    type="button"
+                                                                    onClick={() => deleteUser(user.id)}
+                                                                    className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50"
+                                                                >
+                                                                    Delete
+                                                                </button>}
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -8614,137 +8881,82 @@ function AdminPage() {
                                 </div>
                             )}
 
-                            {userModuleTab === 'create-user' && (
-                                <form onSubmit={createUser} className="mt-6 rounded-lg bg-zinc-50 p-4 ring-1 ring-zinc-200">
-                                    <div className="flex flex-col gap-1 border-b border-zinc-200 pb-4">
-                                        <h2 className="text-lg font-bold">Create Admin User</h2>
-                                        <p className="text-sm text-zinc-600">Assign a role, set the account status, and issue a temporary password.</p>
-                                    </div>
-                                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                                        {[
-                                            ['name', 'Full Name', 'Registration Staff'],
-                                            ['email', 'Email', 'staff@nsc2026.local'],
-                                            ['mobile', 'Mobile', '+91 98765 43210'],
-                                            ['password', 'Temporary Password', 'Set temporary password'],
-                                        ].map(([name, label, placeholder]) => (
-                                            <label key={name} className="block text-sm font-semibold text-zinc-800">
-                                                {label}
-                                                <input
-                                                    className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                                                    type={name === 'password' ? 'password' : name === 'email' ? 'email' : 'text'}
-                                                    value={userForm[name]}
-                                                    onChange={(event) => setUserForm((current) => ({ ...current, [name]: event.target.value }))}
-                                                    placeholder={placeholder}
-                                                />
-                                            </label>
-                                        ))}
-                                        <label className="block text-sm font-semibold text-zinc-800">
-                                            Role
-                                            <select
-                                                className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                                                value={userForm.roleId}
-                                                onChange={(event) => setUserForm((current) => ({ ...current, roleId: event.target.value }))}
-                                            >
-                                                {roles.map((role) => (
-                                                    <option key={role.id} value={role.id}>{role.name}</option>
-                                                ))}
-                                            </select>
-                                        </label>
-                                        <label className="block text-sm font-semibold text-zinc-800">
-                                            Status
-                                            <select
-                                                className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                                                value={userForm.status}
-                                                onChange={(event) => setUserForm((current) => ({ ...current, status: event.target.value }))}
-                                            >
-                                                <option value="Active">Active</option>
-                                                <option value="Inactive">Inactive</option>
-                                            </select>
-                                        </label>
-                                    </div>
-                                    <button type="submit" className="admin-button mt-5 rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900">
-                                        Create User
-                                    </button>
-                                </form>
-                            )}
-
-                            {userModuleTab === 'roles' && (
-                                <div className="mt-6 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-                                    <form onSubmit={createRole} className="rounded-lg bg-zinc-50 p-4 ring-1 ring-zinc-200">
-                                        <div className="border-b border-zinc-200 pb-4">
-                                            <h2 className="text-lg font-bold">Create Role</h2>
-                                            <p className="mt-1 text-sm text-zinc-600">Build roles around real admin duties like registration, finance, program, reports, or results.</p>
+                            {/* Roles */}
+                            {activeUsersSection === 'roles' && (
+                                <div className="mt-6">
+                                    <div className="mb-4 flex items-center justify-between gap-3">
+                                        <div>
+                                            <h2 className="text-lg font-bold">Roles</h2>
+                                            <p className="mt-1 text-sm text-zinc-600">Define roles with specific permission sets and assign them to users.</p>
                                         </div>
-                                        <label className="mt-5 block text-sm font-semibold text-zinc-800">
-                                            Role Name
-                                            <input
-                                                className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                                                value={roleForm.name}
-                                                onChange={(event) => setRoleForm((current) => ({ ...current, name: event.target.value }))}
-                                                placeholder="Program Coordinator"
-                                            />
-                                        </label>
-                                        <label className="mt-4 block text-sm font-semibold text-zinc-800">
-                                            Description
-                                            <textarea
-                                                className="admin-input mt-2 min-h-24 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
-                                                value={roleForm.description}
-                                                onChange={(event) => setRoleForm((current) => ({ ...current, description: event.target.value }))}
-                                                placeholder="Access scope for this role"
-                                            />
-                                        </label>
-                                        <div className="mt-4">
-                                            <p className="text-sm font-semibold text-zinc-800">Permissions</p>
-                                            <div className="mt-3 grid gap-3 md:grid-cols-2">
-                                                {permissionGroups.map((group) => (
-                                                    <div key={group.title} className="rounded-lg border border-zinc-200 bg-white p-3">
-                                                        <p className="text-xs font-bold uppercase text-zinc-500">{group.title}</p>
-                                                        <div className="mt-3 grid gap-2">
-                                                            {group.permissions.map((permission) => (
-                                                                <label key={permission} className="text-sm font-semibold text-zinc-700">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="mr-2"
-                                                                        checked={roleForm.permissions.includes(permission)}
-                                                                        onChange={() => togglePermission(permission)}
-                                                                    />
-                                                                    {formatPermissionLabel(permission)}
-                                                                </label>
-                                                            ))}
+                                        {can('role.manage') && (
+                                        <button
+                                            type="button"
+                                            onClick={openCreateRole}
+                                            className="admin-button shrink-0 rounded-lg bg-emerald-800 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-900"
+                                        >
+                                            + Add Role
+                                        </button>
+                                        )}
+                                    </div>
+
+                                    {rolesError && <p className="mb-3 rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{rolesError}</p>}
+
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        {roles.map((role) => {
+                                            const assignedCount = users.filter((u) => u.roleId === role.id).length;
+                                            return (
+                                                <article key={role.id} className="rounded-lg border border-zinc-200 bg-white p-5">
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="min-w-0">
+                                                            <h3 className="font-bold text-zinc-900">{role.name}</h3>
+                                                            <p className="mt-1 text-sm text-zinc-500">{role.description || 'No description.'}</p>
+                                                        </div>
+                                                        <div className="flex shrink-0 flex-col items-end gap-1">
+                                                            <span className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-800">
+                                                                {role.permissions.length}/{totalPermissions} perms
+                                                            </span>
+                                                            <span className="text-xs text-zinc-400">{assignedCount} user{assignedCount !== 1 ? 's' : ''}</span>
                                                         </div>
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <button type="submit" className="admin-button mt-5 rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900">
-                                            Create Role
-                                        </button>
-                                    </form>
-
-                                    <div className="grid gap-3">
-                                        {roles.map((role) => (
-                                            <article key={role.id} className="rounded-lg border border-zinc-200 p-4">
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div>
-                                                        <h3 className="font-bold">{role.name}</h3>
-                                                        <p className="mt-1 text-sm text-zinc-600">{role.description || 'No description added.'}</p>
+                                                    <div className="mt-3 flex flex-wrap gap-1.5">
+                                                        {role.permissions.length === 0
+                                                            ? <span className="text-xs text-zinc-400">No permissions assigned.</span>
+                                                            : role.permissions.map((permission) => (
+                                                                <span key={permission} className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-700">
+                                                                    {formatPermissionLabel(permission)}
+                                                                </span>
+                                                            ))}
                                                     </div>
-                                                    <span className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-800">{role.permissions.length}/{totalPermissions}</span>
-                                                </div>
-                                                <div className="mt-3 flex flex-wrap gap-2">
-                                                    {role.permissions.map((permission) => (
-                                                        <span key={permission} className="rounded-lg bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-700">
-                                                            {formatPermissionLabel(permission)}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </article>
-                                        ))}
+                                                    {can('role.manage') && (
+                                                    <div className="mt-4 flex gap-2 border-t border-zinc-100 pt-3">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openEditRole(role)}
+                                                            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-100"
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => deleteRole(role.id)}
+                                                            disabled={assignedCount > 0}
+                                                            className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                                            title={assignedCount > 0 ? 'Cannot delete a role with assigned users' : 'Delete role'}
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                    )}
+                                                </article>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
 
-                            {userModuleTab === 'permissions' && (
+                            {/* Permission Matrix */}
+                            {activeUsersSection === 'permissions' && (
                                 <div className="mt-6 grid gap-4 md:grid-cols-2">
                                     {permissionGroups.map((group) => (
                                         <article key={group.title} className="rounded-lg border border-zinc-200 p-4">
@@ -8761,10 +8973,188 @@ function AdminPage() {
                                     ))}
                                 </div>
                             )}
+
+                            {/* User Drawer */}
+                            {userDrawerOpen && (
+                                <div className="fixed inset-0 z-50 flex justify-end">
+                                    <div className="absolute inset-0 bg-black/40" onClick={() => setUserDrawerOpen(false)} />
+                                    <aside className="relative z-10 flex w-full max-w-md flex-col overflow-y-auto bg-white shadow-xl">
+                                        <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4">
+                                            <h2 className="text-base font-bold">{editingUserId ? 'Edit User' : 'Add User'}</h2>
+                                            <button type="button" onClick={() => setUserDrawerOpen(false)} className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100">✕</button>
+                                        </div>
+                                        <form onSubmit={saveUser} className="flex flex-1 flex-col gap-5 p-6">
+                                            {usersError && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{usersError}</p>}
+                                            <label className="block text-sm font-semibold text-zinc-800">
+                                                Full Name <span className="text-red-500">*</span>
+                                                <input
+                                                    className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                    value={userForm.name}
+                                                    onChange={(e) => setUserForm((c) => ({ ...c, name: e.target.value }))}
+                                                    placeholder="Full name"
+                                                    required
+                                                />
+                                            </label>
+                                            <label className="block text-sm font-semibold text-zinc-800">
+                                                Email <span className="text-red-500">*</span>
+                                                <input
+                                                    type="email"
+                                                    className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                    value={userForm.email}
+                                                    onChange={(e) => setUserForm((c) => ({ ...c, email: e.target.value }))}
+                                                    placeholder="email@example.com"
+                                                    required
+                                                />
+                                            </label>
+                                            <label className="block text-sm font-semibold text-zinc-800">
+                                                Mobile
+                                                <input
+                                                    className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                    value={userForm.mobile}
+                                                    onChange={(e) => setUserForm((c) => ({ ...c, mobile: e.target.value }))}
+                                                    placeholder="+91 98765 43210"
+                                                />
+                                            </label>
+                                            <label className="block text-sm font-semibold text-zinc-800">
+                                                Role
+                                                <select
+                                                    className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                    value={userForm.roleId}
+                                                    onChange={(e) => setUserForm((c) => ({ ...c, roleId: e.target.value }))}
+                                                >
+                                                    {roles.map((role) => (
+                                                        <option key={role.id} value={role.id}>{role.name}</option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                            <label className="block text-sm font-semibold text-zinc-800">
+                                                Status
+                                                <select
+                                                    className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                    value={userForm.status}
+                                                    onChange={(e) => setUserForm((c) => ({ ...c, status: e.target.value }))}
+                                                >
+                                                    <option value="Active">Active</option>
+                                                    <option value="Inactive">Inactive</option>
+                                                </select>
+                                            </label>
+                                            <label className="block text-sm font-semibold text-zinc-800">
+                                                {editingUserId ? 'New Password' : 'Password'} {!editingUserId && <span className="text-red-500">*</span>}
+                                                <input
+                                                    type="password"
+                                                    className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                    value={userForm.password}
+                                                    onChange={(e) => setUserForm((c) => ({ ...c, password: e.target.value }))}
+                                                    placeholder={editingUserId ? 'Leave blank to keep current password' : 'Set password'}
+                                                />
+                                            </label>
+                                            <div className="mt-auto flex gap-3 border-t border-zinc-100 pt-4">
+                                                <button
+                                                    type="submit"
+                                                    disabled={userSaving}
+                                                    className="admin-button flex-1 rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-60"
+                                                >
+                                                    {userSaving ? 'Saving…' : editingUserId ? 'Save Changes' : 'Create User'}
+                                                </button>
+                                                <button type="button" onClick={() => setUserDrawerOpen(false)} className="rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-100">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </aside>
+                                </div>
+                            )}
+
+                            {/* Role Drawer */}
+                            {roleDrawerOpen && (
+                                <div className="fixed inset-0 z-50 flex justify-end">
+                                    <div className="absolute inset-0 bg-black/40" onClick={() => setRoleDrawerOpen(false)} />
+                                    <aside className="relative z-10 flex w-full max-w-lg flex-col overflow-y-auto bg-white shadow-xl">
+                                        <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4">
+                                            <h2 className="text-base font-bold">{editingRoleId ? 'Edit Role' : 'Create Role'}</h2>
+                                            <button type="button" onClick={() => setRoleDrawerOpen(false)} className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100">✕</button>
+                                        </div>
+                                        <form onSubmit={saveRole} className="flex flex-1 flex-col gap-5 p-6">
+                                            {rolesError && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{rolesError}</p>}
+                                            <label className="block text-sm font-semibold text-zinc-800">
+                                                Role Name <span className="text-red-500">*</span>
+                                                <input
+                                                    className="admin-input mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                    value={roleForm.name}
+                                                    onChange={(e) => setRoleForm((c) => ({ ...c, name: e.target.value }))}
+                                                    placeholder="Program Coordinator"
+                                                    required
+                                                />
+                                            </label>
+                                            <label className="block text-sm font-semibold text-zinc-800">
+                                                Description
+                                                <textarea
+                                                    className="admin-input mt-2 min-h-20 w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm outline-none focus:border-emerald-700 focus:ring-2 focus:ring-emerald-100"
+                                                    value={roleForm.description}
+                                                    onChange={(e) => setRoleForm((c) => ({ ...c, description: e.target.value }))}
+                                                    placeholder="Describe the scope of this role"
+                                                />
+                                            </label>
+                                            <div>
+                                                <p className="text-sm font-semibold text-zinc-800">Permissions</p>
+                                                <div className="mt-3 grid gap-3">
+                                                    {permissionGroups.map((group) => (
+                                                        <div key={group.title} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+                                                            <div className="mb-2 flex items-center justify-between">
+                                                                <p className="text-xs font-bold uppercase text-zinc-500">{group.title}</p>
+                                                                <button
+                                                                    type="button"
+                                                                    className="text-xs text-emerald-700 hover:underline"
+                                                                    onClick={() => {
+                                                                        const allSelected = group.permissions.every((p) => roleForm.permissions.includes(p));
+                                                                        setRoleForm((c) => ({
+                                                                            ...c,
+                                                                            permissions: allSelected
+                                                                                ? c.permissions.filter((p) => !group.permissions.includes(p))
+                                                                                : [...new Set([...c.permissions, ...group.permissions])],
+                                                                        }));
+                                                                    }}
+                                                                >
+                                                                    {group.permissions.every((p) => roleForm.permissions.includes(p)) ? 'Deselect all' : 'Select all'}
+                                                                </button>
+                                                            </div>
+                                                            <div className="grid gap-2 sm:grid-cols-2">
+                                                                {group.permissions.map((permission) => (
+                                                                    <label key={permission} className="flex cursor-pointer items-center gap-2 text-sm font-medium text-zinc-700">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            className="rounded"
+                                                                            checked={roleForm.permissions.includes(permission)}
+                                                                            onChange={() => togglePermission(permission)}
+                                                                        />
+                                                                        {formatPermissionLabel(permission)}
+                                                                    </label>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="mt-auto flex gap-3 border-t border-zinc-100 pt-4">
+                                                <button
+                                                    type="submit"
+                                                    disabled={roleSaving}
+                                                    className="admin-button flex-1 rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-60"
+                                                >
+                                                    {roleSaving ? 'Saving…' : editingRoleId ? 'Save Changes' : 'Create Role'}
+                                                </button>
+                                                <button type="button" onClick={() => setRoleDrawerOpen(false)} className="rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-100">
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </aside>
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {activeModule === 'home-content' && (
+                    {canViewModule('home-content') && activeModule === 'home-content' && (
                         <div className="mt-6 space-y-5">
                             <div className="admin-card rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -8799,7 +9189,7 @@ function AdminPage() {
 
                                         <div className="flex flex-col gap-3 border-t border-zinc-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
                                             <p className="min-h-6 text-sm font-semibold text-emerald-700">{homeCmsNotice}</p>
-                                            <button type="button" onClick={saveHomeCms} disabled={homeCmsSaving} className="admin-button rounded-lg bg-emerald-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50">
+                                            <button type="button" onClick={saveHomeCms} disabled={homeCmsSaving || !can('content.update')} className="admin-button rounded-lg bg-emerald-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50" title={!can('content.update') ? 'Requires content.update permission' : undefined}>
                                                 {homeCmsSaving ? 'Saving...' : 'Save Latest News and Updates'}
                                             </button>
                                         </div>
@@ -8809,7 +9199,7 @@ function AdminPage() {
                         </div>
                     )}
 
-                    {activeModule === 'accommodation' && (
+                    {canViewModule('accommodation') && activeModule === 'accommodation' && (
                         <div className="mt-6 space-y-5">
                             <div className="admin-card rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
                                 {accommodationCmsLoading ? (
@@ -8922,8 +9312,9 @@ function AdminPage() {
                                             <button
                                                 type="button"
                                                 onClick={saveAccommodationCms}
-                                                disabled={accommodationCmsSaving}
+                                                disabled={accommodationCmsSaving || !can('content.update')}
                                                 className="admin-button rounded-lg bg-emerald-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50"
+                                                title={!can('content.update') ? 'Requires content.update permission' : undefined}
                                             >
                                                 {accommodationCmsSaving ? 'Saving...' : `Save ${activeAccommodationSectionMeta.label}`}
                                             </button>
@@ -8934,7 +9325,7 @@ function AdminPage() {
                         </div>
                     )}
 
-                    {activeModule === 'abstracts' && (
+                    {canViewModule('abstracts') && activeModule === 'abstracts' && (
                         <div className="mt-6 space-y-8">
                             {/* ── Abstract Submissions ─────────────────────────────── */}
                             {activeAbstractsSection === 'student-abstracts' && (
@@ -9206,6 +9597,7 @@ function AdminPage() {
                                             title="Abstract Book Preview"
                                             className="h-[500px] w-full rounded-lg border border-zinc-200"
                                         />
+                                        {can('content.update') && (
                                         <div className="flex gap-3">
                                             <label className="cursor-pointer rounded-lg border border-zinc-300 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100">
                                                 {abstractBookUploading ? 'Uploading...' : 'Replace PDF'}
@@ -9215,9 +9607,10 @@ function AdminPage() {
                                                 Remove
                                             </button>
                                         </div>
+                                        )}
                                         {abstractBookError && <p className="text-xs font-medium text-red-600">{abstractBookError}</p>}
                                     </div>
-                                ) : (
+                                ) : can('content.update') ? (
                                     <div className="mt-5">
                                         <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 px-6 py-12 text-center transition hover:border-emerald-500 hover:bg-emerald-50/30">
                                             {abstractBookUploading ? (
@@ -9235,13 +9628,15 @@ function AdminPage() {
                                         </label>
                                         {abstractBookError && <p className="mt-2 text-xs font-medium text-red-600">{abstractBookError}</p>}
                                     </div>
+                                ) : (
+                                    <p className="mt-5 text-sm text-zinc-500">No abstract book uploaded. You need <strong>content.update</strong> permission to upload.</p>
                                 )}
                             </div>
                             )}
                         </div>
                     )}
 
-                    {activeModule === 'skill-competitions' && (
+                    {canViewModule('skill-competitions') && activeModule === 'skill-competitions' && (
                         <div className="mt-6 space-y-8">
                             <div className="rounded-xl border border-zinc-200 bg-white p-6">
                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

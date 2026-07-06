@@ -1522,6 +1522,7 @@ function mapRegistration(row, competitions = []) {
         category: row.category || '',
         ipaMemberId: row.ipa_member_id || '',
         stateOfResidence: row.state_of_residence || '',
+        organization: row.organization || '',
         whatsappNumber: row.whatsapp_number || '',
         email: row.email || '',
         gender: row.gender || '',
@@ -1571,6 +1572,7 @@ function mapAdminRegistration(row) {
         category: row.category || '',
         ipaMemberId: row.ipa_member_id || '',
         stateOfResidence: row.state_of_residence || '',
+        organization: row.organization || '',
         whatsappNumber: row.whatsapp_number || '',
         email: row.email || '',
         gender: row.gender || '',
@@ -1654,6 +1656,7 @@ async function saveRegistration(sql, data, submit = false) {
                 ['Name of Participant', data.participantName],
                 ['Category', data.category],
                 ['State of Residence', data.stateOfResidence],
+                ['Organization', data.organization],
                 ['WhatsApp Number', data.whatsappNumber],
                 ['Email ID', data.email],
                 ['Gender', data.gender],
@@ -1752,7 +1755,7 @@ async function saveRegistration(sql, data, submit = false) {
         INSERT INTO event_registrations (
             draft_token, registration_mode, participant_name, institution_name,
             group_coordinator_name, group_coordinator_email, group_coordinator_whatsapp,
-            expected_participants, group_members, category, ipa_member_id, state_of_residence, whatsapp_number, email,
+            expected_participants, group_members, category, ipa_member_id, state_of_residence, organization, whatsapp_number, email,
             gender, food_preference, course_of_study, college_with_state,
             competition_fee_acknowledged, pre_conference_workshop,
             selected_workshops, workshop_fee_acknowledged, presentation_type,
@@ -1768,6 +1771,7 @@ async function saveRegistration(sql, data, submit = false) {
             ${expectedParticipants}, ${JSON.stringify(groupMembers)}::jsonb, ${data.category || null},
             ${normalizedIpaMemberId || null},
             ${data.stateOfResidence || null},
+            ${String(data.organization || '').trim() || null},
             ${data.whatsappNumber || null}, ${data.email || null}, ${data.gender || null}, ${data.foodPreference || null},
             ${data.courseOfStudy || null}, ${data.collegeWithState || null},
             ${booleanValue(data.competitionFeeAcknowledged)}, ${preConferenceWorkshop || null},
@@ -1791,6 +1795,7 @@ async function saveRegistration(sql, data, submit = false) {
             category = EXCLUDED.category,
             ipa_member_id = EXCLUDED.ipa_member_id,
             state_of_residence = EXCLUDED.state_of_residence,
+            organization = EXCLUDED.organization,
             whatsapp_number = EXCLUDED.whatsapp_number,
             email = EXCLUDED.email,
             gender = EXCLUDED.gender,
@@ -3084,6 +3089,38 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             return send(response, 201, { role: publicRole(rows[0]) });
         }
 
+        const roleMatch = path.match(/^admin\/roles\/([^/]+)$/);
+        if (roleMatch && request.method === 'PATCH') {
+            if (!requirePermission(session, 'role.manage')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const roleId = roleMatch[1];
+            const rows = await sql`
+                UPDATE admin_roles
+                SET name = ${String(request.body?.name || '').trim()},
+                    description = ${String(request.body?.description || '').trim()},
+                    permissions = ${JSON.stringify(request.body?.permissions || [])}::jsonb,
+                    updated_at = NOW()
+                WHERE id = ${roleId}
+                RETURNING *
+            `;
+            if (!rows.length) return send(response, 404, { error: 'Role not found.' });
+            return send(response, 200, { role: publicRole(rows[0]) });
+        }
+
+        if (roleMatch && request.method === 'DELETE') {
+            if (!requirePermission(session, 'role.manage')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const roleId = roleMatch[1];
+            const assigned = await sql`SELECT id FROM admin_users WHERE role_id = ${roleId} LIMIT 1`;
+            if (assigned.length) {
+                return send(response, 400, { error: 'Cannot delete a role that is assigned to active users.' });
+            }
+            await sql`DELETE FROM admin_roles WHERE id = ${roleId}`;
+            return send(response, 200, { ok: true });
+        }
+
         if (path === 'admin/users' && request.method === 'POST') {
             if (!requirePermission(session, 'user.create')) {
                 return send(response, 403, { error: 'Permission denied.' });
@@ -3129,10 +3166,41 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
                     WHERE id = ${userId}
                     RETURNING *
                 `;
+            } else if (action === 'profile') {
+                rows = await sql`
+                    UPDATE admin_users
+                    SET name = ${String(request.body.name || '').trim()},
+                        email = ${String(request.body.email || '').trim().toLowerCase()},
+                        mobile = ${String(request.body.mobile || '').trim() || null},
+                        role_id = ${request.body.roleId || null},
+                        status = ${request.body.status || 'Active'},
+                        updated_at = NOW()
+                    WHERE id = ${userId}
+                    RETURNING *
+                `;
             } else {
                 return send(response, 400, { error: 'Unsupported user update.' });
             }
+            if (!rows || !rows.length) return send(response, 404, { error: 'User not found.' });
             return send(response, 200, { user: publicUser(rows[0]) });
+        }
+
+        if (userMatch && request.method === 'DELETE') {
+            if (!requirePermission(session, 'user.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const userId = userMatch[1];
+            if (String(userId) === String(session.userId)) {
+                return send(response, 400, { error: 'You cannot delete your own account.' });
+            }
+            const target = await sql`SELECT role_id FROM admin_users WHERE id = ${userId} LIMIT 1`;
+            if (!target.length) return send(response, 404, { error: 'User not found.' });
+            if (target[0].role_id === 'role-super-admin') {
+                return send(response, 400, { error: 'Super Admin accounts cannot be deleted.' });
+            }
+            await sql`DELETE FROM admin_sessions WHERE user_id = ${userId}`;
+            await sql`DELETE FROM admin_users WHERE id = ${userId}`;
+            return send(response, 200, { ok: true });
         }
 
         if (path === 'admin/accommodation-travel' && request.method === 'GET') {

@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS event_registrations (
     category VARCHAR(100),
     ipa_member_id VARCHAR(30),
     state_of_residence VARCHAR(100),
+    organization VARCHAR(180),
     whatsapp_number VARCHAR(25),
     email VARCHAR(180),
     gender VARCHAR(20),
@@ -58,6 +59,7 @@ ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_email_confirmation V
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_core_area VARCHAR(100);
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS gender VARCHAR(20);
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS transaction_date DATE;
+ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS organization VARCHAR(180);
 UPDATE event_registrations
 SET selected_workshops = jsonb_build_array(pre_conference_workshop)
 WHERE selected_workshops = '[]'::jsonb AND pre_conference_workshop IS NOT NULL;
