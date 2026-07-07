@@ -634,8 +634,20 @@ const permissionGroups = [
         permissions: ['report.view', 'report.export'],
     },
     {
-        title: 'Content',
-        permissions: ['content.view', 'content.update'],
+        title: 'Home CMS',
+        permissions: ['home-content.view', 'home-content.update'],
+    },
+    {
+        title: 'Accommodation CMS',
+        permissions: ['accommodation.view', 'accommodation.update'],
+    },
+    {
+        title: 'Scientific Content',
+        permissions: ['scientific.view', 'scientific.update'],
+    },
+    {
+        title: 'Abstracts CMS',
+        permissions: ['abstracts.view', 'abstracts.update'],
     },
     {
         title: 'Administration',
@@ -6052,10 +6064,10 @@ function AdminPage() {
         programs: 'program.view',
         winners: 'winner.view',
         reports: 'report.view',
-        'home-content': 'content.view',
-        accommodation: 'content.view',
-        scientific: 'content.view',
-        abstracts: 'content.view',
+        'home-content': 'home-content.view',
+        accommodation: 'accommodation.view',
+        scientific: 'scientific.view',
+        abstracts: 'abstracts.view',
         'skill-competitions': 'registration.view',
         users: 'user.view',
         audit: 'audit.view',
@@ -6067,7 +6079,7 @@ function AdminPage() {
         const perm = moduleViewPermission[moduleId];
         if (!perm) return true; // dashboard — always visible
         // abstracts also accessible with registration.view
-        if (moduleId === 'abstracts') return can('content.view') || can('registration.view');
+        if (moduleId === 'abstracts') return can('abstracts.view') || can('registration.view');
         // payments also viewable with registration.view
         if (moduleId === 'payments') return can('payment.verify') || can('registration.view');
         return can(perm);
@@ -9189,7 +9201,7 @@ function AdminPage() {
 
                                         <div className="flex flex-col gap-3 border-t border-zinc-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
                                             <p className="min-h-6 text-sm font-semibold text-emerald-700">{homeCmsNotice}</p>
-                                            <button type="button" onClick={saveHomeCms} disabled={homeCmsSaving || !can('content.update')} className="admin-button rounded-lg bg-emerald-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50" title={!can('content.update') ? 'Requires content.update permission' : undefined}>
+                                            <button type="button" onClick={saveHomeCms} disabled={homeCmsSaving || !can('home-content.update')} className="admin-button rounded-lg bg-emerald-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50" title={!can('home-content.update') ? 'Requires home-content.update permission' : undefined}>
                                                 {homeCmsSaving ? 'Saving...' : 'Save Latest News and Updates'}
                                             </button>
                                         </div>
@@ -9312,9 +9324,9 @@ function AdminPage() {
                                             <button
                                                 type="button"
                                                 onClick={saveAccommodationCms}
-                                                disabled={accommodationCmsSaving || !can('content.update')}
+                                                disabled={accommodationCmsSaving || !can('accommodation.update')}
                                                 className="admin-button rounded-lg bg-emerald-800 px-5 py-2.5 text-sm font-bold text-white hover:bg-emerald-900 disabled:opacity-50"
-                                                title={!can('content.update') ? 'Requires content.update permission' : undefined}
+                                                title={!can('accommodation.update') ? 'Requires accommodation.update permission' : undefined}
                                             >
                                                 {accommodationCmsSaving ? 'Saving...' : `Save ${activeAccommodationSectionMeta.label}`}
                                             </button>
@@ -9597,7 +9609,7 @@ function AdminPage() {
                                             title="Abstract Book Preview"
                                             className="h-[500px] w-full rounded-lg border border-zinc-200"
                                         />
-                                        {can('content.update') && (
+                                        {can('abstracts.update') && (
                                         <div className="flex gap-3">
                                             <label className="cursor-pointer rounded-lg border border-zinc-300 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100">
                                                 {abstractBookUploading ? 'Uploading...' : 'Replace PDF'}
@@ -9610,7 +9622,7 @@ function AdminPage() {
                                         )}
                                         {abstractBookError && <p className="text-xs font-medium text-red-600">{abstractBookError}</p>}
                                     </div>
-                                ) : can('content.update') ? (
+                                ) : can('abstracts.update') ? (
                                     <div className="mt-5">
                                         <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 px-6 py-12 text-center transition hover:border-emerald-500 hover:bg-emerald-50/30">
                                             {abstractBookUploading ? (
@@ -9629,7 +9641,7 @@ function AdminPage() {
                                         {abstractBookError && <p className="mt-2 text-xs font-medium text-red-600">{abstractBookError}</p>}
                                     </div>
                                 ) : (
-                                    <p className="mt-5 text-sm text-zinc-500">No abstract book uploaded. You need <strong>content.update</strong> permission to upload.</p>
+                                    <p className="mt-5 text-sm text-zinc-500">No abstract book uploaded. You need <strong>abstracts.update</strong> permission to upload.</p>
                                 )}
                             </div>
                             )}
