@@ -1430,7 +1430,8 @@ async function ensureRegistrationEnhancements(sql) {
         ADD COLUMN IF NOT EXISTS hr_core_area VARCHAR(100),
         ADD COLUMN IF NOT EXISTS gender VARCHAR(20),
         ADD COLUMN IF NOT EXISTS ipa_member_id VARCHAR(30),
-        ADD COLUMN IF NOT EXISTS transaction_date DATE
+        ADD COLUMN IF NOT EXISTS transaction_date DATE,
+        ADD COLUMN IF NOT EXISTS organization VARCHAR(180)
     `;
     await sql`
         ALTER TABLE event_registrations
