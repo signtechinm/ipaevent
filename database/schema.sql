@@ -21,17 +21,17 @@ CREATE TABLE IF NOT EXISTS event_registrations (
     course_of_study VARCHAR(80),
     college_with_state TEXT,
     competition_fee_acknowledged BOOLEAN DEFAULT FALSE,
-    pre_conference_workshop VARCHAR(80),
+    pre_conference_workshop TEXT,
     selected_workshops JSONB NOT NULL DEFAULT '[]'::jsonb,
     workshop_fee_acknowledged BOOLEAN DEFAULT FALSE,
-    presentation_type VARCHAR(80),
+    presentation_type TEXT,
     hr_college_with_state TEXT,
     hr_course_or_qualification VARCHAR(180),
     hr_whatsapp_number VARCHAR(25),
     hr_whatsapp_confirmation VARCHAR(25),
     hr_email VARCHAR(180),
     hr_email_confirmation VARCHAR(180),
-    hr_core_area VARCHAR(100),
+    hr_core_area TEXT,
     registration_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
     competition_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
     workshop_fee NUMERIC(10, 2) NOT NULL DEFAULT 0,
@@ -60,6 +60,10 @@ ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS hr_core_area VARCHAR(10
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS gender VARCHAR(20);
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS transaction_date DATE;
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS organization VARCHAR(180);
+ALTER TABLE event_registrations
+    ALTER COLUMN pre_conference_workshop TYPE TEXT,
+    ALTER COLUMN presentation_type TYPE TEXT,
+    ALTER COLUMN hr_core_area TYPE TEXT;
 UPDATE event_registrations
 SET selected_workshops = jsonb_build_array(pre_conference_workshop)
 WHERE selected_workshops = '[]'::jsonb AND pre_conference_workshop IS NOT NULL;

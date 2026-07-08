@@ -1433,6 +1433,12 @@ async function ensureRegistrationEnhancements(sql) {
         ADD COLUMN IF NOT EXISTS transaction_date DATE
     `;
     await sql`
+        ALTER TABLE event_registrations
+        ALTER COLUMN pre_conference_workshop TYPE TEXT,
+        ALTER COLUMN presentation_type TYPE TEXT,
+        ALTER COLUMN hr_core_area TYPE TEXT
+    `;
+    await sql`
         UPDATE event_registrations
         SET selected_workshops = jsonb_build_array(pre_conference_workshop)
         WHERE selected_workshops = '[]'::jsonb AND pre_conference_workshop IS NOT NULL
