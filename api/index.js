@@ -2119,6 +2119,10 @@ function requirePermission(user, permission) {
     return user?.permissions?.includes(permission);
 }
 
+function requireAnyPermission(user, permissions = []) {
+    return permissions.some((permission) => requirePermission(user, permission));
+}
+
 function publicRole(row) {
     return {
         id: row.id,
@@ -3211,7 +3215,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
         }
 
         if (path === 'admin/accommodation-travel' && request.method === 'GET') {
-            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.view')) {
+            if (session.role_id !== 'role-super-admin' && !requireAnyPermission(session, ['accommodation.view', 'content.view'])) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
             const row = await ensureAccommodationTravelContent(sql);
@@ -3219,7 +3223,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
         }
 
         if (path === 'admin/home-content' && request.method === 'GET') {
-            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.view')) {
+            if (session.role_id !== 'role-super-admin' && !requireAnyPermission(session, ['home-content.view', 'content.view'])) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
             const row = await ensureHomeContent(sql);
@@ -3227,7 +3231,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
         }
 
         if (path === 'admin/accommodation-travel/tourist-attraction-photo' && request.method === 'POST') {
-            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
+            if (session.role_id !== 'role-super-admin' && !requireAnyPermission(session, ['accommodation.update', 'content.update'])) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
 
@@ -3276,7 +3280,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
         }
 
         if (path === 'admin/accommodation-travel/tourist-attraction-photo' && request.method === 'DELETE') {
-            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
+            if (session.role_id !== 'role-super-admin' && !requireAnyPermission(session, ['accommodation.update', 'content.update'])) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
 
@@ -3294,7 +3298,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
         }
 
         if (path === 'admin/accommodation-travel' && request.method === 'PUT') {
-            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
+            if (session.role_id !== 'role-super-admin' && !requireAnyPermission(session, ['accommodation.update', 'content.update'])) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
             await ensureAccommodationTravelContent(sql);
@@ -3312,7 +3316,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
         }
 
         if (path === 'admin/home-content' && request.method === 'PUT') {
-            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
+            if (session.role_id !== 'role-super-admin' && !requireAnyPermission(session, ['home-content.update', 'content.update'])) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
             await ensureHomeContent(sql);
@@ -3330,7 +3334,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
         }
 
         if (path === 'admin/abstract-book' && request.method === 'GET') {
-            if (!requirePermission(session, 'registration.view') && !requirePermission(session, 'content.view')) {
+            if (!requireAnyPermission(session, ['registration.view', 'abstracts.view', 'content.view'])) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
             const row = await ensureAbstractBookContent(sql);
@@ -3338,7 +3342,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
         }
 
         if (path === 'admin/abstract-book' && request.method === 'POST') {
-            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
+            if (session.role_id !== 'role-super-admin' && !requireAnyPermission(session, ['abstracts.update', 'content.update'])) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
 
@@ -3384,7 +3388,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
         }
 
         if (path === 'admin/abstract-book' && request.method === 'DELETE') {
-            if (session.role_id !== 'role-super-admin' && !requirePermission(session, 'content.update')) {
+            if (session.role_id !== 'role-super-admin' && !requireAnyPermission(session, ['abstracts.update', 'content.update'])) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
 
