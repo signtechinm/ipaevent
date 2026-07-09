@@ -751,6 +751,9 @@ function buildConfirmedRegistrationMail(registration) {
     `).join('');
     const htmlBody = `
         <p>Dear ${safeName},</p>
+        <div style="margin:0 0 16px;padding:12px 16px;border-left:4px solid #f59e0b;background:#fffbeb;border-radius:4px">
+            <strong>Please Note:</strong> Read the whole mail body till end, as it contains Important Information and hyperlinks for participants.
+        </div>
         <p><strong>Congratulations!</strong></p>
         <p>Your registration for the <strong>14th IPA National Student Congress (IPA NSC) 2026</strong>, organized by the Indian Pharmaceutical Association (IPA) Kerala State Branch, has been verified and confirmed.</p>
         <p>Your Registration/Delegate ID Number is: <strong>${safeDelegateId}</strong></p>
@@ -766,6 +769,8 @@ function buildConfirmedRegistrationMail(registration) {
             <li>Please save this QR gate pass for future reference. You can present it digitally on your smartphone or carry a printed copy to the venue at the registration desk for quick barcode scanning and entry.</li>
             <li>Visit our official web portal for brochures, detailed information, and guidelines of scientific events and student competitions:<br><a href="${portalUrl}">${portalUrl}</a></li>
             <li>Join the Congress WhatsApp Community for real-time announcements, instant scheduling changes, and emergency updates during the event:<br><a href="${whatsAppCommunityUrl}">${whatsAppCommunityUrl}</a></li>
+            <li>For SCIENTIFIC SERVICES: Guidelines &amp; Online Submissions (Abstract as a single page PDF / Presentation Video as Viewable link)<br>Click here: <a href="https://nsc2026.ipakerala.org/scientific-service">https://nsc2026.ipakerala.org/scientific-service</a><br><em>Note: Only applicable participants can submit their abstracts followed by Video Submission.</em></li>
+            <li>For ALL STUDENTS SKILL COMPETITIONS: (Click below link &amp; Scroll for Rules, Guidelines, Topics and Submission link in each Competition)<br><a href="https://nsc2026.ipakerala.org/student-skill-competitions">https://nsc2026.ipakerala.org/student-skill-competitions</a><br><em>Note: Submission of Entries in any other mode will be rejected.</em></li>
         </ol>
         <p>We look forward to welcoming you to an incredible, high-energy congress. Travel safe!</p>
         <p>Warm regards,</p>
@@ -773,6 +778,7 @@ function buildConfirmedRegistrationMail(registration) {
     `;
     const textBody = [
         `Dear ${participantName},`,
+        'Please Note: Read the whole mail body till end, as it contains Important Information and hyperlinks for participants.',
         'Congratulations!',
         'Your registration for the 14th IPA National Student Congress (IPA NSC) 2026, organized by the Indian Pharmaceutical Association (IPA) Kerala State Branch, has been verified and confirmed.',
         `Your Registration/Delegate ID Number is: ${delegateId}`,
@@ -787,6 +793,8 @@ function buildConfirmedRegistrationMail(registration) {
         '1. Please save this QR gate pass for future reference. You can present it digitally on your smartphone or carry a printed copy to the venue at the registration desk for quick barcode scanning and entry.',
         `2. Visit our official web portal for brochures, detailed information, and guidelines of scientific events and student competitions: ${portalUrl}`,
         `3. Join the Congress WhatsApp Community for real-time announcements, instant scheduling changes, and emergency updates during the event: ${whatsAppCommunityUrl}`,
+        '4. For SCIENTIFIC SERVICES: Guidelines & Online Submissions (Abstract as a single page PDF / Presentation Video as Viewable link)\nClick here: https://nsc2026.ipakerala.org/scientific-service\nNote: Only applicable participants can submit their abstracts followed by Video Submission.',
+        '5. For ALL STUDENTS SKILL COMPETITIONS: (Click below link & Scroll for Rules, Guidelines, Topics and Submission link in each Competition)\nhttps://nsc2026.ipakerala.org/student-skill-competitions\nNote: Submission of Entries in any other mode will be rejected.',
         'We look forward to welcoming you to an incredible, high-energy congress. Travel safe!',
         'Warm regards,',
         'Organizing Secretariat',
