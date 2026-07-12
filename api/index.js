@@ -2635,31 +2635,6 @@ export default async function handler(request, response) {
             });
         }
 
-        if (path === 'registrations/draft' && request.method === 'GET') {
-            await ensureRegistrationEnhancements(sql);
-            const token = request.query.token;
-            if (!token) {
-                return send(response, 400, { error: 'Draft token is required.' });
-            }
-            const rows = await sql`SELECT * FROM event_registrations WHERE draft_token = ${token} LIMIT 1`;
-            if (!rows.length) {
-                return send(response, 404, { error: 'Draft not found.' });
-            }
-            const competitions = await sql`
-                SELECT competition_name FROM registration_competitions
-                WHERE registration_id = ${rows[0].id}
-                ORDER BY id
-            `;
-            return send(response, 200, {
-                registration: mapRegistration(rows[0], competitions.map((item) => item.competition_name)),
-            });
-        }
-
-        if (path === 'registrations/draft' && request.method === 'POST') {
-            const registration = await saveRegistration(sql, request.body || {});
-            return send(response, 200, { registration });
-        }
-
         if (path === 'registrations/submit' && request.method === 'POST') {
             const registration = await saveRegistration(sql, request.body || {}, true);
             await notifyRegistrationSubmitted(registration);

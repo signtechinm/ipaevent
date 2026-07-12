@@ -366,7 +366,8 @@ function normalizeAccommodationCms(data = {}) {
     };
 }
 
-const registrationDraftKey = 'ipa-nsc-2026-registration-draft-token';
+const registrationDraftKey = 'ipa-nsc-2026-registration-local-draft';
+const registrationDraftMaxAge = 72 * 60 * 60 * 1000;
 
 const groupMemberColumns = [
     ['name', 'Name'],
@@ -1438,19 +1439,24 @@ function RegistrationPage() {
     }, []);
 
     useEffect(() => {
-        const draftToken = window.localStorage.getItem(registrationDraftKey);
-        if (!draftToken) {
+        const storedDraft = window.localStorage.getItem(registrationDraftKey);
+        if (!storedDraft) {
             return;
         }
 
-        apiRequest(`registrations/draft?token=${encodeURIComponent(draftToken)}`)
-            .then(({ registration }) => {
-                setFormData({ ...initialRegistration, ...registration });
-                setNotice('Your saved draft was loaded.');
-            })
-            .catch(() => {
+        try {
+            const draft = JSON.parse(storedDraft);
+            const savedAt = new Date(draft.savedAt).getTime();
+            if (!draft.formData || !Number.isFinite(savedAt) || Date.now() - savedAt > registrationDraftMaxAge) {
                 window.localStorage.removeItem(registrationDraftKey);
-            });
+                return;
+            }
+            setFormData({ ...initialRegistration, ...draft.formData });
+            setSavedSections(draft.savedSections || {});
+            setNotice('Your locally saved draft was loaded.');
+        } catch {
+            window.localStorage.removeItem(registrationDraftKey);
+        }
     }, []);
 
     const registrationCategories = categoryCatalog.length
@@ -1648,26 +1654,22 @@ function RegistrationPage() {
         }
     }
 
-    async function saveSection(sectionId) {
+    function saveSection(sectionId) {
         if (sectionId === 'general' && !validateGeneralFields()) {
             return;
         }
-        setIsSaving(true);
-        setNotice('Saving...');
 
         try {
-            const { registration } = await apiRequest('registrations/draft', {
-                method: 'POST',
-                body: JSON.stringify(formData),
-            });
-            setFormData((current) => ({ ...current, ...registration }));
-            window.localStorage.setItem(registrationDraftKey, registration.draftToken);
-            setSavedSections((current) => ({ ...current, [sectionId]: true }));
-            setNotice('Section saved to the database.');
-        } catch (error) {
-            setNotice(error.message);
-        } finally {
-            setIsSaving(false);
+            const nextSavedSections = { ...savedSections, [sectionId]: true };
+            window.localStorage.setItem(registrationDraftKey, JSON.stringify({
+                savedAt: new Date().toISOString(),
+                formData,
+                savedSections: nextSavedSections,
+            }));
+            setSavedSections(nextSavedSections);
+            setNotice('Section saved in this browser. Nothing has been submitted yet.');
+        } catch {
+            setNotice('This browser could not save the section. Please keep this page open and try again.');
         }
     }
 
@@ -1937,7 +1939,7 @@ function RegistrationPage() {
                 body: JSON.stringify(formData),
             });
             setFormData((current) => ({ ...current, ...registration }));
-            window.localStorage.setItem(registrationDraftKey, registration.draftToken);
+            window.localStorage.removeItem(registrationDraftKey);
             setSavedSections((current) => ({ ...current, payment: true, review: true, confirmation: true }));
             setActiveTab('confirmation');
             setNotice('Registration submitted to the database.');
@@ -3130,7 +3132,7 @@ function RegistrationPage() {
 
                         <div className="mt-6 flex flex-col gap-3 border-t border-zinc-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
                             <div className="min-h-6 text-sm font-semibold text-emerald-700">
-                                {sectionSaved ? 'This section is saved.' : notice}
+                                {sectionSaved ? 'Saved in this browser only. Not submitted to the database.' : notice}
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 <button
