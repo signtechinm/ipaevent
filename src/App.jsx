@@ -602,8 +602,8 @@ const sponsorTabs = [
     { id: 'organization', label: 'Organization' },
     { id: 'sponsorship', label: 'Sponsorship' },
     { id: 'advertisement', label: 'Souvenir Ad' },
-    { id: 'payment', label: 'Payment' },
     { id: 'review', label: 'Review' },
+    { id: 'payment', label: 'Payment' },
     { id: 'confirmation', label: 'Confirmation' },
 ];
 
@@ -3320,9 +3320,16 @@ function SponsorRegistrationPage() {
     }
 
     async function submitSponsorApplication() {
-        const error = validateSection('review');
-        if (error) {
-            setNotice(error);
+        const reviewError = validateSection('review');
+        if (reviewError) {
+            setActiveTab('review');
+            setNotice(reviewError);
+            return;
+        }
+        const paymentError = validateSection('payment');
+        if (paymentError) {
+            setActiveTab('payment');
+            setNotice(paymentError);
             return;
         }
 
@@ -3335,7 +3342,7 @@ function SponsorRegistrationPage() {
             });
             setFormData((current) => ({ ...current, ...sponsor }));
             window.localStorage.setItem(sponsorDraftKey, sponsor.draftToken);
-            setSavedSections((current) => ({ ...current, review: true, confirmation: true }));
+            setSavedSections((current) => ({ ...current, review: true, payment: true, confirmation: true }));
             setActiveTab('confirmation');
             setNotice('Sponsor application submitted.');
         } catch (errorMessage) {
@@ -3637,27 +3644,34 @@ function SponsorRegistrationPage() {
 
                             {activeTab === 'payment' && (
                                 <div className="mt-6 grid gap-5 md:grid-cols-2">
-                                    <div className="grid gap-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 md:col-span-2 lg:grid-cols-[1fr_340px] lg:items-start lg:p-6">
+                                    <div className="grid gap-5 rounded-xl border border-sky-200 bg-sky-50 p-4 md:col-span-2 lg:grid-cols-[1fr_340px] lg:items-start lg:p-6">
                                         <div>
-                                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Payment Collection</p>
-                                            <h3 className="mt-2 text-xl font-bold text-emerald-950">PHARMA FIRST</h3>
-                                            <div className="mt-4 rounded-lg border border-emerald-200 bg-white p-4 text-sm leading-7 text-zinc-700">
-                                                <p><span className="font-semibold text-zinc-950">Current A/C:</span> 31140200001427</p>
-                                                <p><span className="font-semibold text-zinc-950">IFSC:</span> BARB0MUVATT</p>
-                                                <p><span className="font-semibold text-zinc-950">Branch:</span> Muvattupuzha</p>
-                                                <p><span className="font-semibold text-zinc-950">MICR:</span> 686012252</p>
+                                            <p className="text-xs font-bold uppercase tracking-[0.14em] text-sky-700">Sponsor Payment</p>
+                                            <h3 className="mt-2 text-xl font-bold text-zinc-950">Pay using UPI or account transfer</h3>
+                                            <p className="mt-2 text-sm leading-6 text-zinc-700">Scan the QR code or transfer the sponsorship amount to the account below, then enter the transaction details and upload the receipt.</p>
+                                            <div className="mt-4 rounded-lg border border-sky-200 bg-white p-4">
+                                                <p className="text-xs font-bold uppercase tracking-[0.14em] text-sky-700">Bank Details</p>
+                                                <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+                                                    {[
+                                                        ['Account Name', '14TH NATIONAL IPA STUDENTS CONGRESS 2026'],
+                                                        ['Account Number', '0423073000000937'],
+                                                        ['Bank Name', 'SOUTH INDIAN BANK'],
+                                                        ['IFSC', 'SIBL0000423'],
+                                                        ['Branch', 'ERNAKULAM VENNALA'],
+                                                    ].map(([label, value]) => (
+                                                        <div key={label} className={label === 'Account Name' ? 'sm:col-span-2' : ''}>
+                                                            <dt className="text-xs font-bold uppercase tracking-wide text-zinc-500">{label}</dt>
+                                                            <dd className="mt-1 font-semibold text-zinc-950">{value}</dd>
+                                                        </div>
+                                                    ))}
+                                                </dl>
                                             </div>
-                                            <div className="mt-4 rounded-lg bg-emerald-900 px-4 py-3 text-white">
-                                                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200">Verified UPI ID</p>
-                                                <p className="mt-1 break-all font-mono text-sm font-bold">pharm94460427@barodampay</p>
-                                            </div>
-                                            <p className="mt-4 text-sm leading-6 text-emerald-900">Scan using any UPI or CBDC payment app, then enter the transaction reference and upload the receipt below.</p>
                                         </div>
-                                        <figure className="rounded-xl border border-emerald-200 bg-white p-3 shadow-sm">
-                                            <img src="/sponsor-payment-qr.jpg" alt="Verified PHARMA FIRST Bank of Baroda UPI payment QR code" className="mx-auto h-auto w-full max-w-xs rounded-lg" loading="lazy" />
+                                        <figure className="rounded-xl border border-sky-200 bg-white p-3 shadow-sm">
+                                            <img src="/sponsor.jpeg" alt="Sponsor registration payment QR code" className="mx-auto h-auto w-full max-w-xs rounded-lg object-contain" loading="lazy" />
                                             <figcaption className="mt-3 text-center">
-                                                <p className="text-xs font-bold text-zinc-800">Bank of Baroda Verified Merchant</p>
-                                                <a href="/pharm94460427@barodampayVerified%20Merchant.pdf" target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-semibold text-emerald-700 underline">Open verified merchant PDF</a>
+                                                <p className="text-xs font-bold uppercase tracking-wide text-sky-700">Sponsor Payment QR</p>
+                                                <p className="mt-1 text-xs font-semibold text-zinc-500">Scan using your preferred UPI payment app</p>
                                             </figcaption>
                                         </figure>
                                     </div>
@@ -3759,10 +3773,6 @@ function SponsorRegistrationPage() {
                                                 )?.label || 'None',
                                             ],
                                             ['Total Payable', formatInr(totals.total)],
-                                            ['Amount Paid', formatInr(formData.amountPaid)],
-                                            ['Transaction Reference', formData.transactionReference || 'Not entered'],
-                                            ['Payment Proof', formData.paymentProofName || 'Not selected'],
-                                            ['Payment Status', 'Verification required'],
                                         ].map(([label, value]) => (
                                             <div key={label} className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
                                                 <p className="text-xs font-bold uppercase text-zinc-500">{label}</p>
@@ -3827,7 +3837,7 @@ function SponsorRegistrationPage() {
                                             {isSaving ? 'Saving...' : 'Save Section'}
                                         </button>
                                     )}
-                                    {activeTab === 'review' ? (
+                                    {activeTab === 'payment' ? (
                                         <button
                                             type="button"
                                             onClick={submitSponsorApplication}
@@ -4880,8 +4890,8 @@ function SponsorSection() {
                                 Become a Sponsor
                             </a>
                             <a
-                                href="/sponsorship-brochure.pdf"
-                                download="14th-IPA-NSC-Sponsorship-Brochure.pdf"
+                                href="/14th IPA NSC Sponsorship Form.pdf"
+                                download="14th IPA NSC Sponsorship Form.pdf"
                                 className="button-pop inline-flex justify-center rounded-lg border border-[#11145f]/20 bg-white px-5 py-3 text-sm font-bold text-[#11145f] shadow-sm hover:border-[#11145f] hover:bg-[#11145f] hover:text-white"
                             >
                                 Sponsorship Brochure
