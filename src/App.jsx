@@ -6681,7 +6681,9 @@ function AdminPage() {
         ['Manual Review', registrations.filter((registration) => registration.paymentStatus === 'manual_verification_required').length, 'bg-sky-600'],
     ];
     const totalPaymentCount = paymentBreakdown.reduce((total, item) => total + item[1], 0);
-    const programSelectionCounts = registrations.reduce((counts, registration) => {
+    const programSelectionCounts = registrations
+        .filter((registration) => registration.registrationStatus === 'submitted')
+        .reduce((counts, registration) => {
         const addSelection = (name) => {
             if (!name) return;
             counts.set(name, (counts.get(name) || 0) + 1);
@@ -6697,11 +6699,35 @@ function AdminPage() {
         }
         return counts;
     }, new Map());
-    const programRegistrations = programs
-        .map((program) => [program.name, programSelectionCounts.get(program.name) || 0])
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .slice(0, 8);
-    const maxProgramRegistrations = Math.max(...programRegistrations.map((item) => item[1]), 1);
+    const mapProgramRegistration = (program) => ({
+        id: program.id,
+        name: program.name,
+        count: programSelectionCounts.get(program.name) || 0,
+        isActive: program.isActive,
+    });
+    const programRegistrationGroups = [
+        {
+            id: 'competitions',
+            label: 'Student Competitions',
+            programs: programs.filter((program) => program.type === 'competition').map(mapProgramRegistration),
+        },
+        {
+            id: 'pre-congress',
+            label: 'Pre-Congress Workshops',
+            programs: programs
+                .filter((program) => program.type === 'workshop' && program.name !== fipVaccinationWorkshopName)
+                .map(mapProgramRegistration),
+        },
+        {
+            id: 'post-congress',
+            label: 'Post-Congress Workshops',
+            programs: programs
+                .filter((program) => program.type === 'workshop' && program.name === fipVaccinationWorkshopName)
+                .map(mapProgramRegistration),
+        },
+    ];
+    const allProgramRegistrations = programRegistrationGroups.flatMap((group) => group.programs);
+    const maxProgramRegistrations = Math.max(...allProgramRegistrations.map((program) => program.count), 1);
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     const weeklyRegistrations = Array.from({ length: 7 }, (_, index) => {
@@ -7712,8 +7738,8 @@ function AdminPage() {
                                 </section>
                             </div>
 
-                            <div className="grid gap-6 xl:grid-cols-3">
-                                <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-5 xl:col-span-2">
+                            <div className="grid gap-6">
+                                <section className="w-full rounded-lg border border-zinc-200 bg-zinc-50 p-5">
                                     <h2 className="text-lg font-bold">Weekly Registrations</h2>
                                     <div className="mt-6 flex h-56 items-end gap-3 rounded-lg bg-white p-4 ring-1 ring-zinc-200">
                                         {weeklyRegistrations.map(([day, value]) => (
@@ -7733,18 +7759,56 @@ function AdminPage() {
 
                                 <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-5">
                                     <h2 className="text-lg font-bold">Program Registrations</h2>
-                                    <div className="mt-5 grid gap-3">
-                                        {programRegistrations.map(([label, value]) => (
-                                            <div key={label}>
-                                                <div className="mb-1 flex items-center justify-between gap-3 text-sm">
-                                                    <span className="font-semibold text-zinc-700">{label}</span>
-                                                    <span className="font-bold text-zinc-950">{value}</span>
-                                                </div>
-                                                <div className="h-3 overflow-hidden rounded-lg bg-white ring-1 ring-zinc-200">
-                                                    <div
-                                                        className="h-full rounded-lg bg-sky-600"
-                                                        style={{ width: `${value ? (value / maxProgramRegistrations) * 100 : 0}%` }}
-                                                    />
+                                    <p className="mt-1 text-xs font-medium text-zinc-500">All configured programs, including programs with no registrations.</p>
+                                    <div className="mt-5 grid gap-5 lg:grid-cols-2">
+                                        {[
+                                            {
+                                                id: 'student-competitions',
+                                                title: 'Student Competitions',
+                                                groups: programRegistrationGroups.filter((group) => group.id === 'competitions'),
+                                            },
+                                            {
+                                                id: 'congress-workshops',
+                                                title: 'Congress Workshops',
+                                                groups: programRegistrationGroups.filter((group) => group.id !== 'competitions'),
+                                            },
+                                        ].map((section) => (
+                                            <div key={section.id} className="rounded-lg border border-zinc-200 bg-white p-4">
+                                                <h3 className="text-sm font-bold uppercase tracking-wide text-sky-900">{section.title}</h3>
+                                                <div className="mt-4 grid gap-5">
+                                                    {section.groups.map((group) => (
+                                                        <div key={group.id}>
+                                                            {section.groups.length > 1 && (
+                                                                <div className="mb-3 flex items-center justify-between gap-3">
+                                                                    <h4 className="text-xs font-bold uppercase tracking-wide text-sky-700">{group.label}</h4>
+                                                                    <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-800">{group.programs.length}</span>
+                                                                </div>
+                                                            )}
+                                                            {group.programs.length ? (
+                                                                <div className="grid gap-3">
+                                                                    {group.programs.map((program) => (
+                                                                        <div key={program.id}>
+                                                                            <div className="mb-1 flex items-start justify-between gap-3 text-sm">
+                                                                                <span className="font-semibold leading-5 text-zinc-700">
+                                                                                    {program.name}
+                                                                                    {!program.isActive && <span className="ml-2 text-xs font-medium text-zinc-400">Hidden</span>}
+                                                                                </span>
+                                                                                <span className="shrink-0 font-bold text-zinc-950">{program.count}</span>
+                                                                            </div>
+                                                                            <div className="h-3 overflow-hidden rounded-lg bg-zinc-50 ring-1 ring-zinc-200">
+                                                                                <div
+                                                                                    className="h-full rounded-lg bg-sky-600"
+                                                                                    style={{ width: `${program.count ? (program.count / maxProgramRegistrations) * 100 : 0}%` }}
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <p className="rounded-lg bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-500 ring-1 ring-zinc-200">No programs configured in this section.</p>
+                                                            )}
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
                                         ))}
