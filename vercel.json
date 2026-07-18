@@ -36,6 +36,14 @@
         {
             "source": "/accommodation-travel",
             "destination": "/index.html"
+        },
+        {
+            "source": "/organizing-team",
+            "destination": "/index.html"
+        },
+        {
+            "source": "/workshops/:path*",
+            "destination": "/index.html"
         }
     ]
 }
