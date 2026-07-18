@@ -33,6 +33,7 @@ const siteMap = [
     },
     {
         title: 'Organizing Team',
+        link: '/organizing-team',
         pages: [
             'Organizing Team',
             'Patrons',
@@ -84,6 +85,15 @@ const pageHighlights = {
 
 const standalonePageLinks = {
     'Student Skill Competitions': '/student-skill-competitions',
+    'Organizing Team': '/organizing-team',
+    Patrons: '/organizing-team#patrons',
+    'LOC - Core Group': '/organizing-team#local-organising-committee-core-group',
+    'LOC - Sub Committee': '/organizing-team#chairpersons-of-various-committees',
+    'Advisors and Principals': '/organizing-team#advisors-and-mentors',
+    'IPA NEC 2026': '/organizing-team#national-organising-committee',
+    'IPA SF NEC 2026': '/organizing-team#ipa-sf-student-network',
+    'IPA Kerala SEC 2026': '/organizing-team#local-organising-committee-core-group',
+    'Partners and Sponsors': '/#partners-and-sponsors',
 };
 
 function pageHref(page) {
@@ -130,7 +140,7 @@ const preCongressWorkshops = [
     {
         title: '3D Printing and AI in Scientific Writing & Publications',
         events: [
-            { number: 1, name: '3D Printing' },
+            { number: 1, name: '3D Printing', detailsHref: '/workshops/3d-printing-in-pharmaceuticals' },
             { number: 2, name: 'AI in Scientific Writing & Publications' },
         ],
         date: '18 September 2026',
@@ -145,6 +155,80 @@ const preCongressWorkshops = [
         ],
         date: '18 September 2026',
         venue: 'Amrita School of Pharmacy, Ernakulam',
+    },
+];
+
+const organizingTeamSections = [
+    {
+        id: 'chief-patrons',
+        title: 'Chief Patrons',
+        members: [
+            ['Dr. B. Suresh', '/organising team/1) Chief Patrons/1) Dr. B. Suresh.webp', '32% center'],
+            ['Dr. S. V. Veeramani', '/organising team/1) Chief Patrons/2) Dr. S V Veeramani.png'],
+        ],
+    },
+    {
+        id: 'national-organising-committee',
+        title: 'National Organising Committee',
+        members: [
+            ['Dr. T. V. Narayana', '/organising team/2) National Organising Committee/1) Dr. T. V. Narayana.png'],
+            ['Dr. G. Sumalatha', '/organising team/2) National Organising Committee/2) Dr. G. Sumalatha.jpeg'],
+            ['Dr. T. Bharath Vikas', '/organising team/2) National Organising Committee/3) Dr. T. Bharath Vikas.jpeg'],
+            ['Dr. P. Jayasekhar', '/organising team/2) National Organising Committee/4) Dr. P. Jayasekhar.jpeg'],
+            ['Dr. John Joseph', '/organising team/2) National Organising Committee/5) Dr. John Joseph.jpeg'],
+            ['Ms. Medam Venkata Komali', '/organising team/2) National Organising Committee/6) Ms. Medam Venkata Komali.jpeg'],
+        ],
+    },
+    {
+        id: 'patrons',
+        title: 'Patrons',
+        members: [
+            ['Dr. Rajeev Singh Raghuvanshi', '/organising team/3) Patrons/1)  Dr Rajeev Singh Raghuvanshi.jpeg'],
+            ['Dr. C. P. Vijayan', '/organising team/3) Patrons/2) Dr. C P Vijayan.jpeg'],
+            ['Dr. V. Kalaiselvan', '/organising team/3) Patrons/7) Dr. V. Kalaiselvan.jpeg'],
+            ['Prof. Shantikumar Nair', '/organising team/3) Patrons/10) Prof. Shantikumar Nair.jpeg'],
+            ['Dr. L. Ramaswamy', '/organising team/3) Patrons/12) Dr. L. Ramaswamy.jpeg'],
+        ],
+    },
+    {
+        id: 'local-organising-committee-core-group',
+        title: 'Local Organising Committee — Core Group',
+        members: [
+            ['Mr. Shisi A.', '/organising team/8) Local Organising Committe ( Core Group )/10) Mr. Shisi A.jpeg'],
+            ['Mr. Prasanth Kumar M.', '/organising team/8) Local Organising Committe ( Core Group )/11) Mr. Prasanth Kumar. M.jpeg'],
+        ],
+    },
+    {
+        id: 'chairpersons-of-various-committees',
+        title: 'Chairpersons of Various Committees',
+        members: [
+            ['Dr. Suja Abraham', '/organising team/9) Chairpersons of Various Committes/13) Dr. Suja Abraham.jpeg'],
+            ['Mrs. Meena Chandran', '/organising team/9) Chairpersons of Various Committes/14) Mrs. Meena Chandran.jpeg'],
+            ['Dr. Sreeja C. Nair', '/organising team/9) Chairpersons of Various Committes/15) Dr. Sreeja C. Nair.jpeg'],
+            ['Dr. Ronald Peter', '/organising team/9) Chairpersons of Various Committes/18) Dr. Ronald Peter.jpeg'],
+            ['Dr. M. P. Narmadha', '/organising team/9) Chairpersons of Various Committes/21) Dr. M. P. Narmadha.jpeg'],
+        ],
+    },
+    {
+        id: 'advisors-and-mentors',
+        title: 'Advisors & Mentors',
+        members: [
+            ['Dr. K. Krishna Kumar', '/organising team/10) ADVISORS & Mentors/7) Dr K. Krishna Kumar.jpeg'],
+            ['Dr. Mohammed Haneefa K. P.', '/organising team/10) ADVISORS & Mentors/8) Dr.Mohammed Haneefa KP.jpeg'],
+            ['Dr. K. Radha', '/organising team/10) ADVISORS & Mentors/11) Dr.K. Radha.jpeg'],
+            ['Dr. Sibi P. I.', '/organising team/10) ADVISORS & Mentors/12) Dr.Sibi PI.jpeg'],
+            ['Dr. S. Kathirve', '/organising team/10) ADVISORS & Mentors/14) Dr. S. Kathirve.jpeg'],
+            ['Dr. Shiny George', '/organising team/10) ADVISORS & Mentors/15) Dr. Shiny George.jpeg'],
+            ['Dr. Sapna Shrikumar', '/organising team/10) ADVISORS & Mentors/16) Dr.Sapna Shrikumar.jpeg'],
+            ['Dr. P. S. Shiji Kumar', '/organising team/10) ADVISORS & Mentors/20) Dr.P.S. Shiji Kumar.jpeg'],
+        ],
+    },
+    {
+        id: 'ipa-sf-student-network',
+        title: 'IPA-SF Student Network',
+        members: [
+            ['Alan Jomon', '/organising team/12) IPA-SF Student Network/12) Alan Jomon.jpeg'],
+        ],
     },
 ];
 
@@ -1016,11 +1100,21 @@ function QuickFacts() {
                                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#df0867]">Pre-Congress Workshops</p>
                                     <h4 className="mt-3 grid gap-3 text-xl font-bold leading-snug text-[#11145f]">
                                         {workshop.events.map((event) => (
-                                            <span key={event.number} className="flex items-center gap-3">
+                                            <span key={event.number} className="flex items-start gap-3">
                                                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#11145f] text-sm font-black text-white shadow-lg">
                                                     {String(event.number).padStart(2, '0')}
                                                 </span>
-                                                <span>{event.name}</span>
+                                                <span className="min-w-0">
+                                                    <span className="block">{event.name}</span>
+                                                    {event.detailsHref && (
+                                                        <a
+                                                            href={event.detailsHref}
+                                                            className="mt-1 inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wide text-[#df0867] transition hover:text-[#a60049]"
+                                                        >
+                                                            View details <span aria-hidden="true">→</span>
+                                                        </a>
+                                                    )}
+                                                </span>
                                             </span>
                                         ))}
                                     </h4>
@@ -4805,7 +4899,7 @@ function OrganizingTeam() {
                                             <div className="mt-auto pt-5">
                                                 <div className="h-px bg-zinc-100" />
                                             <a
-                                                href={`#${slugify(item)}`}
+                                                href={pageHref(item)}
                                                 className="mt-4 inline-flex text-sm font-bold text-emerald-700 hover:text-emerald-900"
                                             >
                                                 View details
@@ -10535,6 +10629,210 @@ function ScientificServicePage() {
     );
 }
 
+function OrganizingTeamPage() {
+    return (
+        <div className="event-theme min-h-screen bg-zinc-50 text-zinc-950 antialiased">
+            <Header />
+            <main>
+                <section className="relative isolate overflow-hidden bg-[#11145f] py-16 text-white sm:py-20">
+                    <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(223,8,103,0.34),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(0,101,47,0.48),transparent_42%)]" />
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ffd36a]">14th National IPA Student Congress</p>
+                        <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight sm:text-5xl">Organizing Team</h1>
+                        <p className="mt-5 max-w-3xl text-lg leading-8 text-white/80">
+                            Meet the patrons, national and local committee members, advisors, mentors, and student leaders guiding the congress.
+                        </p>
+                        <nav className="mt-8 flex flex-wrap gap-2" aria-label="Organizing team sections">
+                            {organizingTeamSections.map((section) => (
+                                <a key={section.id} href={`#${section.id}`} className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white hover:text-[#11145f]">
+                                    {section.title}
+                                </a>
+                            ))}
+                        </nav>
+                    </div>
+                </section>
+
+                {organizingTeamSections.map((section, sectionIndex) => (
+                    <section
+                        key={section.id}
+                        id={section.id}
+                        className={`scroll-mt-24 py-14 sm:py-16 ${sectionIndex % 2 === 1 ? 'bg-white' : 'bg-zinc-50'}`}
+                    >
+                        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-end gap-4 border-b border-zinc-200 pb-5">
+                                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#11145f] text-sm font-black text-white shadow-md">
+                                    {String(sectionIndex + 1).padStart(2, '0')}
+                                </span>
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#df0867]">Organizing Team</p>
+                                    <h2 className="mt-1 text-2xl font-bold text-[#11145f] sm:text-3xl">{section.title}</h2>
+                                </div>
+                            </div>
+                            <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                                {section.members.map(([name, photo, objectPosition]) => (
+                                    <article key={photo} className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                                        <div className="aspect-[4/5] overflow-hidden bg-zinc-100">
+                                            <img
+                                                src={photo}
+                                                alt={name}
+                                                className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.03]"
+                                                style={objectPosition ? { objectPosition } : undefined}
+                                                loading="lazy"
+                                                decoding="async"
+                                            />
+                                        </div>
+                                        <div className="border-t-4 border-[#df0867] p-4 text-center">
+                                            <h3 className="text-sm font-bold leading-5 text-[#11145f] sm:text-base">{name}</h3>
+                                            <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">{section.title}</p>
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                ))}
+                <Contact />
+            </main>
+        </div>
+    );
+}
+
+function ThreeDPrintingWorkshopPage() {
+    const learningObjectives = [
+        'Grasp the foundational concepts behind additive manufacturing and its specific adaptation to the medical and pharmaceutical sectors.',
+        'Understand the distinct types of 3D printing technologies and how to choose the right method for an application.',
+        'Study the step-by-step process of preparing, formulation-matching, and successfully printing functional biomaterials and precise pharmaceutical dosages.',
+    ];
+    const reasonsToAttend = [
+        {
+            title: 'Live Demonstrations',
+            copy: 'Move beyond slideshows and see a 3D printer in action, handling actual bio and pharmaceutical formulations.',
+        },
+        {
+            title: 'Focus on Personalization',
+            copy: 'Learn how 3D printing enables customized dosages, shapes, and multi-drug combinations known as polypills.',
+        },
+        {
+            title: 'Expert Insights',
+            copy: 'Gain practical knowledge that can be applied to research, academic projects, and industrial development.',
+        },
+    ];
+
+    return (
+        <div className="event-theme min-h-screen bg-zinc-50 text-zinc-950 antialiased">
+            <Header />
+            <main>
+                <section className="relative isolate overflow-hidden bg-[#11145f] py-16 text-white sm:py-20">
+                    <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(223,8,103,0.38),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(0,101,47,0.45),transparent_40%)]" />
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <a href="/#important-dates" className="inline-flex items-center gap-2 text-sm font-bold text-[#ffd36a] transition hover:text-white">
+                            <span aria-hidden="true">←</span> Back to workshops
+                        </a>
+                        <p className="mt-10 text-xs font-black uppercase tracking-[0.2em] text-[#ffd36a]">Pre-Congress Workshop</p>
+                        <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight sm:text-5xl">3D Printing in Pharmaceuticals</h1>
+                        <p className="mt-5 max-w-3xl text-lg font-medium leading-8 text-white/80">
+                            Explore the complete digital-to-physical workflow behind personalized medicines, pharmaceutical dosage forms, and bioprinting.
+                        </p>
+                        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                            {[
+                                ['Date', '18 September 2026'],
+                                ['Time', '9:00 AM–12:30 PM'],
+                                ['Venue', 'Lisie College of Pharmacy, Ernakulam'],
+                            ].map(([label, value]) => (
+                                <div key={label} className="rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-[#ffd36a]">{label}</p>
+                                    <p className="mt-2 text-sm font-semibold leading-6 text-white">{value}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="py-14 sm:py-18">
+                    <div className="mx-auto grid max-w-5xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.45fr_0.75fr] lg:px-8">
+                        <article className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-9">
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#df0867]">About the workshop</p>
+                            <h2 className="mt-3 text-3xl font-bold text-[#11145f]">From digital design to personalized medicine</h2>
+                            <div className="mt-6 space-y-5 text-base leading-8 text-zinc-600">
+                                <p>
+                                    Three-dimensional printing, rooted in additive manufacturing, constructs complex physical structures layer by layer from digital designs. In pharmaceuticals, it moves beyond the limits of conventional tablet compression and capsule filling by enabling precise doses tailored to a patient’s age, weight, and metabolic profile.
+                                </p>
+                                <p>
+                                    By changing internal geometries, infill density, and surface-area-to-volume ratios, 3D printing can create immediate, sustained, or multi-phasic drug-release profiles. It also enables multi-drug “polypills” that combine active ingredients in a single dosage form to improve patient compliance.
+                                </p>
+                                <p>
+                                    The technology extends into bioprinting, where cell-laden bio-inks—hydrogels combined with living cells and growth factors—are deposited as organized biological scaffolds. These structures can guide cell growth, differentiation, and vascularization for regenerative medicine and advanced drug-testing models.
+                                </p>
+                                <p>
+                                    This workshop bridges theory and practice by examining extrusion, inkjet, and stereolithography methods; the materials used in pharmaceutical and biological printing; and the critical attributes that determine printability, structural integrity, and therapeutic outcomes.
+                                </p>
+                            </div>
+                        </article>
+
+                        <aside className="rounded-2xl bg-[#00652f] p-6 text-white shadow-lg sm:p-8 lg:self-start">
+                            <div className="mx-auto mb-6 aspect-[4/5] max-w-64 overflow-hidden rounded-2xl border-4 border-white/20 bg-white/10 shadow-xl">
+                                <img
+                                    src="/images/dr-fels-saju-enhanced.png"
+                                    alt="Dr. Fels Saju, Course Coordinator"
+                                    className="h-full w-full object-cover object-top"
+                                    loading="eager"
+                                    decoding="async"
+                                />
+                            </div>
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd36a]">Course Coordinator</p>
+                            <h2 className="mt-3 text-2xl font-bold">Dr. Fels Saju</h2>
+                            <p className="mt-2 text-sm font-semibold text-white/75">Associate Professor, Nirmala College of Pharmacy, Muvattupuzha</p>
+                            <p className="mt-5 text-sm leading-7 text-white/85">
+                                Dr. Fels Saju brings more than 14 years of academic and professional experience in pharmaceutics. His work spans formulation development, business incubation, Design of Experiments, and pharmaceutical 3D printing. He has secured research grants from Kerala Startup Mission and Kerala University of Health Sciences for 3D-printed formulations and founded the startup SimplifyD to translate his research into practical applications.
+                            </p>
+                        </aside>
+                    </div>
+                </section>
+
+                <section className="bg-white py-14 sm:py-18">
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#df0867]">Learning Objectives</p>
+                        <h2 className="mt-3 text-3xl font-bold text-[#11145f]">What participants will learn</h2>
+                        <div className="mt-8 grid gap-4 md:grid-cols-3">
+                            {learningObjectives.map((objective, index) => (
+                                <div key={objective} className="rounded-xl border border-zinc-200 bg-zinc-50 p-6">
+                                    <span className="flex size-9 items-center justify-center rounded-lg bg-[#11145f] text-sm font-black text-white">{index + 1}</span>
+                                    <p className="mt-4 text-sm font-medium leading-7 text-zinc-700">{objective}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="py-14 sm:py-18">
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#00652f]">Why Attend?</p>
+                        <h2 className="mt-3 text-3xl font-bold text-[#11145f]">A practical introduction to an emerging field</h2>
+                        <div className="mt-8 grid gap-5 md:grid-cols-3">
+                            {reasonsToAttend.map((reason) => (
+                                <article key={reason.title} className="rounded-2xl border-t-4 border-[#df0867] bg-white p-6 shadow-md">
+                                    <h3 className="text-xl font-bold text-[#11145f]">{reason.title}</h3>
+                                    <p className="mt-3 text-sm leading-7 text-zinc-600">{reason.copy}</p>
+                                </article>
+                            ))}
+                        </div>
+                        <div className="mt-10 flex flex-col items-start justify-between gap-5 rounded-2xl bg-[#11145f] p-6 text-white sm:flex-row sm:items-center sm:p-8">
+                            <div>
+                                <h2 className="text-2xl font-bold">Interested in this workshop?</h2>
+                                <p className="mt-2 text-sm text-white/75">Choose “3D Printing” during congress registration to reserve your seat.</p>
+                            </div>
+                            <a href="/registration" className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#ffd36a] px-5 py-3 text-sm font-black text-[#11145f] transition hover:bg-white">
+                                Register now
+                            </a>
+                        </div>
+                    </div>
+                </section>
+                <Contact />
+            </main>
+        </div>
+    );
+}
+
 export default function App() {
     useRevealOnScroll();
     const isAdminLoginPage = window.location.pathname === '/admin/login';
@@ -10544,6 +10842,8 @@ export default function App() {
     const isScientificServicePage = window.location.pathname === '/scientific-service';
     const isStudentSkillCompetitionsPage = window.location.pathname === '/student-skill-competitions';
     const isAccommodationTravelPage = window.location.pathname === '/accommodation-travel';
+    const isOrganizingTeamPage = window.location.pathname === '/organizing-team';
+    const isThreeDPrintingWorkshopPage = window.location.pathname === '/workshops/3d-printing-in-pharmaceuticals';
 
     if (isAdminLoginPage) {
         return <AdminLoginPage />;
@@ -10606,6 +10906,14 @@ export default function App() {
                 </main>
             </div>
         );
+    }
+
+    if (isThreeDPrintingWorkshopPage) {
+        return <ThreeDPrintingWorkshopPage />;
+    }
+
+    if (isOrganizingTeamPage) {
+        return <OrganizingTeamPage />;
     }
 
     return (
