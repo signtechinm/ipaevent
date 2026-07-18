@@ -163,71 +163,238 @@ const organizingTeamSections = [
         id: 'chief-patrons',
         title: 'Chief Patrons',
         members: [
-            ['Dr. B. Suresh', '/organising team/1) Chief Patrons/1) Dr. B. Suresh.webp', '32% center'],
-            ['Dr. S. V. Veeramani', '/organising team/1) Chief Patrons/2) Dr. S V Veeramani.png'],
+            ['Dr. B. Suresh', '/organising team/1) Chief Patrons/1) Dr. B. Suresh.webp', '32% center', 'Pro Chancellor, JSS Academy of Higher Education & Research'],
+            ['Dr. S. V. Veeramani', '/organising team/1) Chief Patrons/2) Dr. S V Veeramani.png', null, 'Chairman & Managing Director, Fourrts (India) Laboratories Pvt. Ltd., Chennai, India'],
         ],
     },
     {
         id: 'national-organising-committee',
         title: 'National Organising Committee',
         members: [
-            ['Dr. T. V. Narayana', '/organising team/2) National Organising Committee/1) Dr. T. V. Narayana.png'],
-            ['Dr. G. Sumalatha', '/organising team/2) National Organising Committee/2) Dr. G. Sumalatha.jpeg'],
-            ['Dr. T. Bharath Vikas', '/organising team/2) National Organising Committee/3) Dr. T. Bharath Vikas.jpeg'],
-            ['Dr. P. Jayasekhar', '/organising team/2) National Organising Committee/4) Dr. P. Jayasekhar.jpeg'],
-            ['Dr. John Joseph', '/organising team/2) National Organising Committee/5) Dr. John Joseph.jpeg'],
-            ['Ms. Medam Venkata Komali', '/organising team/2) National Organising Committee/6) Ms. Medam Venkata Komali.jpeg'],
+            ['Dr. T. V. Narayana', '/organising team/2) National Organising Committee/1) Dr. T. V. Narayana.png', null, 'Immediate Past President, IPA & Director, Vikas Institute of Pharmaceutical Sciences, Andhra Pradesh'],
+            ['Dr. G. Sumalatha', '/organising team/2) National Organising Committee/2) Dr. G. Sumalatha.jpeg', null, 'Chairperson, Education Division'],
+            ['Dr. T. Bharath Vikas', '/organising team/2) National Organising Committee/3) Dr. T. Bharath Vikas.jpeg', null, 'Secretary, Education Division'],
+            ['Dr. P. Jayasekhar', '/organising team/2) National Organising Committee/4) Dr. P. Jayasekhar.jpeg', null, 'State President, IPA Kerala'],
+            ['Dr. John Joseph', '/organising team/2) National Organising Committee/5) Dr. John Joseph.jpeg', null, 'Honorary Secretary, IPA Kerala'],
+            ['Ms. Medam Venkata Komali', '/organising team/2) National Organising Committee/6) Ms. Medam Venkata Komali.jpeg', null, 'Chairperson, IPA-SF NEC'],
         ],
     },
     {
         id: 'patrons',
         title: 'Patrons',
         members: [
-            ['Dr. Rajeev Singh Raghuvanshi', '/organising team/3) Patrons/1)  Dr Rajeev Singh Raghuvanshi.jpeg'],
-            ['Dr. C. P. Vijayan', '/organising team/3) Patrons/2) Dr. C P Vijayan.jpeg'],
-            ['Dr. V. Kalaiselvan', '/organising team/3) Patrons/7) Dr. V. Kalaiselvan.jpeg'],
-            ['Prof. Shantikumar Nair', '/organising team/3) Patrons/10) Prof. Shantikumar Nair.jpeg'],
-            ['Dr. L. Ramaswamy', '/organising team/3) Patrons/12) Dr. L. Ramaswamy.jpeg'],
+            ['Dr. Rajeev Singh Raghuvanshi', '/organising team/3) Patrons/1)  Dr Rajeev Singh Raghuvanshi.jpeg', null, 'Drugs Controller General of India'],
+            ['Dr. C. P. Vijayan', '/organising team/3) Patrons/2) Dr. C P Vijayan.jpeg', null, 'Pro Vice Chancellor, Kerala University of Health Sciences'],
+            ['Dr. K. Sujith Kumar', null, null, 'Drugs Control, Kerala State'],
+            ['Dr. P. Jayaseelan', null, null, 'State President, IPA Tamil Nadu State'],
+            ['Dr. George A. Patani', null, null, 'Sr. Vice President, IDMA & Director, Inga Laboratories Pvt. Ltd., Mumbai'],
+            ['Prof. K. Chinnaswamy', null, null, 'President, Indian Association of Colleges of Pharmacy'],
+            ['Dr. V. Kalaiselvan', '/organising team/3) Patrons/7) Dr. V. Kalaiselvan.jpeg', null, 'Secretary-cum-Scientific Director, Indian Pharmacopoeia Commission (IPC), Ministry of Health & Family Welfare, Government of India'],
+            ['Dr. Ranjit Barshikar', null, null, 'QbD/CGMP Consultant, United Nations, Geneva'],
+            ['Dr. Premnath Shenoy', null, null, 'Immediate Past President, IPA Karnataka State'],
+            ['Prof. Shantikumar Nair', '/organising team/3) Patrons/10) Prof. Shantikumar Nair.jpeg', null, 'Associate Provost of Academics, Amrita Vishwa Vidyapeetham, AIMS Health Sciences Campus, Kochi'],
+            ['Dr. S. Sriram', null, null, 'Principal, SRIPMS, Coimbatore, IPA Tamil Nadu'],
+            ['Dr. Anitha Thampi', null, null, 'Chairperson & Managing Director, HLL Lifecare Limited'],
+        ],
+    },
+    {
+        id: 'national-advisors',
+        title: 'National Advisors',
+        members: [
+            ['Mr. Vinupal K. K.', null, null, 'Director, Solista Pharmaceuticals Pvt. Ltd., Pondicherry'],
+            ['Mr. S. Vanchinathan', null, null, 'Former Senior Vice President, Fourrts (India) Laboratories Pvt. Ltd., Chennai'],
+            ['Dr. B. Ramesh', null, null, 'Hon. Secretary, IPA Karnataka State Branch'],
+            ['Dr. Anand Shedge', null, null, 'Vice President, IPA-MSB & Mentor, IPA-MSB-SF, Mumbai'],
+            ['Dr. Shrinivas S. Savale', null, null, 'President, IPA Gujarat State Branch'],
+            ['Dr. B. Madhava Reddy', null, null, 'President, IPA Telangana State Branch'],
+            ['Dr. Prasada Rao Manchineni', null, null, 'President, IPA Andhra Pradesh State Branch'],
+            ['Dr. Khalid Ahmed Khan', null, null, 'President, IPA Karnataka State Branch'],
+            ['Mr. Kaushik Desai', null, null, 'Secretary General, Health Foods & Dietary Supplements Association'],
+            ['Mr. Raja Bhanu', null, null, 'Director General, Pharmaceuticals Export Promotion Council of India'],
+            ['Dr. L. Ramaswamy', '/organising team/3) Patrons/12) Dr. L. Ramaswamy.jpeg', null, 'Founder Chairman, Sotax India Pvt. Ltd. & Secretary General, SPDS'],
+            ['Mr. Sathish T.', null, null, 'Vice President, IPA Tamil Nadu State Branch'],
+            ['Mr. Benny Joseph', null, null, 'Director (Technical and Operations), HLL Lifecare Limited'],
+        ],
+    },
+    {
+        id: 'national-advisors-ipa-central-executive-committee',
+        title: 'National Advisors – IPA Central Executive Committee',
+        members: [
+            ['Dr. R. N. Gupta', null, null, 'National President, IPA'],
+            ['Dr. Subhash C. Mandal', null, null, 'Hon. Secretary, IPA'],
+            ['Dr. Alka Mukne', null, null, 'Treasurer, IPA'],
+            ['Dr. G. Sumalatha', '/organising team/2) National Organising Committee/2) Dr. G. Sumalatha.jpeg', null, 'Chairperson, Education Division'],
+            ['Dr. Anuradha Majumdar', null, null, 'Editor, Pharma Times'],
+            ['Mr. M. Vasudev Rao', null, null, 'Chairperson, Industry Division'],
+            ['Dr. A. Ramkishnan', null, null, 'Chairperson, Regulatory Division'],
+            ['Dr. Raj Vaidya', null, null, 'Chairperson, Community Pharmacy Division'],
+            ['Dr. Ramesh Adepu', null, null, 'Chairperson, Hospital Pharmacy Division'],
+            ['Dr. S. Vidyadhara', null, null, 'Editor, IJPS'],
+            ['Mr. Arun Kumar', null, null, 'Joint Secretary, IPA'],
+            ['Dr. T. V. Narayana', '/organising team/2) National Organising Committee/1) Dr. T. V. Narayana.png', null, 'Immediate Past President, IPA'],
+        ],
+    },
+    {
+        id: 'members-from-ipa-education-division',
+        title: 'Members from IPA Education Division',
+        members: [
+            ['Dr. G. Sumalatha', '/organising team/2) National Organising Committee/2) Dr. G. Sumalatha.jpeg', null, 'Chairperson'],
+            ['Prof. S. Vidyadhara', null, null, 'Immediate Past Chairman'],
+            ['Dr. Atmaram Pawar', null, null, 'Vice Chairman'],
+            ['Dr. T. Bharath Vikas', '/organising team/2) National Organising Committee/3) Dr. T. Bharath Vikas.jpeg', null, 'Secretary'],
+            ['Mr. P. Vasubabu', null, null, 'Treasurer'],
+            ['Dr. K. Hemamalini', null, null, 'Member'],
+            ['Dr. L. Satyanarayana', null, null, 'Member'],
+            ['Dr. D. Ashok Kumar', null, null, 'Member'],
+            ['Dr. Sabita M.', null, null, 'Member'],
+            ['Suresh Chandra Airen', null, null, 'Member'],
+            ['Dr. Sruthi Ranjan Mishra', null, null, 'Member'],
+            ['Dr. Kumar Ajay', null, null, 'Member'],
+            ['Dr. B. N. Sinha', null, null, 'Member'],
+            ['Dr. K. Eswar Kumar', null, null, 'Member'],
+            ['Dr. A. Chakravarthy', null, null, 'Member'],
+            ['Ms. Komali Likhitha', null, null, 'IPA-SF Nominee'],
+            ['Mr. Ambati Vamsi Krishnai', null, null, 'IPA-SF Nominee'],
+        ],
+    },
+    {
+        id: 'members-from-nec-ipa-sf',
+        title: 'Members from NEC IPA-SF',
+        members: [
+            ['Ms. Medam Venkata Komali', '/organising team/2) National Organising Committee/6) Ms. Medam Venkata Komali.jpeg', null, 'President'],
+            ['Vrushali Doshi', null, null, 'Immediate Past President'],
+            ['Rajalakshmi S.', null, null, 'Secretary'],
+            ['Rohit Satya Naga Sai Kumar', null, null, 'Joint Secretary'],
+            ['Freddy Alappattu', null, null, 'Treasurer'],
+            ['Akanksha Kathikar', null, null, 'Chairperson of Public Relations'],
+            ['Kashish Shah', null, null, 'Chairperson of Public Relations'],
+            ['Sharvaree Sonurlekar', null, null, 'Chairperson of Projects'],
+            ['Gunda Rajeev Sri Sasikar', null, null, 'Chairperson of Projects'],
+            ['Sungjemkaba Jamir', null, null, 'Chairperson of Liaisons'],
+            ['Bathurasi Mallikarjun', null, null, 'Chairperson of Liaisons'],
         ],
     },
     {
         id: 'local-organising-committee-core-group',
         title: 'Local Organising Committee — Core Group',
         members: [
-            ['Mr. Shisi A.', '/organising team/8) Local Organising Committe ( Core Group )/10) Mr. Shisi A.jpeg'],
-            ['Mr. Prasanth Kumar M.', '/organising team/8) Local Organising Committe ( Core Group )/11) Mr. Prasanth Kumar. M.jpeg'],
+            ['Dr. P. Jayasekhar', '/organising team/2) National Organising Committee/4) Dr. P. Jayasekhar.jpeg', null, 'Chairperson'],
+            ['Mr. M. P. George', null, null, 'Vice Chairperson'],
+            ['Dr. Sabitha M.', null, null, 'Vice Chairperson'],
+            ['Dr. Anjana John', null, null, 'Vice Chairperson'],
+            ['Dr. John Joseph', '/organising team/2) National Organising Committee/5) Dr. John Joseph.jpeg', null, 'Organizing Secretary'],
+            ['Dr. Kiron S. S.', null, null, 'Joint Secretary'],
+            ['Dr. Arun Rasheed', null, null, 'Joint Secretary'],
+            ['Dr. Pradeep M. R.', null, null, 'Joint Secretary'],
+            ['Dr. Deepu S.', null, null, 'Joint Secretary'],
+            ['Mr. Shisi A.', '/organising team/8) Local Organising Committe ( Core Group )/10) Mr. Shisi A.jpeg', null, 'Joint Secretary'],
+            ['Mr. Prasanth Kumar M.', '/organising team/8) Local Organising Committe ( Core Group )/11) Mr. Prasanth Kumar. M.jpeg', null, 'Joint Secretary'],
+            ['Dr. Anupriya Mahesh', null, null, 'Treasurer'],
         ],
     },
     {
         id: 'chairpersons-of-various-committees',
         title: 'Chairpersons of Various Committees',
         members: [
-            ['Dr. Suja Abraham', '/organising team/9) Chairpersons of Various Committes/13) Dr. Suja Abraham.jpeg'],
-            ['Mrs. Meena Chandran', '/organising team/9) Chairpersons of Various Committes/14) Mrs. Meena Chandran.jpeg'],
-            ['Dr. Sreeja C. Nair', '/organising team/9) Chairpersons of Various Committes/15) Dr. Sreeja C. Nair.jpeg'],
-            ['Dr. Ronald Peter', '/organising team/9) Chairpersons of Various Committes/18) Dr. Ronald Peter.jpeg'],
-            ['Dr. M. P. Narmadha', '/organising team/9) Chairpersons of Various Committes/21) Dr. M. P. Narmadha.jpeg'],
+            ['Dr. Preeja G. Pillai', null, null, 'Registration'],
+            ['Dr. Boby Johns G.', null, null, 'Scientific Services'],
+            ['Dr. Shamna M. S.', null, null, 'Student Skill Competitions'],
+            ['Dr. Fels Saju', '/images/dr-fels-saju-enhanced.png', null, 'Catering'],
+            ['Prof. Manju C. S.', null, null, 'Program'],
+            ['Dr. Sudheesh M. S.', null, null, 'Exhibition'],
+            ['Dr. Raji M. K.', null, null, 'Logistics'],
+            ['Dr. Jooly Kurien', null, null, 'Inauguration'],
+            ['Dr. Sabu M. C.', null, null, 'Poster Presentation'],
+            ['Dr. K. S. G. Arulkumaran', null, null, 'Registration'],
+            ['Dr. Badmanaban', null, null, 'Registration'],
+            ['Dr. L. Sutharson', null, null, 'HR Drive'],
+            ['Dr. Suja Abraham', '/organising team/9) Chairpersons of Various Committes/13) Dr. Suja Abraham.jpeg', null, 'Hospitality'],
+            ['Mrs. Meena Chandran', '/organising team/9) Chairpersons of Various Committes/14) Mrs. Meena Chandran.jpeg', null, 'Culturals'],
+            ['Dr. Sreeja C. Nair', '/organising team/9) Chairpersons of Various Committes/15) Dr. Sreeja C. Nair.jpeg', null, 'Stage'],
+            ['Dr. Jinu Isaac', null, null, 'Transportation'],
+            ['Dr. David Paul', null, null, 'Publicity'],
+            ['Dr. Ronald Peter', '/organising team/9) Chairpersons of Various Committes/18) Dr. Ronald Peter.jpeg', null, 'Accommodation'],
+            ['Mr. Sujith M.', null, null, 'Sightseeing'],
+            ['Mr. Suseelan Nair', null, null, 'Promotion'],
+            ['Dr. M. P. Narmadha', '/organising team/9) Chairpersons of Various Committes/21) Dr. M. P. Narmadha.jpeg', null, 'Medical Support'],
         ],
     },
     {
         id: 'advisors-and-mentors',
         title: 'Advisors & Mentors',
         members: [
-            ['Dr. K. Krishna Kumar', '/organising team/10) ADVISORS & Mentors/7) Dr K. Krishna Kumar.jpeg'],
-            ['Dr. Mohammed Haneefa K. P.', '/organising team/10) ADVISORS & Mentors/8) Dr.Mohammed Haneefa KP.jpeg'],
-            ['Dr. K. Radha', '/organising team/10) ADVISORS & Mentors/11) Dr.K. Radha.jpeg'],
-            ['Dr. Sibi P. I.', '/organising team/10) ADVISORS & Mentors/12) Dr.Sibi PI.jpeg'],
-            ['Dr. S. Kathirve', '/organising team/10) ADVISORS & Mentors/14) Dr. S. Kathirve.jpeg'],
-            ['Dr. Shiny George', '/organising team/10) ADVISORS & Mentors/15) Dr. Shiny George.jpeg'],
-            ['Dr. Sapna Shrikumar', '/organising team/10) ADVISORS & Mentors/16) Dr.Sapna Shrikumar.jpeg'],
-            ['Dr. P. S. Shiji Kumar', '/organising team/10) ADVISORS & Mentors/20) Dr.P.S. Shiji Kumar.jpeg'],
+            ['Rev. Fr. Joseph Samuel Karukayil', null, null, 'President, KSSPCMA'],
+            ['Mr. K. P. Purushothaman', null, null, 'Chethana Pharmaceuticals'],
+            ['Dr. David Joseph', null, null, 'Variety Pharmaceuticals'],
+            ['Mr. Santhosh T. R.', null, null, 'Manager (Technical), KSDP'],
+            ['Mr. Jayaraj L. R.', null, null, 'Secretary, AKCDA'],
+            ['Dr. Sujith Varma', null, null, 'Principal, KMCT National College of Pharmacy'],
+            ['Dr. K. Krishna Kumar', '/organising team/10) ADVISORS & Mentors/7) Dr K. Krishna Kumar.jpeg', null, 'Principal, St. James College of Pharmaceutical Sciences'],
+            ['Dr. Mohammed Haneefa K. P.', '/organising team/10) ADVISORS & Mentors/8) Dr.Mohammed Haneefa KP.jpeg', null, 'Principal, Moulana College of Pharmacy'],
+            ['Dr. Prasobh G. R.', null, null, 'Principal, Sree Krishna College of Pharmacy & Research Centre'],
+            ['Mr. P. K. Harikumar', null, null, 'Industry Consultant'],
+            ['Dr. K. Radha', '/organising team/10) ADVISORS & Mentors/11) Dr.K. Radha.jpeg', null, 'Principal, Holy Grace Academy of Pharmacy'],
+            ['Dr. Sibi P. I.', '/organising team/10) ADVISORS & Mentors/12) Dr.Sibi PI.jpeg', null, 'Principal, KMCT Institute of Pharmacy'],
+            ['Dr. Lal Prasanth M. L.', null, null, 'Principal, DM WIMS College of Pharmacy'],
+            ['Dr. S. Kathirvel', '/organising team/10) ADVISORS & Mentors/14) Dr. S. Kathirve.jpeg', null, 'Principal, KIPER'],
+            ['Dr. Shiny George', '/organising team/10) ADVISORS & Mentors/15) Dr. Shiny George.jpeg', null, 'Principal, Hindustan College of Pharmacy'],
+            ['Dr. Sapna Shrikumar', '/organising team/10) ADVISORS & Mentors/16) Dr.Sapna Shrikumar.jpeg', null, 'Principal, Ahalia School of Pharmacy'],
+            ['Dr. Santosh M. Mathews', null, null, 'Principal, Pushpagiri College of Pharmacy'],
+            ['Dr. Subash Philip', null, null, 'Dr. Joseph Mar Thoma Institute of Pharmaceutical Sciences & Research'],
+            ['Dr. Dileep C.', null, null, 'Principal, Alshifa College of Pharmacy'],
+            ['Dr. P. S. Shiji Kumar', '/organising team/10) ADVISORS & Mentors/20) Dr.P.S. Shiji Kumar.jpeg', null, 'Principal, The Dale View College of Pharmacy and Research Centre, Thiruvananthapuram'],
+            ['Dr. Sujith Thomas', null, null, 'Professor, Moulana College of Pharmacy'],
+            ['Dr. Sajan Jose', null, null, 'Principal, Caritas College of Pharmacy'],
+            ['Dr. Aju Joseph Kurien', null, null, 'Assistant Drugs Controller, Ernakulam'],
+            ['Mr. Shaji M. Varghese', null, null, 'Former Assistant Drugs Controller, Kerala State'],
+            ['Dr. Moniveena M. G.', null, null, 'Drugs Inspector (SIB), Thiruvananthapuram'],
+        ],
+    },
+    {
+        id: 'ipa-sf-kerala-state-leadership-board',
+        title: 'IPA-SF Kerala State Leadership Board',
+        members: [
+            ['Mr. Siva S.', null, null, 'State Coordinator'],
+            ['Chinmaya T. Bijumon', null, null, 'State Coordinator'],
+            ['Aby Augustine', null, null, 'State Coordinator'],
+            ['Fathima Manziya K. M.', null, null, 'State Coordinator'],
+            ['Umamaheswary J.', null, null, 'State Coordinator'],
+            ['Lubna Ibrahim', null, null, 'State Coordinator'],
+            ['Jumana K. M.', null, null, 'State Coordinator'],
+            ['Fadhiya Mariyam', null, null, 'State Coordinator'],
+            ['Delphin John', null, null, 'State Coordinator'],
+            ['Mohammed Renahn', null, null, 'State Coordinator'],
+            ['Safva Shihab', null, null, 'State Coordinator'],
+            ['Chrisvin Varghese Parolickal', null, null, 'State Coordinator'],
+            ['Noufida A. N.', null, null, 'State Coordinator'],
+            ['Shifna Shirin', null, null, 'State Coordinator'],
+            ['Aliya Anasri', null, null, 'State Coordinator'],
+            ['Gifty N. Shah', null, null, 'State Coordinator'],
+            ['Theja Lakshmi K.', null, null, 'State Coordinator'],
         ],
     },
     {
         id: 'ipa-sf-student-network',
         title: 'IPA-SF Student Network',
         members: [
-            ['Alan Jomon', '/organising team/12) IPA-SF Student Network/12) Alan Jomon.jpeg'],
+            ['Meganie Fernandes', null, null, 'Karnataka'],
+            ['Sakshi Prabhu', null, null, 'Karnataka'],
+            ['Mayank Sharma', null, null, 'Telangana'],
+            ['Chaturvedi Ritika', null, null, 'Gujarat'],
+            ['Sayan Das', null, null, 'Assam'],
+            ['Earuingam Gogoi', null, null, 'Assam'],
+            ['Suddhi Tajanpure', null, null, 'Maharashtra'],
+            ['Aadya Passi', null, null, 'Delhi'],
+            ['Prathamesh Shailesh Patil', null, null, 'Maharashtra'],
+            ['Sharat Chinta', null, null, 'Andhra Pradesh'],
+            ['Y. Mounika', null, null, 'Andhra Pradesh'],
+            ['Alon Jomon', '/organising team/12) IPA-SF Student Network/12) Alan Jomon.jpeg', null, 'Kerala'],
+            ['Gargi SilimKhan', null, null, 'Goa'],
+            ['Ronit Deyashi', null, null, 'West Bengal'],
+            ['Jayaprashanth G.', null, null, 'Tamil Nadu'],
+            ['Rudraksh Khurana', null, null, 'Punjab'],
+            ['Gautam Kumar', null, null, 'Bihar'],
+            ['Ananya Kala', null, null, 'Uttarakhand'],
         ],
     },
 ];
@@ -10634,29 +10801,59 @@ function OrganizingTeamPage() {
         <div className="event-theme min-h-screen bg-zinc-50 text-zinc-950 antialiased">
             <Header />
             <main>
-                <section className="relative isolate overflow-hidden bg-[#11145f] py-16 text-white sm:py-20">
-                    <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(223,8,103,0.34),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(0,101,47,0.48),transparent_42%)]" />
+                <section className="sci-service-hero py-16 text-white sm:py-20">
+                    <img src="/images/nsc-kerala-hero.png" alt="" aria-hidden="true" className="sci-service-hero-image absolute inset-0 h-full w-full object-cover" />
+                    <div className="sci-service-hero-overlay absolute inset-0" />
+                    <div className="sci-service-hero-grid absolute inset-0" />
+                    <div className="hero-sheen absolute inset-0" />
+                    <span className="sci-hero-particle" style={{ top: '12%', left: '6%', width: 72, height: 72, '--dur': '9s', '--delay': '0s', '--lift': '-14px', '--op-lo': 0.14, '--op-hi': 0.38 }} />
+                    <span className="sci-hero-particle" style={{ top: '8%', right: '10%', width: 110, height: 110, '--dur': '11s', '--delay': '1.4s', '--lift': '-20px', '--op-lo': 0.10, '--op-hi': 0.28 }} />
+                    <span className="sci-hero-particle" style={{ top: '55%', right: '5%', width: 88, height: 88, '--dur': '10s', '--delay': '0.6s', '--lift': '-18px', '--op-lo': 0.12, '--op-hi': 0.34 }} />
+                    <span className="sci-hero-particle" style={{ bottom: '14%', left: '18%', width: 60, height: 60, '--dur': '8.5s', '--delay': '3.2s', '--lift': '-12px', '--op-lo': 0.15, '--op-hi': 0.40 }} />
+                    <div className="snapshot-flow-lines pointer-events-none absolute inset-0" aria-hidden="true">
+                        {[
+                            { top: '22%', delay: '0s', duration: '13s' },
+                            { top: '46%', delay: '4.5s', duration: '10s' },
+                            { top: '70%', delay: '8s', duration: '14s' },
+                        ].map((line, index) => (
+                            <span key={index} className="snapshot-flow-line" style={{ top: line.top, animationDelay: line.delay, animationDuration: line.duration }} />
+                        ))}
+                    </div>
+                    <div className="sci-hero-copy relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-amber-300 ring-1 ring-white/20">
+                            <span className="pulse-dot size-1.5 rounded-full bg-amber-300" />
+                            14th National IPA Student Congress 2026
+                        </div>
+                        <h1 className="mt-4 text-3xl font-extrabold leading-tight sm:text-4xl lg:text-5xl">Organizing Team</h1>
+                        <div className="mt-5 max-w-2xl border-l-4 border-[#df0867] bg-[#0d124f]/50 px-4 py-3 backdrop-blur-sm">
+                            <p className="text-base leading-7 text-blue-100">
+                                Meet the patrons, national and local committee members, advisors, mentors, and student leaders guiding the congress.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+
+                <div className="sticky top-[84px] z-40 border-b border-white/10 bg-[#080c38] shadow-md sm:top-[106px]">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#ffd36a]">14th National IPA Student Congress</p>
-                        <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight sm:text-5xl">Organizing Team</h1>
-                        <p className="mt-5 max-w-3xl text-lg leading-8 text-white/80">
-                            Meet the patrons, national and local committee members, advisors, mentors, and student leaders guiding the congress.
-                        </p>
-                        <nav className="mt-8 flex flex-wrap gap-2" aria-label="Organizing team sections">
-                            {organizingTeamSections.map((section) => (
-                                <a key={section.id} href={`#${section.id}`} className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white hover:text-[#11145f]">
+                        <nav className="flex overflow-x-auto" aria-label="Organizing team sections" style={{ scrollbarWidth: 'none' }}>
+                            {organizingTeamSections.map((section, index) => (
+                                <a
+                                    key={section.id}
+                                    href={`#${section.id}`}
+                                    className={`shrink-0 px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-white/65 transition hover:bg-white/5 hover:text-white${index < organizingTeamSections.length - 1 ? ' border-r border-white/10' : ''}`}
+                                >
                                     {section.title}
                                 </a>
                             ))}
                         </nav>
                     </div>
-                </section>
+                </div>
 
                 {organizingTeamSections.map((section, sectionIndex) => (
                     <section
                         key={section.id}
                         id={section.id}
-                        className={`scroll-mt-24 py-14 sm:py-16 ${sectionIndex % 2 === 1 ? 'bg-white' : 'bg-zinc-50'}`}
+                        className={`scroll-mt-40 py-14 sm:py-16 ${sectionIndex % 2 === 1 ? 'bg-white' : 'bg-zinc-50'}`}
                     >
                         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                             <div className="flex items-end gap-4 border-b border-zinc-200 pb-5">
@@ -10669,21 +10866,34 @@ function OrganizingTeamPage() {
                                 </div>
                             </div>
                             <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                                {section.members.map(([name, photo, objectPosition]) => (
-                                    <article key={photo} className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                                {section.members.map(([name, photo, objectPosition, designation]) => (
+                                    <article key={name} className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl">
                                         <div className="aspect-[4/5] overflow-hidden bg-zinc-100">
-                                            <img
-                                                src={photo}
-                                                alt={name}
-                                                className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.03]"
-                                                style={objectPosition ? { objectPosition } : undefined}
-                                                loading="lazy"
-                                                decoding="async"
-                                            />
+                                            {photo ? (
+                                                <img
+                                                    src={photo}
+                                                    alt={name}
+                                                    className="h-full w-full object-cover object-top transition duration-500 group-hover:scale-[1.03]"
+                                                    style={objectPosition ? { objectPosition } : undefined}
+                                                    loading="lazy"
+                                                    decoding="async"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-zinc-100 to-zinc-200 px-5 text-center" role="img" aria-label={`${name} photo placeholder`}>
+                                                    <span className="flex size-24 items-center justify-center rounded-full bg-white text-zinc-400 shadow-inner ring-1 ring-zinc-300">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="size-16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                            <path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5a18.683 18.683 0 0 1-7.812-1.7.75.75 0 0 1-.437-.695Z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </span>
+                                                    <span className="mt-4 text-xs font-bold uppercase tracking-[0.16em] text-zinc-400">Photo awaited</span>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="border-t-4 border-[#df0867] p-4 text-center">
                                             <h3 className="text-sm font-bold leading-5 text-[#11145f] sm:text-base">{name}</h3>
-                                            <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">{section.title}</p>
+                                            <p className={`mt-1 text-zinc-500 ${designation ? 'text-xs leading-5' : 'text-[11px] font-bold uppercase tracking-wide'}`}>
+                                                {designation || section.title}
+                                            </p>
                                         </div>
                                     </article>
                                 ))}
