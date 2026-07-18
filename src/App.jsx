@@ -141,7 +141,7 @@ const preCongressWorkshops = [
         title: '3D Printing and AI in Scientific Writing & Publications',
         events: [
             { number: 1, name: '3D Printing', detailsHref: '/workshops/3d-printing-in-pharmaceuticals' },
-            { number: 2, name: 'AI in Scientific Writing & Publications' },
+            { number: 2, name: 'AI in Scientific Writing & Publications', detailsHref: '/workshops/ai-in-scientific-writing-and-publications' },
         ],
         date: '18 September 2026',
         venue: 'Lisie College of Pharmacy, Ernakulam',
@@ -149,9 +149,9 @@ const preCongressWorkshops = [
     {
         title: 'Molecular Docking & Molecular Dynamics Simulation, NDDS and Advanced in Neurological Screening Models',
         events: [
-            { number: 3, name: 'Molecular Docking & Molecular Dynamics Simulation' },
-            { number: 4, name: 'NDDS (Nano/Micro Drug Delivery Systems) - Formulation and Characterization' },
-            { number: 5, name: 'Advanced in Neurological Screening Models' },
+            { number: 3, name: 'Molecular Docking & Molecular Dynamics Simulation', detailsHref: '/workshops/molecular-docking-and-dynamics-simulation' },
+            { number: 4, name: 'NDDS (Nano/Micro Drug Delivery Systems) - Formulation and Characterization', detailsHref: '/workshops/ndds-formulation-and-characterization' },
+            { number: 5, name: 'Advanced in Neurological Screening Models', detailsHref: '/workshops/advanced-neurological-screening-models' },
         ],
         date: '18 September 2026',
         venue: 'Amrita School of Pharmacy, Ernakulam',
@@ -343,7 +343,7 @@ const organizingTeamSections = [
             ['Dr. Subash Philip', null, null, 'Dr. Joseph Mar Thoma Institute of Pharmaceutical Sciences & Research'],
             ['Dr. Dileep C.', null, null, 'Principal, Alshifa College of Pharmacy'],
             ['Dr. P. S. Shiji Kumar', '/organising team/10) ADVISORS & Mentors/20) Dr.P.S. Shiji Kumar.jpeg', null, 'Principal, The Dale View College of Pharmacy and Research Centre, Thiruvananthapuram'],
-            ['Dr. Sujith Thomas', null, null, 'Professor, Moulana College of Pharmacy'],
+            ['Dr. Sujith Thomas', '/organising team/10) ADVISORS & Mentors/dr-sujith-thomas.png', null, 'Professor, Moulana College of Pharmacy'],
             ['Dr. Sajan Jose', null, null, 'Principal, Caritas College of Pharmacy'],
             ['Dr. Aju Joseph Kurien', null, null, 'Assistant Drugs Controller, Ernakulam'],
             ['Mr. Shaji M. Varghese', null, null, 'Former Assistant Drugs Controller, Kerala State'],
@@ -4419,65 +4419,63 @@ function StudentSkillCompetitionsPage() {
         },
         {
             title: 'ClinRx Case Challenge',
-            subtitle: 'National Clinical Case Challenge',
-            objective: 'Designed to evaluate clinical knowledge, problem-solving ability, evidence-based decision-making, pharmaceutical care planning, and presentation skills through patient case analysis and management.',
+            subtitle: 'Clinical Case Competition',
+            objective: 'The ClinRx Case Challenge is designed to evaluate the clinical knowledge, problem-solving ability, evidence-based decision-making, pharmaceutical care planning, and presentation skills of pharmacy students through the analysis and management of patient cases.',
             sections: [
                 {
                     heading: 'Eligibility',
                     items: [
                         'Open to B.Pharm, Pharm.D, and M.Pharm students from recognized institutions.',
-                        'Each institution may nominate one team consisting of two students.',
-                        'Both participants should actively participate in case analysis and presentation.',
+                        'Each institution may nominate one student.',
                         'Participants must carry a valid institutional identity card.',
                         'The decision of the organizing committee and judges shall be final.',
-                        'Each participant will receive a certificate of participation after the final rounds.',
                     ],
                 },
                 {
                     heading: 'Format',
                     items: [
-                        'Team event.',
-                        'Case will be provided 30 minutes before presentation.',
+                        'Each participant should submit an abstract of the case.',
+                        'The abstract must be limited to one A4 page and must not exceed 500 words.',
+                        'Five participants whose abstracts are selected will present their cases at the final IPA National Student Congress.',
+                        'Upload the prepared abstract in PDF format only through the respective section of the web portal.',
+                        'Only registered participants will be able to submit an abstract.',
+                        'Last date for abstract submission: 15 August 2026.',
+                        'Upload abstract here. (PDF)',
                     ],
                 },
             ],
         },
         {
             title: 'Error Hunters',
-            subtitle: 'National Medication Error Challenge',
+            subtitle: 'Medication Error Challenge',
             theme: 'Detect. Prevent. Protect.',
-            objective: 'Develops student skills in identifying, analysing, preventing, and managing medication errors through real-life clinical scenarios while promoting patient safety, pharmacovigilance, and quality use of medicines.',
+            objective: 'The Error Hunters Medication Error Challenge develops students’ skills in identifying, analysing, preventing, and managing medication errors through real-life clinical scenarios. It promotes patient safety, pharmacovigilance, and the quality use of medicines through the identification, classification, and prevention of medication errors.',
             sections: [
                 {
                     heading: 'Eligibility',
                     items: [
                         'Open to B.Pharm, Pharm.D, D.Pharm, and M.Pharm students from recognized institutions.',
-                        'Each institution may nominate one team consisting of two students.',
-                        'Participants must carry a valid college identity card.',
-                        'The decision of the organizing committee and judges shall be final.',
-                        'Each participant will receive a certificate of participation after the final rounds.',
+                        'This is an individual competition.',
+                        'Participants must carry a valid institutional identity card and registration details.',
+                        'Each participant may represent only one institution.',
+                        'Mobile phones, smart watches, Bluetooth devices, and other electronic gadgets are not permitted during the competition.',
+                        'Violation of the electronic-device rule may result in disqualification.',
                     ],
                 },
                 {
-                    heading: 'Focus',
-                    items: ['Identify, classify, and prevent medication errors.'],
-                },
-            ],
-        },
-        {
-            title: 'National Pharmacy Debate Competition',
-            subtitle: 'Voices of Pharmacy: Debating the Future of Healthcare',
-            objective: 'Develops critical thinking, scientific reasoning, public speaking, evidence-based argumentation, and professional communication skills among pharmacy students.',
-            sections: [
-                {
-                    heading: 'Eligibility',
+                    heading: 'Round 1: Error Prescription Hunt',
                     items: [
-                        'Open to B.Pharm, Pharm.D, D.Pharm, and M.Pharm students from recognized institutions.',
-                        'Each institution may nominate one team consisting of two participants.',
-                        'One participant shall speak for the motion and the other against the motion, assigned by draw of lots.',
-                        'Participants must carry a valid institutional identity card.',
-                        'The decision of the judges and organizing committee shall be final.',
-                        'Each participant will receive a certificate of participation after the final rounds.',
+                        'Participants must identify the maximum number of prescriptions containing errors.',
+                        'Answers must be submitted within the stipulated time.',
+                        'Top-performing participants will qualify for the final round.',
+                    ],
+                },
+                {
+                    heading: 'Round 2: Final Round',
+                    items: [
+                        'A prescription will be displayed on the screen.',
+                        'Each participant must identify the maximum number of medication errors.',
+                        'Participants should identify incorrect doses or strengths, unsafe combinations, administration errors, incorrect dosage regimens, and the total number of errors.',
                     ],
                 },
             ],
@@ -4498,9 +4496,9 @@ function StudentSkillCompetitionsPage() {
                         'Vertical format: 9:16.',
                         'MP4 format.',
                         'Language: English only.',
-                        'English subtitles preferred.',
+                        'English subtitles are mandatory.',
                         'Background music permitted, copyright-free only.',
-                        'Submit before the notified deadline.',
+                        'Last date for video submission: 15 August 2026.',
                     ],
                 },
                 {
@@ -4522,14 +4520,15 @@ function StudentSkillCompetitionsPage() {
                         'Vertical 9:16 ratio.',
                         'HD quality, minimum 720p.',
                         'English language only.',
+                        'English subtitles are mandatory.',
                     ],
                 },
                 {
                     heading: 'Submission',
                     items: [
-                        'Submit through a video link to download or view the file.',
+                        'Submit by email as a link from which the video can be downloaded or viewed.',
                         'File name format: Registration number.mp4.',
-                        'National Pharmacy Reels Competition: Click and upload your video link here.',
+                        'The submitted link must remain accessible to the competition reviewers.',
                     ],
                 },
                 {
@@ -4544,6 +4543,7 @@ function StudentSkillCompetitionsPage() {
                         'Pharmacy students must appear in the video.',
                         'Offensive, misleading, or unscientific content is prohibited.',
                         'Organizers may use selected videos for educational and promotional purposes with due acknowledgement.',
+                        'Last date for video submission: 15 August 2026.',
                         "Judges' decision shall be final.",
                     ],
                 },
@@ -4613,6 +4613,13 @@ function StudentSkillCompetitionsPage() {
     const [skillVideoLink, setSkillVideoLink] = useState('');
     const [skillVideoSubmitting, setSkillVideoSubmitting] = useState(false);
     const [skillVideoError, setSkillVideoError] = useState('');
+    const [clinRxModalOpen, setClinRxModalOpen] = useState(false);
+    const [clinRxRegNum, setClinRxRegNum] = useState('');
+    const [clinRxInfo, setClinRxInfo] = useState(null);
+    const [clinRxFile, setClinRxFile] = useState(null);
+    const [clinRxChecking, setClinRxChecking] = useState(false);
+    const [clinRxSubmitting, setClinRxSubmitting] = useState(false);
+    const [clinRxError, setClinRxError] = useState('');
 
     function openSkillVideoModal(competitionName) {
         setSkillVideoModal({ competitionName });
@@ -4695,6 +4702,76 @@ function StudentSkillCompetitionsPage() {
                 Click and upload your video link here.
             </button>
         );
+    }
+
+    function openClinRxModal() {
+        setClinRxModalOpen(true);
+        setClinRxRegNum('');
+        setClinRxInfo(null);
+        setClinRxFile(null);
+        setClinRxError('');
+    }
+
+    function closeClinRxModal() {
+        setClinRxModalOpen(false);
+        setClinRxRegNum('');
+        setClinRxInfo(null);
+        setClinRxFile(null);
+        setClinRxError('');
+    }
+
+    async function checkClinRxRegistration() {
+        if (!clinRxRegNum.trim()) return;
+        setClinRxChecking(true);
+        setClinRxError('');
+        setClinRxInfo(null);
+        try {
+            const params = new URLSearchParams({ registrationNumber: clinRxRegNum.trim().toUpperCase(), competitionName: 'ClinRx Case Challenge' });
+            const res = await fetch(`/api/skill-abstracts/check?${params.toString()}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Could not verify registration.');
+            setClinRxInfo(data);
+        } catch (err) {
+            setClinRxError(err.message);
+        } finally {
+            setClinRxChecking(false);
+        }
+    }
+
+    async function submitClinRxAbstract() {
+        if (!clinRxFile || !clinRxInfo?.canSubmit || clinRxInfo?.alreadySubmitted) return;
+        setClinRxSubmitting(true);
+        setClinRxError('');
+        try {
+            if (clinRxFile.type !== 'application/pdf' && !clinRxFile.name.toLowerCase().endsWith('.pdf')) throw new Error('Upload a PDF file only.');
+            if (clinRxFile.size > 1024 * 1024) throw new Error('File exceeds the 1 MB limit.');
+            const fileData = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(clinRxFile);
+            });
+            const res = await fetch('/api/skill-abstracts/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    registrationNumber: clinRxRegNum.trim().toUpperCase(),
+                    competitionName: 'ClinRx Case Challenge',
+                    fileName: clinRxFile.name,
+                    fileSize: clinRxFile.size,
+                    fileType: clinRxFile.type || 'application/pdf',
+                    fileData,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Could not upload abstract.');
+            setClinRxInfo((current) => ({ ...current, alreadySubmitted: true, submission: data.submission }));
+            setClinRxFile(null);
+        } catch (err) {
+            setClinRxError(err.message || 'Could not upload abstract.');
+        } finally {
+            setClinRxSubmitting(false);
+        }
     }
 
     return (
@@ -4814,6 +4891,7 @@ function StudentSkillCompetitionsPage() {
                                             <ul className="mt-3 space-y-2">
                                                 {section.items.map((item) => {
                                                     const hasUploadLink = item.includes('Click and upload your video link here');
+                                                    const hasClinRxUpload = competition.title === 'ClinRx Case Challenge' && item === 'Upload abstract here. (PDF)';
                                                     if (hasUploadLink && !skillVideoUploadCompetitions.has(competition.title)) {
                                                         return null;
                                                     }
@@ -4821,7 +4899,11 @@ function StudentSkillCompetitionsPage() {
                                                     return (
                                                     <li key={item} className="flex items-start gap-2 text-sm leading-6 text-zinc-700">
                                                         <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#00652f]" />
-                                                        {hasUploadLink ? (
+                                                        {hasClinRxUpload ? (
+                                                            <button type="button" onClick={openClinRxModal} className="font-bold text-[#df0867] underline decoration-[#df0867]/40 underline-offset-2 hover:text-[#bd0758]">
+                                                                Upload abstract here. (PDF)
+                                                            </button>
+                                                        ) : hasUploadLink ? (
                                                             <span>
                                                                 {item.replace('Click and upload your video link here.', '')}
                                                                 {renderSkillVideoLink(competition.title)}
@@ -4865,6 +4947,28 @@ function StudentSkillCompetitionsPage() {
                     </div>
                 </div>
             </section>
+
+            {clinRxModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/60 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="clinrx-modal-title">
+                    <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
+                        <div className="flex items-start justify-between border-b border-zinc-200 px-6 py-5">
+                            <div><p className="text-xs font-bold uppercase tracking-wider text-[#df0867]">PDF Abstract Submission</p><h2 id="clinrx-modal-title" className="mt-1 text-lg font-black text-zinc-950">ClinRx Case Challenge</h2></div>
+                            <button type="button" onClick={closeClinRxModal} className="rounded-lg px-3 py-1.5 text-sm font-bold text-zinc-500 hover:bg-zinc-100">Close</button>
+                        </div>
+                        <div className="space-y-5 p-6">
+                            <div><label className="text-sm font-semibold text-zinc-800">Registration Number</label><div className="mt-2 flex gap-2"><input value={clinRxRegNum} onChange={(event) => { setClinRxRegNum(event.target.value.toUpperCase()); setClinRxInfo(null); setClinRxFile(null); setClinRxError(''); }} placeholder="e.g. IPA2026-001" className="min-w-0 flex-1 rounded-lg border border-zinc-300 px-3 py-2.5 text-sm uppercase focus:border-[#df0867] focus:outline-none" /><button type="button" onClick={checkClinRxRegistration} disabled={!clinRxRegNum.trim() || clinRxChecking} className="rounded-lg bg-[#0d124f] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{clinRxChecking ? 'Checking...' : 'Verify'}</button></div></div>
+                            {clinRxInfo?.valid === false && <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">Registration number not found.</p>}
+                            {clinRxInfo?.valid && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4"><p className="font-bold text-emerald-900">{clinRxInfo.participantName}</p><p className="mt-1 text-xs text-emerald-700">{clinRxInfo.institutionName}</p>{!clinRxInfo.canSubmit && <p className="mt-2 text-xs font-semibold text-amber-800">{clinRxInfo.eligibilityReason}</p>}</div>}
+                            {clinRxInfo?.alreadySubmitted ? (
+                                <div className="rounded-lg border border-sky-200 bg-sky-50 p-4"><p className="text-sm font-bold text-sky-900">Abstract already submitted</p><p className="mt-1 text-xs text-sky-700">{clinRxInfo.submission?.fileName || 'Your PDF is pending committee review.'}</p></div>
+                            ) : clinRxInfo?.valid && clinRxInfo?.canSubmit ? (
+                                <div><label className="flex cursor-pointer flex-col items-center rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 px-5 py-8 text-center hover:border-[#df0867]"><span className="text-sm font-bold text-zinc-700">{clinRxFile ? clinRxFile.name : 'Choose abstract PDF'}</span><span className="mt-1 text-xs text-zinc-500">PDF only · Maximum 1 MB · Text-only abstract</span><input type="file" accept="application/pdf,.pdf" className="sr-only" onChange={(event) => { setClinRxFile(event.target.files?.[0] || null); setClinRxError(''); }} /></label><button type="button" onClick={submitClinRxAbstract} disabled={!clinRxFile || clinRxSubmitting} className="mt-4 w-full rounded-lg bg-[#df0867] px-5 py-3 text-sm font-bold text-white hover:bg-[#bd0758] disabled:opacity-50">{clinRxSubmitting ? 'Uploading...' : 'Upload Abstract'}</button></div>
+                            ) : null}
+                            {clinRxError && <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{clinRxError}</p>}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {skillVideoModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/60 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="skill-video-modal-title">
@@ -5614,7 +5718,7 @@ const usersAdminSections = [
 const skillCompetitionAdminSections = [
     { id: 'pharma-mastermind-2026', label: 'Pharma Mastermind - 2026', description: 'Review submitted links for Pharma Mastermind.' },
     { id: 'national-patient-counselling-challenge-2026', label: 'National Patient Counselling Challenge - 2026', description: 'Review submitted patient counselling videos.' },
-    { id: 'clinrx-case-challenge', label: 'ClinRx Case Challenge', description: 'Review submitted clinical case challenge videos.' },
+    { id: 'clinrx-case-challenge', label: 'ClinRx Case Challenge', description: 'Review uploaded clinical case abstracts.' },
     { id: 'error-hunters', label: 'Error Hunters', description: 'Review submitted medication error challenge videos.' },
     { id: 'national-pharmacy-debate-competition', label: 'National Pharmacy Debate Competition', description: 'Review submitted debate competition videos.' },
     { id: 'national-pharmacy-reels-competition', label: 'National Pharmacy Reels Competition', description: 'Review submitted pharmacy reels.' },
@@ -9991,7 +10095,7 @@ function AdminPage() {
                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
                                         <h3 className="text-base font-bold text-zinc-900">{activeSkillCompetitionSectionMeta.label}</h3>
-                                        <p className="mt-1 text-sm text-zinc-500">Review submitted video links for this competition and approve or reject entries.</p>
+                                        <p className="mt-1 text-sm text-zinc-500">{activeSkillCompetitionSection === 'clinrx-case-challenge' ? 'Review uploaded ClinRx case abstracts and shortlist, approve, or reject entries.' : 'Review submitted video links for this competition and approve or reject entries.'}</p>
                                     </div>
                                     <button
                                         type="button"
@@ -10012,7 +10116,7 @@ function AdminPage() {
                                                 <tr className="border-b border-zinc-200">
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Reg. No.</th>
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Participant</th>
-                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Video Link</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">{activeSkillCompetitionSection === 'clinrx-case-challenge' ? 'Abstract PDF' : 'Video Link'}</th>
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Status</th>
                                                     <th className="pb-3 text-xs font-bold uppercase text-zinc-500">Actions</th>
                                                 </tr>
@@ -10026,7 +10130,7 @@ function AdminPage() {
                                                             <p className="text-xs text-zinc-500">{submission.institutionName || ''}</p>
                                                         </td>
                                                         <td className="max-w-[240px] py-3 pr-4">
-                                                            <a href={submission.videoLink} target="_blank" rel="noopener noreferrer" className="block truncate text-xs text-[#0d124f] underline">{submission.videoLink}</a>
+                                                            {submission.fileUrl ? <a href={submission.fileUrl} target="_blank" rel="noopener noreferrer" className="block truncate text-xs font-semibold text-[#0d124f] underline">{submission.fileName || 'Open PDF'}</a> : <a href={submission.videoLink} target="_blank" rel="noopener noreferrer" className="block truncate text-xs text-[#0d124f] underline">{submission.videoLink}</a>}
                                                         </td>
                                                         <td className="py-3 pr-4">
                                                             <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-bold uppercase ${
@@ -10078,7 +10182,7 @@ function AdminPage() {
                                 )}
 
                                 {!skillVideosLoading && activeSkillCompetitionVideos.length === 0 && (
-                                    <p className="mt-4 text-sm text-zinc-400">No video links have been submitted for {activeSkillCompetitionSectionMeta.label} yet.</p>
+                                    <p className="mt-4 text-sm text-zinc-400">No {activeSkillCompetitionSection === 'clinrx-case-challenge' ? 'abstracts' : 'video links'} have been submitted for {activeSkillCompetitionSectionMeta.label} yet.</p>
                                 )}
                             </div>
                         </div>
@@ -10907,6 +11011,389 @@ function OrganizingTeamPage() {
     );
 }
 
+function AiScientificWritingWorkshopPage() {
+    const highlights = [
+        ['10 health-focused apps', 'Published on the Google Play Store, primarily addressing non-communicable diseases and mental health.'],
+        ['International recognition', 'His deaf-rehabilitation app received MIT’s Best App Award for community rehabilitation.'],
+        ['Award-winning platform', 'The Beat Diabetes platform attracts one million annual visitors and received Healthline’s Best App of the Year Award in 2022.'],
+        ['8,000+ professionals trained', 'Medical faculty and researchers across 32 countries trained in AI-based research and app development.'],
+    ];
+
+    return (
+        <div className="event-theme min-h-screen bg-zinc-50 text-zinc-950 antialiased">
+            <Header />
+            <main>
+                <section className="relative isolate overflow-hidden bg-[#11145f] py-16 text-white sm:py-20">
+                    <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(223,8,103,0.38),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(0,101,47,0.45),transparent_40%)]" />
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <a href="/#important-dates" className="inline-flex items-center gap-2 text-sm font-bold text-[#ffd36a] transition hover:text-white"><span aria-hidden="true">←</span> Back to workshops</a>
+                        <p className="mt-10 text-xs font-black uppercase tracking-[0.2em] text-[#ffd36a]">Pre-Congress Workshop</p>
+                        <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight sm:text-5xl">AI in Scientific Writing &amp; Publications</h1>
+                        <p className="mt-5 max-w-3xl text-lg font-medium leading-8 text-white/80">Explore the role of artificial intelligence in research, scientific communication, and modern publication workflows with an experienced AI educator and health-technology innovator.</p>
+                        <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                            {[
+                                ['Date', '18 September 2026'],
+                                ['Venue', 'Lisie College of Pharmacy, Ernakulam'],
+                            ].map(([label, value]) => <div key={label} className="rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm"><p className="text-xs font-bold uppercase tracking-wider text-[#ffd36a]">{label}</p><p className="mt-2 text-sm font-semibold leading-6 text-white">{value}</p></div>)}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="py-14 sm:py-18">
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.4fr]">
+                            <aside className="rounded-2xl bg-[#00652f] p-6 text-white shadow-lg sm:p-8 lg:self-start">
+                                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd36a]">Workshop Faculty</p>
+                                <h2 className="mt-3 text-3xl font-bold">Dr. Sharon Baisil</h2>
+                                <p className="mt-3 text-sm font-semibold leading-6 text-white/75">Associate Professor of Community Medicine &amp; Assistant Medical Superintendent, MOSC Medical College, Cochin</p>
+                                <div className="mt-6 border-t border-white/15 pt-5 text-sm leading-7 text-white/85">
+                                    <p>AI Course Faculty, Neonatal Neuro-Critical Care Education, University of Calgary, Canada</p>
+                                    <p className="mt-3">CEO, Kronotome</p>
+                                </div>
+                            </aside>
+                            <article className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-9">
+                                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#df0867]">About the faculty</p>
+                                <h2 className="mt-3 text-3xl font-bold text-[#11145f]">Technology, healthcare, and AI-enabled research</h2>
+                                <div className="mt-6 space-y-5 text-base leading-8 text-zinc-600">
+                                    <p>Dr. Sharon Baisil is passionate about using technology to improve healthcare and well-being, reflected in his work as an app developer, entrepreneur, author, and international AI educator.</p>
+                                    <p>He has co-authored public-health textbook chapters and books on diabetes management. His work has received awards including Best Medical App in India from Google and Healthline’s Best Depression App award.</p>
+                                    <p>As CEO of Kronotome, he leads a startup focused on empowering researchers and writers with AI tools. His international training collaborations include AIIMS, Hamad Medical Corporation, JIPMER, and the Indian Institute of Science.</p>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="bg-white py-14 sm:py-18">
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#00652f]">Profile Highlights</p>
+                        <h2 className="mt-3 text-3xl font-bold text-[#11145f]">Innovation with global reach</h2>
+                        <div className="mt-8 grid gap-5 md:grid-cols-2">{highlights.map(([title, copy], index) => <article key={title} className="flex gap-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-6"><span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#11145f] text-sm font-black text-white">{index + 1}</span><div><h3 className="font-bold text-[#11145f]">{title}</h3><p className="mt-2 text-sm leading-7 text-zinc-600">{copy}</p></div></article>)}</div>
+                        <div className="mt-10 flex flex-col items-start justify-between gap-5 rounded-2xl bg-[#11145f] p-6 text-white sm:flex-row sm:items-center sm:p-8"><div><h2 className="text-2xl font-bold">Interested in this workshop?</h2><p className="mt-2 text-sm text-white/75">Choose “AI in Scientific Writing &amp; Publications” during congress registration.</p></div><a href="/registration" className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#ffd36a] px-5 py-3 text-sm font-black text-[#11145f] transition hover:bg-white">Register now</a></div>
+                    </div>
+                </section>
+                <Contact />
+            </main>
+        </div>
+    );
+}
+
+function NddsWorkshopPage() {
+    const learningObjectives = [
+        'Understand the principles and applications of nano drug delivery systems in pharmaceutical research.',
+        'Prepare liposomes, nanostructured lipid carriers, and nanomicelles.',
+        'Characterize nanoparticles using particle-size and zeta-potential analysis.',
+        'Evaluate drug release and permeation using Franz and side-by-side diffusion cells.',
+        'Understand the role of HPLC in quantitative analysis of nanoparticle formulations.',
+        'Gain practical knowledge of freeze drying and spray drying for nanoformulation stabilization.',
+        'Apply transmission electron microscopy (TEM) to morphological characterization of nanoparticles.',
+        'Develop hands-on skills in formulation, characterization, and optimization using advanced pharmaceutical instrumentation.',
+    ];
+    const trainingAreas = [
+        {
+            title: 'Design & Formulation of Nanoparticles',
+            venue: 'PG Research Lab — Pharmaceutics & Pharmaceutical Chemistry',
+            sessions: [
+                ['Liposome Preparation', 'Devika', 'Dr. Rahul Soman', 'Phospholipid, cholesterol, rotavapor, probe sonicator'],
+                ['Nano Lipid Carriers', 'Julie', 'Dr. Sreeja', 'Probe sonicator and lipids'],
+                ['Nanomicelles', 'Safa', 'Dr. Vrinda', 'Pluronic, cholesterol, rotavapor'],
+                ['Franz Diffusion Cell', 'Vinay', 'Dr. Sreeja', 'Diffusion-cell setup'],
+            ],
+        },
+        {
+            title: 'Characterization Techniques',
+            venue: 'Pharmaceutics Lab III',
+            sessions: [
+                ['Particle Size & Distribution', 'Kavitha', 'Dr. Soumya', 'Particle-size analyzer'],
+                ['Surface Charge Measurement', 'Navyashri', 'Dr. Soumya', 'Zeta-potential analyzer'],
+                ['Side-by-Side Diffusion Cell', 'Gayathri', 'Dr. Sudheesh', 'Diffusion-cell equipment'],
+                ['HPLC Analysis', 'Abhirami', 'Dr. Vidya', 'HPLC setup'],
+            ],
+        },
+        {
+            title: 'Drying & Advanced Imaging',
+            venue: 'Pilot Plant',
+            sessions: [
+                ['Freeze Drying', 'Anjali', 'Dr. Vidya', 'Freeze dryer'],
+                ['Spray Drying', 'Gayathri and Abhirami', 'Dr. Sudheesh', 'Spray dryer'],
+                ['Transmission Electron Microscopy (TEM)', 'Vinay', 'Dr. Sreeja', 'TEM equipment'],
+            ],
+        },
+    ];
+
+    return (
+        <div className="event-theme min-h-screen bg-zinc-50 text-zinc-950 antialiased">
+            <Header />
+            <main>
+                <section className="relative isolate overflow-hidden bg-[#11145f] py-16 text-white sm:py-20">
+                    <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(223,8,103,0.38),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(0,101,47,0.45),transparent_40%)]" />
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <a href="/#important-dates" className="inline-flex items-center gap-2 text-sm font-bold text-[#ffd36a] transition hover:text-white"><span aria-hidden="true">←</span> Back to workshops</a>
+                        <p className="mt-10 text-xs font-black uppercase tracking-[0.2em] text-[#ffd36a]">Pre-Congress Workshop</p>
+                        <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight sm:text-5xl">NDDS: Nano/Micro Drug Delivery Systems</h1>
+                        <p className="mt-5 max-w-3xl text-lg font-medium leading-8 text-white/80">Formulation, characterization, advanced imaging, and drying techniques for modern nanomedicine development.</p>
+                        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                            {[
+                                ['Date & Time', '18 September 2026 · 9:30 AM–1:30 PM'],
+                                ['Format', 'Three batches of 10 students'],
+                                ['Venue', 'Pharmaceutics Research Lab, Amrita School of Pharmacy'],
+                            ].map(([label, value]) => <div key={label} className="rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm"><p className="text-xs font-bold uppercase tracking-wider text-[#ffd36a]">{label}</p><p className="mt-2 text-sm font-semibold leading-6 text-white">{value}</p></div>)}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="py-14 sm:py-18">
+                    <div className="mx-auto grid max-w-5xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.45fr_0.75fr] lg:px-8">
+                        <article className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-9">
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#df0867]">About the workshop</p>
+                            <h2 className="mt-3 text-3xl font-bold text-[#11145f]">Hands-on nanopharmaceutical research</h2>
+                            <div className="mt-6 space-y-5 text-base leading-8 text-zinc-600">
+                                <p>This intensive workshop provides practical training in the formulation and evaluation of nano drug delivery systems, including liposomes, nanostructured lipid carriers, and nanomicelles.</p>
+                                <p>Participants will perform particle-size analysis, zeta-potential measurement, diffusion studies, and HPLC analysis, with exposure to freeze drying, spray drying, and transmission electron microscopy for nanoscale imaging.</p>
+                                <p>Expert lectures, laboratory demonstrations, and small-group practical sessions make the program suitable for postgraduate students, research scholars, and early-career researchers seeking experience with advanced instrumentation.</p>
+                            </div>
+                        </article>
+                        <aside className="rounded-2xl bg-[#00652f] p-6 text-white shadow-lg sm:p-8 lg:self-start">
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd36a]">Workshop Coordinator</p>
+                            <h2 className="mt-3 text-2xl font-bold">Dr. M. S. Sudheesh</h2>
+                            <p className="mt-2 text-sm font-semibold text-white/75">Associate Professor & Head, Department of Pharmaceutics, Amrita School of Pharmacy</p>
+                            <p className="mt-5 text-sm leading-7 text-white/85">Dr. Sudheesh has more than 18 years of research experience. His interests include supersaturation and permeability studies of poorly soluble drugs for improving drug delivery.</p>
+                        </aside>
+                    </div>
+                </section>
+
+                <section className="bg-white py-14 sm:py-18"><div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#df0867]">Learning Objectives</p><h2 className="mt-3 text-3xl font-bold text-[#11145f]">What participants will learn</h2>
+                    <div className="mt-8 grid gap-4 md:grid-cols-2">{learningObjectives.map((objective, index) => <div key={objective} className="flex gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-5"><span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#11145f] text-sm font-black text-white">{index + 1}</span><p className="text-sm font-medium leading-7 text-zinc-700">{objective}</p></div>)}</div>
+                </div></section>
+
+                <section className="py-14 sm:py-18"><div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#00652f]">Practical Schedule</p><h2 className="mt-3 text-3xl font-bold text-[#11145f]">Laboratory training areas</h2>
+                    <p className="mt-3 text-sm leading-6 text-zinc-500">Inauguration begins at 9:00 AM. Particle-size analysis and small-group practical sessions run from 9:30 AM to 1:30 PM, followed by lunch.</p>
+                    <div className="mt-8 space-y-6">{trainingAreas.map((area) => <article key={area.title} className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm"><div className="bg-[#11145f] px-6 py-5 text-white"><h3 className="text-xl font-bold">{area.title}</h3><p className="mt-1 text-xs font-semibold uppercase tracking-wide text-[#ffd36a]">{area.venue}</p></div><div className="grid gap-px bg-zinc-200 sm:grid-cols-2">{area.sessions.map(([activity, aide, mentor, requirement]) => <div key={activity} className="bg-white p-5"><h4 className="font-bold text-[#11145f]">{activity}</h4><dl className="mt-3 space-y-1 text-xs leading-5 text-zinc-600"><div><dt className="inline font-bold text-zinc-800">Session aide: </dt><dd className="inline">{aide}</dd></div><div><dt className="inline font-bold text-zinc-800">Mentor: </dt><dd className="inline">{mentor}</dd></div><div><dt className="inline font-bold text-zinc-800">Equipment/materials: </dt><dd className="inline">{requirement}</dd></div></dl></div>)}</div></article>)}</div>
+                    <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm leading-7 text-amber-900"><strong>Participant note:</strong> Printed protocols will be provided. The program is designed as an in-depth, hands-on skill-development workshop in nano drug delivery technologies.</div>
+                </div></section>
+
+                <section className="bg-white py-14"><div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8"><div className="flex flex-col items-start justify-between gap-5 rounded-2xl bg-[#11145f] p-6 text-white sm:flex-row sm:items-center sm:p-8"><div><h2 className="text-2xl font-bold">Interested in this workshop?</h2><p className="mt-2 text-sm text-white/75">Choose the NDDS workshop during congress registration.</p></div><a href="/registration" className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#ffd36a] px-5 py-3 text-sm font-black text-[#11145f] transition hover:bg-white">Register now</a></div></div></section>
+                <Contact />
+            </main>
+        </div>
+    );
+}
+
+function NeurologicalScreeningWorkshopPage() {
+    const learningObjectives = [
+        'Understand key experimental models used for neurological screening.',
+        'Explain the fundamental biological and genetic features of Drosophila and C. elegans.',
+        'Demonstrate basic laboratory techniques for culturing, maintaining, and handling C. elegans under standard laboratory conditions.',
+        'Compare the strengths, limitations, and translational relevance of these neurological screening models.',
+    ];
+    const faculty = [
+        {
+            name: 'Dr. Jaya Thomas',
+            role: 'Associate Professor & Head, Department of Pharmacology, Amrita School of Pharmacy',
+            copy: 'Dr. Jaya Thomas has 16 years of teaching and research experience and earned her PhD in Pharmacology from Jamia Hamdard University, New Delhi. Her research examines mechanistic pathways underlying neurodevelopmental and neurodegenerative disorders, with an emphasis on advancing neurotherapeutic strategies.',
+        },
+        {
+            name: 'Dr. Lakshmi P. K.',
+            role: 'Assistant Professor, Department of Pharmacognosy, Amrita School of Pharmacy',
+            copy: 'Dr. Lakshmi P. K. has more than 15 years of teaching and research experience. Her research focuses on evaluating phytomolecules for anti-Alzheimer’s activity using Caenorhabditis elegans as a model organism.',
+        },
+    ];
+
+    return (
+        <div className="event-theme min-h-screen bg-zinc-50 text-zinc-950 antialiased">
+            <Header />
+            <main>
+                <section className="relative isolate overflow-hidden bg-[#11145f] py-16 text-white sm:py-20">
+                    <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(223,8,103,0.38),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(0,101,47,0.45),transparent_40%)]" />
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <a href="/#important-dates" className="inline-flex items-center gap-2 text-sm font-bold text-[#ffd36a] transition hover:text-white"><span aria-hidden="true">←</span> Back to workshops</a>
+                        <p className="mt-10 text-xs font-black uppercase tracking-[0.2em] text-[#ffd36a]">Pre-Congress Workshop</p>
+                        <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight sm:text-5xl">Advanced in Neurological Screening Models</h1>
+                        <p className="mt-5 max-w-3xl text-lg font-medium leading-8 text-white/80">From worms to flies: advances in neurological screening models for neuroscience, pharmacology, and drug discovery.</p>
+                        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                            {[
+                                ['Date', '18 September 2026'],
+                                ['Departments', 'Pharmacology & Pharmacognosy'],
+                                ['Venue', 'Amrita School of Pharmacy, Ernakulam'],
+                            ].map(([label, value]) => (
+                                <div key={label} className="rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-[#ffd36a]">{label}</p>
+                                    <p className="mt-2 text-sm font-semibold leading-6 text-white">{value}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="py-14 sm:py-18">
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <article className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-9">
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#df0867]">About the workshop</p>
+                            <h2 className="mt-3 text-3xl font-bold text-[#11145f]">Powerful invertebrate models for neurological research</h2>
+                            <div className="mt-6 space-y-5 text-base leading-8 text-zinc-600">
+                                <p>This workshop introduces two widely used invertebrate model organisms—Caenorhabditis elegans (C. elegans) and Drosophila melanogaster—and their applications in neuroscience and pharmacological research.</p>
+                                <p>Participants will examine the biological and genetic features that make these organisms valuable for studying neurological disorders, neurodegeneration, behavior, and drug responses. Hands-on exposure will cover experimental techniques and behavioral assays used in neurological screening.</p>
+                                <p>Interactive sessions and demonstrations will explore the strengths, limitations, and translational relevance of these systems in modern pharmacology and drug discovery.</p>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section className="bg-white py-14 sm:py-18">
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#00652f]">Workshop Faculty</p>
+                        <h2 className="mt-3 text-3xl font-bold text-[#11145f]">Meet the subject experts</h2>
+                        <div className="mt-8 grid gap-5 md:grid-cols-2">
+                            {faculty.map((person) => (
+                                <article key={person.name} className="rounded-2xl bg-[#00652f] p-6 text-white shadow-lg sm:p-8">
+                                    <h3 className="text-2xl font-bold">{person.name}</h3>
+                                    <p className="mt-2 text-sm font-semibold leading-6 text-[#ffd36a]">{person.role}</p>
+                                    <p className="mt-5 text-sm leading-7 text-white/85">{person.copy}</p>
+                                </article>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="py-14 sm:py-18">
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#df0867]">Learning Objectives</p>
+                        <h2 className="mt-3 text-3xl font-bold text-[#11145f]">What participants will learn</h2>
+                        <div className="mt-8 grid gap-4 md:grid-cols-2">
+                            {learningObjectives.map((objective, index) => (
+                                <div key={objective} className="flex gap-4 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#11145f] text-sm font-black text-white">{index + 1}</span>
+                                    <p className="text-sm font-medium leading-7 text-zinc-700">{objective}</p>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-10 flex flex-col items-start justify-between gap-5 rounded-2xl bg-[#11145f] p-6 text-white sm:flex-row sm:items-center sm:p-8">
+                            <div><h2 className="text-2xl font-bold">Interested in this workshop?</h2><p className="mt-2 text-sm text-white/75">Choose “Advanced in Neurological Screening Models” during congress registration.</p></div>
+                            <a href="/registration" className="inline-flex shrink-0 items-center justify-center rounded-lg bg-[#ffd36a] px-5 py-3 text-sm font-black text-[#11145f] transition hover:bg-white">Register now</a>
+                        </div>
+                    </div>
+                </section>
+                <Contact />
+            </main>
+        </div>
+    );
+}
+
+function MolecularDockingWorkshopPage() {
+    const learningObjectives = [
+        'Understand the fundamental principles and applications of molecular docking in computer-aided drug design and discovery.',
+        'Understand protein-ligand interactions, binding sites, docking algorithms, and scoring functions.',
+        'Gain practical experience in preparing protein and ligand structures for molecular docking studies.',
+        'Perform molecular docking studies using MzDOCK software.',
+        'Visualize and analyze the binding modes and interactions of docked protein-ligand complexes.',
+        'Interpret docking scores, binding poses, and key molecular interactions obtained from docking studies.',
+        'Understand the applications and limitations of molecular docking in pharmaceutical and medicinal chemistry research.',
+        'Develop practical skills in performing and interpreting a basic molecular docking workflow.',
+    ];
+    const schedule = [
+        ['9:00 AM–9:30 AM', 'Inauguration', '—', '—'],
+        ['9:30 AM–10:30 AM', 'Introduction to Molecular Docking: Principles, Methodology, and Applications in Drug Discovery', '—', 'Prof. Bijo Mathew'],
+        ['10:30 AM–10:45 AM', 'Tea Break', '—', '—'],
+        ['10:45 AM–1:30 PM', 'Hands-on Training in Molecular Docking Using MzDOCK Software', 'Saranya K. P. and Harish Chandra V.', 'Prof. Bijo Mathew'],
+    ];
+
+    return (
+        <div className="event-theme min-h-screen bg-zinc-50 text-zinc-950 antialiased">
+            <Header />
+            <main>
+                <section className="relative isolate overflow-hidden bg-[#11145f] py-16 text-white sm:py-20">
+                    <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_right,rgba(223,8,103,0.38),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(0,101,47,0.45),transparent_40%)]" />
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <a href="/#important-dates" className="inline-flex items-center gap-2 text-sm font-bold text-[#ffd36a] transition hover:text-white"><span aria-hidden="true">←</span> Back to workshops</a>
+                        <p className="mt-10 text-xs font-black uppercase tracking-[0.2em] text-[#ffd36a]">Pre-Congress Workshop</p>
+                        <h1 className="mt-4 max-w-4xl text-4xl font-black leading-tight sm:text-5xl">Molecular Docking &amp; Molecular Dynamics Simulation</h1>
+                        <p className="mt-5 max-w-3xl text-lg font-medium leading-8 text-white/80">Hands-on training in the principles, methodology, and practical applications of molecular docking in computer-aided drug design.</p>
+                        <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                            {[
+                                ['Date', '18 September 2026'],
+                                ['Published Duration', '9:00 AM–12:30 PM'],
+                                ['Venue', 'Seminar Hall, Amrita School of Pharmacy'],
+                            ].map(([label, value]) => (
+                                <div key={label} className="rounded-xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-[#ffd36a]">{label}</p>
+                                    <p className="mt-2 text-sm font-semibold leading-6 text-white">{value}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="py-14 sm:py-18">
+                    <div className="mx-auto grid max-w-5xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.45fr_0.75fr] lg:px-8">
+                        <article className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-9">
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#df0867]">About the workshop</p>
+                            <h2 className="mt-3 text-3xl font-bold text-[#11145f]">Practical molecular docking for modern drug discovery</h2>
+                            <div className="mt-6 space-y-5 text-base leading-8 text-zinc-600">
+                                <p>This hands-on workshop gives participants fundamental knowledge and practical experience in molecular docking, an important computational technique in computer-aided drug design and discovery.</p>
+                                <p>An expert seminar introduces protein-ligand interactions, docking methodology, scoring functions, and applications in pharmaceutical and medicinal chemistry. The practical session uses MzDOCK to cover protein and ligand preparation, binding-site identification, docking execution, visualization of docked complexes, and interpretation of results.</p>
+                                <p>The program is intended for postgraduate students, research scholars, and researchers seeking practical exposure to computational approaches used in modern drug discovery.</p>
+                            </div>
+                        </article>
+                        <aside className="rounded-2xl bg-[#00652f] p-6 text-white shadow-lg sm:p-8 lg:self-start">
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd36a]">Workshop Coordinator</p>
+                            <h2 className="mt-3 text-2xl font-bold">Dr. Bijo Mathew</h2>
+                            <p className="mt-2 text-sm font-semibold text-white/75">Professor, Department of Pharmaceutical Chemistry, Amrita School of Pharmacy</p>
+                            <p className="mt-5 text-sm leading-7 text-white/85">Internationally recognized for medicinal chemistry, neurodegenerative drug discovery, molecular modelling, docking, molecular dynamics, and structure-based drug design. Listed among the world’s top 2% scientists for six consecutive years (2020–2025), he has more than 18 years of teaching and research experience and over 270 peer-reviewed publications as of July 2026.</p>
+                        </aside>
+                    </div>
+                </section>
+
+                <section className="bg-white py-14 sm:py-18">
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#df0867]">Learning Objectives</p>
+                        <h2 className="mt-3 text-3xl font-bold text-[#11145f]">What participants will learn</h2>
+                        <div className="mt-8 grid gap-4 md:grid-cols-2">
+                            {learningObjectives.map((objective, index) => (
+                                <div key={objective} className="flex gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-5">
+                                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#11145f] text-sm font-black text-white">{index + 1}</span>
+                                    <p className="text-sm font-medium leading-7 text-zinc-700">{objective}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="py-14 sm:py-18">
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#00652f]">Workshop Schedule</p>
+                        <h2 className="mt-3 text-3xl font-bold text-[#11145f]">Sessions and hands-on training</h2>
+                        <div className="mt-8 overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                            <table className="w-full min-w-[760px] text-left text-sm">
+                                <thead className="bg-[#11145f] text-white"><tr>{['Time', 'Session', 'Session Aid', 'Mentor'].map((heading) => <th key={heading} className="px-5 py-4 font-bold">{heading}</th>)}</tr></thead>
+                                <tbody>{schedule.map((row, index) => <tr key={row[0]} className={index % 2 ? 'bg-zinc-50' : 'bg-white'}>{row.map((cell, cellIndex) => <td key={`${row[0]}-${cellIndex}`} className={`border-t border-zinc-200 px-5 py-4 align-top leading-6 ${cellIndex === 0 ? 'whitespace-nowrap font-bold text-[#11145f]' : 'text-zinc-600'}`}>{cell}</td>)}</tr>)}</tbody>
+                            </table>
+                        </div>
+                        <p className="mt-3 text-xs leading-5 text-zinc-500">The supplied schedule lists the hands-on training session through 1:30 PM, although the workshop brief states a published duration of 9:00 AM–12:30 PM.</p>
+                    </div>
+                </section>
+
+                <section className="bg-white py-14 sm:py-18">
+                    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 sm:p-8">
+                            <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">Before You Attend</p>
+                            <h2 className="mt-3 text-2xl font-bold text-[#11145f]">Laptop and software requirements</h2>
+                            <ul className="mt-5 space-y-3 text-sm leading-7 text-zinc-700">
+                                <li>• Bring your own laptop for the hands-on training session.</li>
+                                <li>• Download and install MzDOCK before attending the workshop.</li>
+                                <li>• Confirm that the software is installed and working correctly in advance.</li>
+                            </ul>
+                            <a href="https://sourceforge.net/projects/mzdock/" target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex rounded-lg bg-[#11145f] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#df0867]">Download MzDOCK ↗</a>
+                        </div>
+                    </div>
+                </section>
+                <Contact />
+            </main>
+        </div>
+    );
+}
+
 function ThreeDPrintingWorkshopPage() {
     const learningObjectives = [
         'Grasp the foundational concepts behind additive manufacturing and its specific adaptation to the medical and pharmaceutical sectors.',
@@ -11054,6 +11541,10 @@ export default function App() {
     const isAccommodationTravelPage = window.location.pathname === '/accommodation-travel';
     const isOrganizingTeamPage = window.location.pathname === '/organizing-team';
     const isThreeDPrintingWorkshopPage = window.location.pathname === '/workshops/3d-printing-in-pharmaceuticals';
+    const isMolecularDockingWorkshopPage = window.location.pathname === '/workshops/molecular-docking-and-dynamics-simulation';
+    const isNeurologicalScreeningWorkshopPage = window.location.pathname === '/workshops/advanced-neurological-screening-models';
+    const isNddsWorkshopPage = window.location.pathname === '/workshops/ndds-formulation-and-characterization';
+    const isAiScientificWritingWorkshopPage = window.location.pathname === '/workshops/ai-in-scientific-writing-and-publications';
 
     if (isAdminLoginPage) {
         return <AdminLoginPage />;
@@ -11120,6 +11611,22 @@ export default function App() {
 
     if (isThreeDPrintingWorkshopPage) {
         return <ThreeDPrintingWorkshopPage />;
+    }
+
+    if (isMolecularDockingWorkshopPage) {
+        return <MolecularDockingWorkshopPage />;
+    }
+
+    if (isNeurologicalScreeningWorkshopPage) {
+        return <NeurologicalScreeningWorkshopPage />;
+    }
+
+    if (isNddsWorkshopPage) {
+        return <NddsWorkshopPage />;
+    }
+
+    if (isAiScientificWritingWorkshopPage) {
+        return <AiScientificWritingWorkshopPage />;
     }
 
     if (isOrganizingTeamPage) {

@@ -1011,13 +1011,14 @@ async function notifyVideoReviewed(contact, submission) {
 
 async function notifySkillVideoReviewed(contact, submission) {
     if (!contact) return;
+    const submissionType = submission.fileUrl ? 'abstract' : 'video';
     await sendStudentMail({
         to: contact.email,
-        subject: `Skill competition video review update - ${submission.registrationNumber || contact.registrationNumber}`,
-        preview: `Your ${submission.competitionName || 'skill competition'} video status is now ${formatStatusLabel(submission.reviewStatus)}.`,
+        subject: `Skill competition ${submissionType} review update - ${submission.registrationNumber || contact.registrationNumber}`,
+        preview: `Your ${submission.competitionName || 'skill competition'} ${submissionType} status is now ${formatStatusLabel(submission.reviewStatus)}.`,
         body: [
             `Dear ${contact.name || 'Delegate'},`,
-            `Your video submission for ${submission.competitionName || 'the skill competition'} under registration ${submission.registrationNumber || contact.registrationNumber || '-'} has been updated to ${formatStatusLabel(submission.reviewStatus)}.`,
+            `Your ${submissionType} submission for ${submission.competitionName || 'the skill competition'} under registration ${submission.registrationNumber || contact.registrationNumber || '-'} has been updated to ${formatStatusLabel(submission.reviewStatus)}.`,
             submission.reviewRemarks ? `Remarks: ${submission.reviewRemarks}` : 'No additional remarks were added.',
         ],
     }).catch((error) => console.error('notifySkillVideoReviewed failed:', error));
@@ -1066,7 +1067,12 @@ async function ensureSkillCompetitionVideoSubmissions(sql) {
             competition_name VARCHAR(180) NOT NULL,
             participant_name TEXT,
             institution_name TEXT,
-            video_link TEXT NOT NULL,
+            video_link TEXT,
+            file_name TEXT,
+            file_size BIGINT NOT NULL DEFAULT 0,
+            file_type VARCHAR(120),
+            file_url TEXT,
+            blob_path TEXT,
             review_status VARCHAR(30) NOT NULL DEFAULT 'pending',
             review_remarks TEXT,
             reviewed_at TIMESTAMPTZ,
@@ -1075,6 +1081,12 @@ async function ensureSkillCompetitionVideoSubmissions(sql) {
             UNIQUE (registration_number, competition_name)
         )
     `;
+    await sql`ALTER TABLE skill_competition_video_submissions ALTER COLUMN video_link DROP NOT NULL`;
+    await sql`ALTER TABLE skill_competition_video_submissions ADD COLUMN IF NOT EXISTS file_name TEXT`;
+    await sql`ALTER TABLE skill_competition_video_submissions ADD COLUMN IF NOT EXISTS file_size BIGINT NOT NULL DEFAULT 0`;
+    await sql`ALTER TABLE skill_competition_video_submissions ADD COLUMN IF NOT EXISTS file_type VARCHAR(120)`;
+    await sql`ALTER TABLE skill_competition_video_submissions ADD COLUMN IF NOT EXISTS file_url TEXT`;
+    await sql`ALTER TABLE skill_competition_video_submissions ADD COLUMN IF NOT EXISTS blob_path TEXT`;
     await sql`CREATE INDEX IF NOT EXISTS skill_competition_video_submissions_status_idx ON skill_competition_video_submissions (review_status)`;
     await sql`CREATE INDEX IF NOT EXISTS skill_competition_video_submissions_registration_idx ON skill_competition_video_submissions (registration_number)`;
     await sql`CREATE INDEX IF NOT EXISTS skill_competition_video_submissions_competition_idx ON skill_competition_video_submissions (competition_name)`;
@@ -2256,6 +2268,11 @@ function mapSkillCompetitionVideoSubmission(row) {
         participantName: row.participant_name || '',
         institutionName: row.institution_name || '',
         videoLink: row.video_link || '',
+        fileName: row.file_name || '',
+        fileSize: Number(row.file_size) || 0,
+        fileType: row.file_type || '',
+        fileUrl: row.file_url || '',
+        blobPath: row.blob_path || '',
         reviewStatus: row.review_status || 'pending',
         reviewRemarks: row.review_remarks || '',
         reviewedAt: row.reviewed_at || null,
@@ -2524,7 +2541,7 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
 }
 
 async function handlePublicSkillCompetitionRoute(path, request, response, sql) {
-    if (path === 'skill-videos/check' && request.method === 'GET') {
+    if ((path === 'skill-videos/check' || path === 'skill-abstracts/check') && request.method === 'GET') {
         await ensureSkillCompetitionVideoSubmissions(sql);
         const regNum = String(request.query.registrationNumber || '').trim().toUpperCase();
         const competitionName = String(request.query.competitionName || '').trim();
@@ -2553,6 +2570,58 @@ async function handlePublicSkillCompetitionRoute(path, request, response, sql) {
             alreadySubmitted: eligibility.alreadySubmitted,
             submission: eligibility.submission,
         });
+    }
+
+    if (path === 'skill-abstracts/submit' && request.method === 'POST') {
+        await ensureSkillCompetitionVideoSubmissions(sql);
+        const regNum = String(request.body?.registrationNumber || '').trim().toUpperCase();
+        const competitionName = String(request.body?.competitionName || '').trim();
+        const fileName = String(request.body?.fileName || '').trim();
+        const fileType = String(request.body?.fileType || '').trim();
+        const fileData = String(request.body?.fileData || '');
+        const fileSize = Number(request.body?.fileSize) || 0;
+        if (!regNum) throw inputError('Registration number is required.');
+        if (competitionName !== 'ClinRx Case Challenge') throw inputError('PDF submission is only available for the ClinRx Case Challenge.');
+        if (!fileName || !fileData) throw inputError('Select a PDF abstract to upload.');
+
+        const eligibility = await getSkillCompetitionEligibility(sql, regNum, competitionName);
+        if (!eligibility.valid) throw inputError('Registration number not found.');
+        if (!eligibility.canSubmit) throw inputError(eligibility.eligibilityReason || 'This registration is not eligible for abstract submission.');
+        if (eligibility.alreadySubmitted) throw inputError('An abstract has already been submitted for this competition.');
+
+        const validatedFile = validateAbstractUpload({ fileName, fileType, fileData, fileSize });
+        const blob = await uploadAbstractToBlob({
+            registrationNumber: `clinrx-${eligibility.canonicalRegNum}`,
+            fileName,
+            fileType,
+            buffer: validatedFile.buffer,
+            extension: validatedFile.extension,
+        });
+        const rows = await sql`
+            INSERT INTO skill_competition_video_submissions
+                (registration_number, competition_name, participant_name, institution_name,
+                 file_name, file_size, file_type, file_url, blob_path, review_status)
+            VALUES (
+                ${eligibility.canonicalRegNum}, ${competitionName},
+                ${eligibility.participantName || null}, ${eligibility.institutionName || null},
+                ${fileName}, ${fileSize}, ${fileType || 'application/pdf'},
+                ${blob.url}, ${blob.pathname}, 'pending'
+            )
+            RETURNING *
+        `;
+        const submission = mapSkillCompetitionVideoSubmission(rows[0]);
+        const contact = await getRegistrationContactForMail(sql, submission.registrationNumber);
+        queueStudentMail({
+            to: contact?.email,
+            subject: `ClinRx abstract received - ${submission.registrationNumber}`,
+            preview: 'Your ClinRx Case Challenge abstract has been received and is pending review.',
+            body: [
+                `Dear ${contact?.name || eligibility.participantName || 'Delegate'},`,
+                `Your PDF abstract "${fileName}" has been received for the ClinRx Case Challenge under registration ${submission.registrationNumber || '-'}.`,
+                'The committee will review it and notify you when the review status is updated.',
+            ],
+        });
+        return send(response, 201, { submission });
     }
 
     if (path === 'skill-videos/submit' && request.method === 'POST') {
@@ -3419,7 +3488,8 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             }
             const rows = await sql`
                 SELECT id, registration_number, competition_name, participant_name, institution_name,
-                       video_link, review_status, review_remarks, reviewed_at, submitted_at
+                       video_link, file_name, file_size, file_type, file_url, blob_path,
+                       review_status, review_remarks, reviewed_at, submitted_at
                 FROM skill_competition_video_submissions
                 ORDER BY submitted_at DESC
             `;

@@ -349,7 +349,12 @@ CREATE TABLE IF NOT EXISTS skill_competition_video_submissions (
     competition_name VARCHAR(180) NOT NULL,
     participant_name TEXT,
     institution_name TEXT,
-    video_link TEXT NOT NULL,
+    video_link TEXT,
+    file_name TEXT,
+    file_size BIGINT NOT NULL DEFAULT 0,
+    file_type VARCHAR(120),
+    file_url TEXT,
+    blob_path TEXT,
     review_status VARCHAR(30) NOT NULL DEFAULT 'pending',
     review_remarks TEXT,
     reviewed_at TIMESTAMPTZ,
@@ -357,6 +362,13 @@ CREATE TABLE IF NOT EXISTS skill_competition_video_submissions (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (registration_number, competition_name)
 );
+
+ALTER TABLE skill_competition_video_submissions ALTER COLUMN video_link DROP NOT NULL;
+ALTER TABLE skill_competition_video_submissions ADD COLUMN IF NOT EXISTS file_name TEXT;
+ALTER TABLE skill_competition_video_submissions ADD COLUMN IF NOT EXISTS file_size BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE skill_competition_video_submissions ADD COLUMN IF NOT EXISTS file_type VARCHAR(120);
+ALTER TABLE skill_competition_video_submissions ADD COLUMN IF NOT EXISTS file_url TEXT;
+ALTER TABLE skill_competition_video_submissions ADD COLUMN IF NOT EXISTS blob_path TEXT;
 
 CREATE INDEX IF NOT EXISTS skill_competition_video_submissions_status_idx ON skill_competition_video_submissions (review_status);
 CREATE INDEX IF NOT EXISTS skill_competition_video_submissions_registration_idx ON skill_competition_video_submissions (registration_number);
