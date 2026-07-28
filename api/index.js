@@ -84,7 +84,7 @@ const defaultPrograms = [
 
 const defaultHomeContent = {
     newsUpdates: [
-        { title: 'Abstract Submission', copy: 'Last date: 31-07-2026' },
+        { title: 'Abstract Submission', copy: 'Last date: 30-08-2026' },
         { title: 'Abstract Acceptance Mail', copy: 'Last date: 05-08-2026' },
         { title: 'Video Submission and Evaluation', copy: 'Last date: 22-08-2026' },
         { title: 'Acceptance email for presentation', copy: 'Last date: 11-09-2026' },

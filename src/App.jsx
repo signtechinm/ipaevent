@@ -102,7 +102,7 @@ function pageHref(page) {
 
 const homeContentDefaults = {
     newsUpdates: [
-        { title: 'Abstract Submission', copy: 'Last date: 31-07-2026' },
+        { title: 'Abstract Submission', copy: 'Last date: 30-08-2026' },
         { title: 'Abstract Acceptance Mail', copy: 'Last date: 05-08-2026' },
         { title: 'Video Submission and Evaluation', copy: 'Last date: 22-08-2026' },
         { title: 'Acceptance email for presentation', copy: 'Last date: 11-09-2026' },
@@ -115,7 +115,7 @@ const importantDatesMarquee = [
     'Group Registration starts from: 03 July 2026',
     'Regular Registration starts from: 10th August 2026',
     'Regular Registration Closes on: 10th September 2026',
-    'Last Date of Submission of abstract: 31-07-2026',
+    'Last Date of Submission of abstract: 30-08-2026',
     'Abstract Acceptance mail date: 05-08-2026',
     'Last date Poster/Oral presentation Video Submission: 22-08-2026',
     'Date of Intimation of mail for Final Presentation by: 11-09-2026',
@@ -1639,7 +1639,7 @@ function AccommodationTravelPage() {
 function HomeWelcome() {
     return (
         <section id="home-welcome" className="event-soft-section py-16">
-            <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:items-center lg:px-8">
+            <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_360px] lg:items-center lg:px-8">
                 <div>
                     <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#df0867]">Welcome Message</p>
                     <h2 className="mt-3 text-3xl font-bold leading-tight text-[#11145f] sm:text-4xl">
@@ -1664,14 +1664,18 @@ function HomeWelcome() {
                         <span className="rounded-full bg-[#fff7df] px-4 py-2 text-[#8a5700]">{eventDate}</span>
                     </div>
                 </div>
-                <div className="overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-[#11145f]/10">
-                    <img
-                        src="/images/nsc-welcome-delegates.png"
-                        alt="Delegates and students at the 14th National IPA Student Congress"
+                <div className="mx-auto w-full max-w-[360px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-[#11145f]/10 lg:mx-0 lg:justify-self-end">
+                    <video
                         className="h-full w-full object-contain"
-                        loading="lazy"
-                        decoding="async"
-                    />
+                        controls
+                        playsInline
+                        preload="metadata"
+                        poster="/welcome-video-poster.png"
+                        aria-label="Welcome to the 14th National IPA Student Congress"
+                    >
+                        <source src="/welcome-14th-ipa-student-congress.mp4" type="video/mp4" />
+                        Your browser does not support HTML5 video.
+                    </video>
                 </div>
             </div>
         </section>
@@ -4439,8 +4443,8 @@ function StudentSkillCompetitionsPage() {
                         'Five participants whose abstracts are selected will present their cases at the final IPA National Student Congress.',
                         'Upload the prepared abstract in PDF format only through the respective section of the web portal.',
                         'Only registered participants will be able to submit an abstract.',
-                        'Last date for abstract submission: 30 September 2026.',
-                        'Upload abstract here. (PDF)',
+                        'Last date for abstract submission: 30 August 2026.',
+                        'Upload Case Challenge Abstract here',
                     ],
                 },
             ],
@@ -4699,7 +4703,9 @@ function StudentSkillCompetitionsPage() {
                 onClick={() => openSkillVideoModal(competitionName)}
                 className="font-bold text-[#df0867] underline decoration-[#df0867]/40 underline-offset-2 hover:text-[#bd0758]"
             >
-                Click and upload your video link here.
+                {competitionName === 'National Pharmacy Reels Competition'
+                    ? 'Upload Your Reel Video Link here'
+                    : 'Click and upload your video link here.'}
             </button>
         );
     }
@@ -4891,7 +4897,7 @@ function StudentSkillCompetitionsPage() {
                                             <ul className="mt-3 space-y-2">
                                                 {section.items.map((item) => {
                                                     const hasUploadLink = item.includes('Click and upload your video link here');
-                                                    const hasClinRxUpload = competition.title === 'ClinRx Case Challenge' && item === 'Upload abstract here. (PDF)';
+                                                    const hasClinRxUpload = competition.title === 'ClinRx Case Challenge' && item === 'Upload Case Challenge Abstract here';
                                                     if (hasUploadLink && !skillVideoUploadCompetitions.has(competition.title)) {
                                                         return null;
                                                     }
@@ -4901,7 +4907,7 @@ function StudentSkillCompetitionsPage() {
                                                         <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#00652f]" />
                                                         {hasClinRxUpload ? (
                                                             <button type="button" onClick={openClinRxModal} className="font-bold text-[#df0867] underline decoration-[#df0867]/40 underline-offset-2 hover:text-[#bd0758]">
-                                                                Upload abstract here. (PDF)
+                                                                Upload Case Challenge Abstract here
                                                             </button>
                                                         ) : hasUploadLink ? (
                                                             <span>
@@ -10460,17 +10466,16 @@ function ScientificServicePage() {
 
                     <div className="grid gap-10 lg:grid-cols-2">
                         <div className="mt-8 rounded-2xl border border-emerald-100 bg-emerald-50 p-6 sm:p-8">
-                            <div className="flex items-center gap-3">
-                                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-lg font-bold text-emerald-700">✓</span>
-                                <h3 className="text-base font-bold text-emerald-900 sm:text-lg">Participation Requirements</h3>
-                            </div>
+                            <h3 className="text-base font-bold text-emerald-900 sm:text-lg">Requirements for Poster and Oral Presentations</h3>
                             <ul className="mt-5 space-y-3">
                                 {[
-                                    'Only registered students, faculty, and researchers having a valid Registration ID can present.',
-                                    'Registration will be confirmed only after payment of the required fees.',
-                                    'E-certificates will be issued to participants selected for presentations.',
-                                    'All abstracts will be published in the 14th National IPA Student Congress Abstract Book.',
+                                    'Who can present: Only students, faculty, and researchers having a valid Registration ID for the 14th National IPA Student Congress.',
+                                    'Registration is a prerequisite for all presentations and abstract submissions.',
                                     'Participants must specify their preferred mode of presentation—Oral or E-Poster—during registration. No alteration is possible after completion of registration.',
+                                    'There is no separate fee for presentation competitions.',
+                                    'Separate competition categories are available for students and faculty/researchers.',
+                                    'The date and time of presentations will be notified through the registered email address.',
+                                    'All participants are requested to check their email inboxes frequently for communications and updates from the Scientific Services Committee.',
                                 ].map((item) => (
                                     <li key={item} className="flex items-start gap-2 text-sm leading-6 text-emerald-900">
                                         <span className="mt-2 size-1.5 shrink-0 rounded-full bg-emerald-600" />
@@ -10478,21 +10483,43 @@ function ScientificServicePage() {
                                     </li>
                                 ))}
                             </ul>
+
+                            <div className="mt-7 border-t border-emerald-200 pt-6">
+                                <h3 className="text-base font-bold text-emerald-900 sm:text-lg">Types and Scope for Poster and Oral Presentations</h3>
+                                <p className="mt-4 text-sm font-semibold leading-6 text-emerald-950">Original and unpublished work in the following categories is accepted:</p>
+                                <ul className="mt-3 space-y-2">
+                                    {['Research articles', 'Review articles', 'Case studies', 'Case series, etc.'].map((item) => (
+                                        <li key={item} className="flex items-start gap-2 text-sm font-semibold leading-6 text-emerald-900">
+                                            <span className="mt-2 size-1.5 shrink-0 rounded-full bg-emerald-600" />
+                                            <span>{item}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                                <div className="mt-5 space-y-3 text-sm leading-6 text-emerald-950">
+                                    <p>Selected abstracts will be published in the Abstract Book of the 14th National IPA Student Congress.</p>
+                                    <p>E-certificates of participation will be issued for all accepted papers.</p>
+                                    <p>Exciting prizes for winners and consolation prizes for the best presentations.</p>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-6 sm:p-8">
                             <div className="flex items-center gap-3">
-                                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-[#0d124f]">1</span>
                                 <h3 className="text-base font-bold text-[#0d124f] sm:text-lg">Stages of E-Poster and Oral Presentation Competition</h3>
                             </div>
                             <div className="mt-5 space-y-5 text-sm leading-6 text-blue-950">
-                                <p>
-                                    <strong>Abstract submission:</strong> After registration, participants shall upload their abstract as a one-page PDF in the space provided below. Please verify the registration number before submission.
-                                </p>
+                                <div className="flex items-start gap-3">
+                                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#0d124f] text-xs font-bold text-white">1</span>
+                                    <p>
+                                        <strong>Abstract submission:</strong> After registration, participants shall upload their abstract as a one-page PDF in the space provided below. Please verify the registration number before submission.
+                                    </p>
+                                </div>
                                 <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 font-bold uppercase text-amber-900">
-                                    Last date for submission of abstracts: 30/09/2026
+                                    Last date for submission of abstracts: 30/08/2026
                                 </p>
-                                <div>
+                                <div className="flex items-start gap-3">
+                                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#0d124f] text-xs font-bold text-white">2</span>
+                                    <div>
                                     <h4 className="font-bold text-[#0d124f]">E-Poster or Oral Presentation (Offline)</h4>
                                     <ul className="mt-2 space-y-2">
                                         {[
@@ -10506,6 +10533,7 @@ function ScientificServicePage() {
                                             </li>
                                         ))}
                                     </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
