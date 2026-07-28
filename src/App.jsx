@@ -4439,7 +4439,7 @@ function StudentSkillCompetitionsPage() {
                         'Five participants whose abstracts are selected will present their cases at the final IPA National Student Congress.',
                         'Upload the prepared abstract in PDF format only through the respective section of the web portal.',
                         'Only registered participants will be able to submit an abstract.',
-                        'Last date for abstract submission: 15 August 2026.',
+                        'Last date for abstract submission: 30 September 2026.',
                         'Upload abstract here. (PDF)',
                     ],
                 },
@@ -4526,9 +4526,9 @@ function StudentSkillCompetitionsPage() {
                 {
                     heading: 'Submission',
                     items: [
-                        'Submit by email as a link from which the video can be downloaded or viewed.',
-                        'File name format: Registration number.mp4.',
-                        'The submitted link must remain accessible to the competition reviewers.',
+                        'Verify your registration number and submit a link from which the video can be downloaded or viewed through this website: Click and upload your video link here.',
+                        'Name the video file using your registration number (for example, NSC26-000001.mp4).',
+                        'Ensure the submitted link remains accessible to the competition reviewers.',
                     ],
                 },
                 {
@@ -4956,7 +4956,7 @@ function StudentSkillCompetitionsPage() {
                             <button type="button" onClick={closeClinRxModal} className="rounded-lg px-3 py-1.5 text-sm font-bold text-zinc-500 hover:bg-zinc-100">Close</button>
                         </div>
                         <div className="space-y-5 p-6">
-                            <div><label className="text-sm font-semibold text-zinc-800">Registration Number</label><div className="mt-2 flex gap-2"><input value={clinRxRegNum} onChange={(event) => { setClinRxRegNum(event.target.value.toUpperCase()); setClinRxInfo(null); setClinRxFile(null); setClinRxError(''); }} placeholder="e.g. IPA2026-001" className="min-w-0 flex-1 rounded-lg border border-zinc-300 px-3 py-2.5 text-sm uppercase focus:border-[#df0867] focus:outline-none" /><button type="button" onClick={checkClinRxRegistration} disabled={!clinRxRegNum.trim() || clinRxChecking} className="rounded-lg bg-[#0d124f] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{clinRxChecking ? 'Checking...' : 'Verify'}</button></div></div>
+                            <div><label className="text-sm font-semibold text-zinc-800">Registration Number</label><div className="mt-2 flex gap-2"><input value={clinRxRegNum} onChange={(event) => { setClinRxRegNum(event.target.value.toUpperCase()); setClinRxInfo(null); setClinRxFile(null); setClinRxError(''); }} placeholder="e.g. NSC26-000001" className="min-w-0 flex-1 rounded-lg border border-zinc-300 px-3 py-2.5 text-sm uppercase focus:border-[#df0867] focus:outline-none" /><button type="button" onClick={checkClinRxRegistration} disabled={!clinRxRegNum.trim() || clinRxChecking} className="rounded-lg bg-[#0d124f] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{clinRxChecking ? 'Checking...' : 'Verify'}</button></div></div>
                             {clinRxInfo?.valid === false && <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">Registration number not found.</p>}
                             {clinRxInfo?.valid && <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4"><p className="font-bold text-emerald-900">{clinRxInfo.participantName}</p><p className="mt-1 text-xs text-emerald-700">{clinRxInfo.institutionName}</p>{!clinRxInfo.canSubmit && <p className="mt-2 text-xs font-semibold text-amber-800">{clinRxInfo.eligibilityReason}</p>}</div>}
                             {clinRxInfo?.alreadySubmitted ? (
@@ -10235,33 +10235,6 @@ const rejectionCriteria = [
     'Papers describing treatment in a single patient',
 ];
 
-const presentationGuidelines = [
-    {
-        title: 'Poster Dimensions',
-        detail: 'A0 size (841 mm × 1189 mm), portrait orientation. Print on glossy or matte paper.',
-    },
-    {
-        title: 'Content Structure',
-        detail: 'Title, Authors & Affiliations, Introduction, Objectives, Materials & Methods, Results, Discussion, Conclusion, References.',
-    },
-    {
-        title: 'Font & Readability',
-        detail: 'Title ≥ 72 pt, Section headings ≥ 36 pt, Body text ≥ 24 pt. Use high-contrast colour schemes.',
-    },
-    {
-        title: 'Figures & Tables',
-        detail: 'Minimum 300 DPI resolution. All figures and tables must be numbered and labelled.',
-    },
-    {
-        title: 'Oral Presentation',
-        detail: '8 minutes presentation + 2 minutes Q&A. PowerPoint / PDF slides only. Submit slides 30 minutes before the session.',
-    },
-    {
-        title: 'Originality',
-        detail: 'All work must be original and unpublished. Plagiarism check will be conducted by the scientific committee.',
-    },
-];
-
 function ScientificServicePage() {
     const [openPanel, setOpenPanel] = useState(null);
     const [publicAbstractBook, setPublicAbstractBook] = useState(null);
@@ -10274,12 +10247,6 @@ function ScientificServicePage() {
     const [absFileErr, setAbsFileErr] = useState('');
     const [absSubmitting, setAbsSubmitting] = useState(false);
     const [absSubmitError, setAbsSubmitError] = useState('');
-
-    // ── Video link state (shares absRegNum / absRegInfo) ──────
-    const [vidLink, setVidLink] = useState('');
-    const [vidLinkErr, setVidLinkErr] = useState('');
-    const [vidSubmitting, setVidSubmitting] = useState(false);
-    const [vidSubmitError, setVidSubmitError] = useState('');
 
     useEffect(() => {
         let cancelled = false;
@@ -10358,29 +10325,6 @@ function ScientificServicePage() {
             setAbsSubmitError(err.message);
         } finally {
             setAbsSubmitting(false);
-        }
-    }
-
-    async function submitVideoLink() {
-        const link = vidLink.trim();
-        if (!link) { setVidLinkErr('Please paste your presentation link.'); return; }
-        setVidSubmitting(true);
-        setVidSubmitError('');
-        setVidLinkErr('');
-        try {
-            const res = await fetch('/api/abstracts/video-link', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ registrationNumber: absRegNum.trim().toUpperCase(), videoLink: link }),
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Submission failed.');
-            setAbsRegInfo((prev) => ({ ...prev, posterVideoLink: link }));
-            setVidLink('');
-        } catch (err) {
-            setVidSubmitError(err.message);
-        } finally {
-            setVidSubmitting(false);
         }
     }
 
@@ -10495,62 +10439,74 @@ function ScientificServicePage() {
                             </div>
                         ))}
                     </div>
+
+                    <div className="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6">
+                        <p className="text-sm font-semibold leading-6 text-emerald-950">Use only the official E-Poster template provided.</p>
+                        <a href="/e-poster-template.pptx" download="E-poster Template.pptx" className="mt-3 inline-flex items-center rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-800">
+                            Click to Download Template
+                        </a>
+                        <p className="mt-3 text-sm leading-6 text-emerald-900">Do not modify the slide size, orientation, or background design.</p>
+                    </div>
                 </div>
             </section>
 
-            {/* Guidelines / Rejection criteria */}
+            {/* Participant instructions and presentation stages */}
             <section id="guidelines" className="bg-white py-14 sm:py-16">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-3xl">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#df0867]">Scientific Presentations</p>
+                        <h2 className="mt-2 text-2xl font-bold text-zinc-900 sm:text-3xl">Instructions for Participants</h2>
+                    </div>
+
                     <div className="grid gap-10 lg:grid-cols-2">
-                        {/* Rejection note */}
-                        <div className="rounded-2xl border border-red-100 bg-red-50 p-6 sm:p-8">
+                        <div className="mt-8 rounded-2xl border border-emerald-100 bg-emerald-50 p-6 sm:p-8">
                             <div className="flex items-center gap-3">
-                                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-lg font-bold text-red-600">!</span>
-                                <h3 className="text-base font-bold text-red-800 sm:text-lg">Categories That Will Be Rejected</h3>
+                                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-lg font-bold text-emerald-700">✓</span>
+                                <h3 className="text-base font-bold text-emerald-900 sm:text-lg">Participation Requirements</h3>
                             </div>
-                            <p className="mt-3 text-sm text-red-700">The following categories of papers will be rejected by the scientific committee:</p>
-                            <ul className="mt-4 space-y-2">
-                                {rejectionCriteria.map((item) => (
-                                    <li key={item} className="flex items-start gap-2 text-sm text-red-800">
-                                        <span className="mt-1 size-1.5 shrink-0 rounded-full bg-red-500" />
-                                        {item}
+                            <ul className="mt-5 space-y-3">
+                                {[
+                                    'Only registered students, faculty, and researchers having a valid Registration ID can present.',
+                                    'Registration will be confirmed only after payment of the required fees.',
+                                    'E-certificates will be issued to participants selected for presentations.',
+                                    'All abstracts will be published in the 14th National IPA Student Congress Abstract Book.',
+                                    'Participants must specify their preferred mode of presentation—Oral or E-Poster—during registration. No alteration is possible after completion of registration.',
+                                ].map((item) => (
+                                    <li key={item} className="flex items-start gap-2 text-sm leading-6 text-emerald-900">
+                                        <span className="mt-2 size-1.5 shrink-0 rounded-full bg-emerald-600" />
+                                        <span>{item}</span>
                                     </li>
                                 ))}
                             </ul>
                         </div>
 
-                        {/* Acceptance communication */}
-                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 sm:p-8">
+                        <div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-6 sm:p-8">
                             <div className="flex items-center gap-3">
-                                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-lg text-emerald-700">✉</span>
-                                <h3 className="text-base font-bold text-emerald-900 sm:text-lg">Acceptance Communication</h3>
+                                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-lg font-bold text-[#0d124f]">1</span>
+                                <h3 className="text-base font-bold text-[#0d124f] sm:text-lg">Stages of E-Poster and Oral Presentation Competition</h3>
                             </div>
-                            <div className="mt-4 space-y-4 text-sm leading-6 text-emerald-800">
+                            <div className="mt-5 space-y-5 text-sm leading-6 text-blue-950">
                                 <p>
-                                    <strong>Poster acceptance letters</strong> will be sent by mail to the corresponding author after review.
+                                    <strong>Abstract submission:</strong> After registration, participants shall upload their abstract as a one-page PDF in the space provided below. Please verify the registration number before submission.
                                 </p>
-                                <div className="rounded-lg border border-emerald-200 bg-white/60 px-4 py-3">
-                                    <h4 className="text-sm font-black uppercase text-emerald-950">ABSTRACTS - KEY REQUIRMENTS</h4>
-                                    <ul className="mt-3 space-y-2">
+                                <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 font-bold uppercase text-amber-900">
+                                    Last date for submission of abstracts: 30/09/2026
+                                </p>
+                                <div>
+                                    <h4 className="font-bold text-[#0d124f]">E-Poster or Oral Presentation (Offline)</h4>
+                                    <ul className="mt-2 space-y-2">
                                         {[
-                                            'Title of Work: Must be written in Lowercase or Small Letters in English Language.',
-                                            'Word Count: Keep it under 250-300 words.',
-                                            'Font and Size: Use Times New Roman or Arial at size 12.',
-                                            'File Format: Submit as a PDF.',
-                                            'Author Info: List all author names and affiliations (Institution or work place).',
-                                            "Underline or star the main presenter's name.",
-                                            'Keywords: Add 3 to 5 keywords to help people search for your work.',
+                                            'All selected participants will be notified through their registered email address to participate in the E-Poster or Oral Presentation competition at the 14th National IPA Student Congress.',
+                                            'The exact date, time, and poster code for presentation will be communicated separately to participants selected for E-Poster and Oral Presentations.',
+                                            'The poster code for competitions will be sent by email. Any alteration to the poster code is not permitted.',
                                         ].map((item) => (
                                             <li key={item} className="flex items-start gap-2">
-                                                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-emerald-600" />
+                                                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#0d124f]" />
                                                 <span>{item}</span>
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
-                                <p className="rounded-lg border border-emerald-200 bg-white/60 px-4 py-3 font-medium text-emerald-900">
-                                    Keep a watch on this portal and your registered email for updates.
-                                </p>
                             </div>
                         </div>
                     </div>
@@ -10566,20 +10522,15 @@ function ScientificServicePage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                             </svg>
                         </span>
-                        <h2 className="text-xl font-bold text-zinc-900">Submit Your Abstract file or Presentation Video Link here</h2>
+                        <h2 className="text-xl font-bold text-zinc-900">Submit Your Abstract File Here</h2>
                     </div>
 
                     <div className="mt-6 w-full space-y-5">
-                        <div className="grid gap-5 lg:grid-cols-2">
+                        <div>
                             <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-5">
                                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#df0867]">Initial Step</p>
-                                <p className="mt-2 text-sm font-semibold leading-6 text-zinc-900">After completion of primary registration, submit a single-page abstract and after checking and confirming your Registration Number below.</p>
+                                <p className="mt-2 text-sm font-semibold leading-6 text-zinc-900">After completing primary registration, verify your registration number below and submit a single-page abstract.</p>
                                 <p className="mt-2 text-xs leading-5 text-zinc-600">Tables and figures are excluded. Supported format: PDF file only. Maximum file size: 1 MB.</p>
-                            </div>
-                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-5 py-5">
-                                <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#00652f]">Final Step</p>
-                                <p className="mt-2 text-sm font-semibold leading-6 text-emerald-950">Only participants who receive an acceptance mail can submit your Presentation video link here for screening and selections.</p>
-                                <p className="mt-2 text-xs leading-5 text-emerald-800">Submit a link of the recorded video or recorded Zoom meet of your poster or oral presentation for screening and selection by the 14th NSC Scientific Service Committee.</p>
                             </div>
                         </div>
 
@@ -10591,7 +10542,7 @@ function ScientificServicePage() {
                                 <input
                                     type="text"
                                     value={absRegNum}
-                                    onChange={(e) => { setAbsRegNum(e.target.value.toUpperCase()); setAbsRegInfo(null); setAbsFile(null); setAbsFileErr(''); setVidLink(''); setVidLinkErr(''); }}
+                                    onChange={(e) => { setAbsRegNum(e.target.value.toUpperCase()); setAbsRegInfo(null); setAbsFile(null); setAbsFileErr(''); }}
                                     placeholder="NSC26-000001"
                                     className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono uppercase placeholder-zinc-400 focus:border-[#df0867] focus:outline-none"
                                 />
@@ -10712,42 +10663,6 @@ function ScientificServicePage() {
                                     </div>
                                 </div>
 
-                                {/* Accepted + presentation link already submitted */}
-                                {absRegInfo.abstractStatus === 'accepted' && absRegInfo.posterVideoLink && (
-                                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
-                                        <p className="text-xs font-semibold text-emerald-700">Presentation Link - Submitted</p>
-                                        <a href={absRegInfo.posterVideoLink} target="_blank" rel="noopener noreferrer" className="mt-1 block truncate text-xs font-medium text-[#0d124f] underline">{absRegInfo.posterVideoLink}</a>
-                                    </div>
-                                )}
-
-                                {/* Accepted + no presentation link yet - show link input */}
-                                {absRegInfo.abstractStatus === 'accepted' && !absRegInfo.posterVideoLink && (
-                                    <div className="space-y-4 rounded-lg border border-emerald-200 bg-emerald-50/40 px-4 py-4">
-                                        <div>
-                                            <p className="text-sm font-semibold text-emerald-800">Submit Presentation Link</p>
-                                            <p className="mt-1 text-xs text-emerald-700">Your abstract has been accepted. Submit a link of the recorded video or recorded Zoom meet of your poster or oral presentation for screening and selection by the 14th NSC Scientific Service Committee.</p>
-                                        </div>
-                                        <div>
-                                            <input
-                                                type="url"
-                                                value={vidLink}
-                                                onChange={(e) => { setVidLink(e.target.value); setVidLinkErr(''); }}
-                                                placeholder="https://drive.google.com/..."
-                                                className="w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm placeholder-zinc-400 focus:border-[#df0867] focus:outline-none"
-                                            />
-                                            {vidLinkErr && <p className="mt-1 text-xs font-medium text-red-600">{vidLinkErr}</p>}
-                                        </div>
-                                        {vidSubmitError && <p className="text-sm font-medium text-red-600">{vidSubmitError}</p>}
-                                        <button
-                                            type="button"
-                                            onClick={submitVideoLink}
-                                            disabled={!vidLink.trim() || vidSubmitting}
-                                            className="rounded-lg bg-[#df0867] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#bd0758] disabled:cursor-not-allowed disabled:opacity-40"
-                                        >
-                                            {vidSubmitting ? 'Submitting…' : 'Submit Presentation Link'}
-                                        </button>
-                                    </div>
-                                )}
                             </div>
                         )}
                     </div>
@@ -10757,19 +10672,103 @@ function ScientificServicePage() {
             {/* Presentation Guidelines */}
             <section id="presentation-guidelines" className="py-14 sm:py-16">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="max-w-2xl">
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#df0867]">Author Instructions</p>
-                        <h2 className="mt-2 text-2xl font-bold text-zinc-900 sm:text-3xl">Presentation Guidelines &amp; Best Scientific Practices</h2>
-                        <p className="mt-3 text-sm leading-6 text-zinc-500">Follow these standards to ensure your work meets the congress requirements.</p>
+                    <div className="max-w-3xl">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#df0867]">E-Poster Guidelines</p>
+                        <h2 className="mt-2 text-2xl font-bold text-zinc-900 sm:text-3xl">Instructions for Preparing the E-Poster</h2>
                     </div>
 
-                    <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {presentationGuidelines.map((g) => (
-                            <div key={g.title} className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-                                <p className="text-sm font-bold text-[#0d124f]">{g.title}</p>
-                                <p className="mt-2 text-sm leading-6 text-zinc-600">{g.detail}</p>
-                            </div>
-                        ))}
+                    <div className="mt-8 space-y-5">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {[
+                                {
+                                    title: 'Title',
+                                    items: [
+                                        'Use a concise, informative title in bold capital letters.',
+                                        'Center-align the title at the top of the poster.',
+                                    ],
+                                },
+                                {
+                                    title: 'Authors',
+                                    items: [
+                                        'List the presenting author first, followed by co-authors.',
+                                        'Indicate affiliations using superscript numbers (1, 2, etc.).',
+                                        'Mention the department, institution, city, and state for each affiliation.',
+                                    ],
+                                },
+                                {
+                                    title: 'Corresponding Author',
+                                    items: [
+                                        "Provide the corresponding author's email ID in the space provided at the bottom of the poster.",
+                                    ],
+                                },
+                                {
+                                    title: 'Poster Sections',
+                                    items: [
+                                        'Display the assigned POSTER CODE.',
+                                        'Abstract',
+                                        'Introduction',
+                                        'Aim & Objectives',
+                                        'Methodology',
+                                        'Results & Data Analysis (include tables, graphs, or images where appropriate)',
+                                        'Discussion',
+                                        'Conclusion',
+                                        'References',
+                                    ],
+                                },
+                                {
+                                    title: 'Text Formatting',
+                                    items: [
+                                        'Use clear, readable fonts such as Arial or Calibri.',
+                                        'Title: 30–36 pt',
+                                        'Section headings: 20–24 pt',
+                                        'Body text: 16–20 pt',
+                                        'Use bullet points instead of lengthy paragraphs wherever possible.',
+                                    ],
+                                },
+                                {
+                                    title: 'Figures and Tables',
+                                    items: [
+                                        'Use high-resolution images (minimum 300 dpi).',
+                                        'Ensure all graphs, tables, and figures are clearly labeled.',
+                                        'Keep visuals readable without overcrowding the poster.',
+                                    ],
+                                },
+                                {
+                                    title: 'References',
+                                    items: [
+                                        'Include only the most relevant references (approximately 3–5).',
+                                        'Use a consistent citation style, such as Vancouver.',
+                                    ],
+                                },
+                                {
+                                    title: 'Final File',
+                                    items: [
+                                        'Save the final poster as a PowerPoint file (.pptx).',
+                                        'File name format: Presenting Author Name-Reg Number.pptx',
+                                        'Example: RahulSharma - NSC26-000001.pptx',
+                                    ],
+                                },
+                                {
+                                    title: 'Submission',
+                                    items: [
+                                        'Submit the E-Poster before the notified deadline.',
+                                        'Ensure all information is proofread before submission.',
+                                    ],
+                                },
+                            ].map((guideline) => (
+                                <div key={guideline.title} className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+                                    <h3 className="text-sm font-bold text-[#0d124f]">{guideline.title}</h3>
+                                    <ul className="mt-3 space-y-2">
+                                        {guideline.items.map((item) => (
+                                            <li key={item} className="flex items-start gap-2 text-sm leading-6 text-zinc-600">
+                                                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-[#00652f]" />
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </section>
