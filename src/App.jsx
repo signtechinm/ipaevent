@@ -110,17 +110,21 @@ const homeContentDefaults = {
 };
 
 const importantDatesMarquee = [
-    'IMPORTANT: In IMPORTANT DATES (Live) section',
-    'Early Bird registration closes on: 9th August 2026',
-    'Group Registration starts from: 03 July 2026',
-    'Regular Registration starts from: 10th August 2026',
-    'Regular Registration Closes on: 10th September 2026',
-    'Last Date of Submission of abstract: 30-08-2026',
-    'Abstract Acceptance mail date: 05-08-2026',
-    'Last date Poster/Oral presentation Video Submission: 22-08-2026',
-    'Date of Intimation of mail for Final Presentation by: 11-09-2026',
-    'POST Congress workshop DATE: 20& 21 September 2026',
-    'All Pre Congress Workshop Date: 18th September 2026.',
+    'Early Bird Registration end date has been extended to 15 August 2026.',
+    'Regular Registration closes by 16 September 2026.',
+    'Abstract Submission date has been extended to 15 August 2026.',
+    'Abstract acceptance emails will be sent by 30 September 2026.',
+    'Use only the official poster template provided on the web portal for presentation competitions.',
+    'Find poster and abstract preparation guidelines under Scientific Service on the website.',
+    'All Pre-Congress Workshops: 18 September 2026.',
+    'FIP Vaccination Training Workshop: 21 & 22 September 2026.',
+    'Group Registration is live now.',
+    'Group Registration end date: 10 September 2026.',
+    'Spot Registration is available on 18 & 19 September 2026.',
+    'E-Poster Competition: 19 & 20 September 2026.',
+    'Oral Presentation Competition: 19 & 20 September 2026.',
+    'Only links for video and reel competitions will be accepted.',
+    'Submit a one-page abstract for the Case Challenge Competition.',
 ];
 
 function normalizeHomeContent(data = {}) {
@@ -1637,8 +1641,46 @@ function AccommodationTravelPage() {
 }
 
 function HomeWelcome() {
+    const sectionRef = useRef(null);
+    const videoRef = useRef(null);
+    const [welcomeSoundEnabled, setWelcomeSoundEnabled] = useState(false);
+    const [welcomeSectionVisible, setWelcomeSectionVisible] = useState(false);
+
+    useEffect(() => {
+        const section = sectionRef.current;
+        const video = videoRef.current;
+        if (!section || !video) return undefined;
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setWelcomeSectionVisible(entry.isIntersecting);
+                if (entry.isIntersecting) {
+                    video.play().catch(() => {
+                        // Browsers may still block playback under user-specific autoplay settings.
+                    });
+                } else {
+                    video.pause();
+                }
+            },
+            { threshold: 0.35 },
+        );
+
+        observer.observe(section);
+        return () => observer.disconnect();
+    }, []);
+
+    function enableWelcomeSound() {
+        const video = videoRef.current;
+        if (!video) return;
+        video.muted = false;
+        setWelcomeSoundEnabled(true);
+        video.play().catch(() => {
+            // The click itself is a user gesture, so playback is normally permitted.
+        });
+    }
+
     return (
-        <section id="home-welcome" className="event-soft-section py-16">
+        <section ref={sectionRef} id="home-welcome" className="event-soft-section py-16">
             <div className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-[1fr_360px] lg:items-center lg:px-8">
                 <div>
                     <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#df0867]">Welcome Message</p>
@@ -1664,10 +1706,12 @@ function HomeWelcome() {
                         <span className="rounded-full bg-[#fff7df] px-4 py-2 text-[#8a5700]">{eventDate}</span>
                     </div>
                 </div>
-                <div className="mx-auto w-full max-w-[360px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-[#11145f]/10 lg:mx-0 lg:justify-self-end">
+                <div className="relative mx-auto w-full max-w-[360px] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-[#11145f]/10 lg:mx-0 lg:justify-self-end">
                     <video
+                        ref={videoRef}
                         className="h-full w-full object-contain"
                         controls
+                        muted={!welcomeSoundEnabled}
                         playsInline
                         preload="metadata"
                         poster="/welcome-video-poster.png"
@@ -1676,6 +1720,15 @@ function HomeWelcome() {
                         <source src="/welcome-14th-ipa-student-congress.mp4" type="video/mp4" />
                         Your browser does not support HTML5 video.
                     </video>
+                    {!welcomeSoundEnabled && welcomeSectionVisible && (
+                        <button
+                            type="button"
+                            onClick={enableWelcomeSound}
+                            className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-[#df0867] px-5 py-2.5 text-sm font-bold text-white shadow-2xl ring-4 ring-white/80 transition hover:scale-105 hover:bg-[#bd0758]"
+                        >
+                            Tap to Play with Sound
+                        </button>
+                    )}
                 </div>
             </div>
         </section>
