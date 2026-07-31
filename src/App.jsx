@@ -1873,6 +1873,17 @@ function RegistrationPage() {
             total: registrationFee + competitionFee + workshopFee,
         };
     }, [formData.category, formData.registrationMode, formData.groupMembers, formData.competitionParticipation, formData.studentCompetitions, formData.workshopParticipation, formData.selectedWorkshops, programCatalog, categoryCatalog]);
+    const upiPaymentUrl = useMemo(() => {
+        const params = new URLSearchParams({
+            pa: registrationUpiId,
+            pn: '14TH NATIONAL IPA STUDENTS CONGRESS 2026',
+            am: totals.total.toFixed(2),
+            cu: 'INR',
+            tn: 'IPA NSC 2026 Registration Fee',
+        });
+
+        return `upi://pay?${params.toString()}`;
+    }, [totals.total]);
 
     function updateField(name, value) {
         setFormData((current) => ({ ...current, [name]: value }));
@@ -3241,6 +3252,21 @@ function RegistrationPage() {
                                                     <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">UPI ID</p>
                                                     <p className="mt-1 break-all font-mono text-base font-black text-[#0d124f]">{registrationUpiId}</p>
                                                 </div>
+                                            </div>
+                                            <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                                                <a
+                                                    href={upiPaymentUrl}
+                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-5 py-3.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                                                    aria-label={`Pay Rs. ${totals.total.toLocaleString('en-IN')} using a UPI app`}
+                                                >
+                                                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6V6.108c0-1.135-.845-2.098-1.975-2.192A45.424 45.424 0 0 0 12 3.75c-1.36 0-2.703.06-4.025.166C6.845 4.01 6 4.973 6 6.108v6.642a6 6 0 0 0 6 6Zm0 0v2.25m-3 0h6M9.75 9.75h4.5" />
+                                                    </svg>
+                                                    Pay Rs. {totals.total.toLocaleString('en-IN')} with any UPI app
+                                                </a>
+                                                <p className="mt-2 text-center text-xs font-medium leading-5 text-emerald-900">
+                                                    On a phone, tap the button to choose GPay, PhonePe, Paytm, BHIM, or another installed UPI app.
+                                                </p>
                                             </div>
                                             <div className="mt-4 rounded-lg border border-sky-100 bg-white p-4">
                                                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-sky-700">Bank details for Account Transfer of Fees</p>
