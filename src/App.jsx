@@ -3018,7 +3018,7 @@ function RegistrationPage() {
                                         <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm font-semibold text-amber-900">Upload the student roster in the General step to assign presentation choices.</p>
                                     ) : (
                                         <div className="mt-3 grid gap-3 md:grid-cols-3">
-                                            {['Not Participating', 'Oral Presentation', 'Poster Presentation'].map((option) => (
+                                            {['Not Participating', 'Poster Presentation'].map((option) => (
                                                 <article key={option} className="rounded-lg border border-zinc-200 bg-white p-4">
                                                     <div className="flex items-start justify-between gap-3">
                                                         <div>
@@ -3057,7 +3057,7 @@ function RegistrationPage() {
                                     )
                                 ) : (
                                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                                        {['Not Participating', 'Oral Presentation', 'Poster Presentation'].map((option) => (
+                                        {['Not Participating', 'Poster Presentation'].map((option) => (
                                             <label
                                                 key={option}
                                                 className={`rounded-lg border p-4 text-sm font-bold ${
@@ -5928,6 +5928,10 @@ function AdminPage() {
         dateTo: '',
     });
     const [selectedRegistration, setSelectedRegistration] = useState(null);
+    const [editingRegistration, setEditingRegistration] = useState(null);
+    const [registrationEditForm, setRegistrationEditForm] = useState({});
+    const [registrationEditSaving, setRegistrationEditSaving] = useState(false);
+    const [registrationEditError, setRegistrationEditError] = useState('');
     const [paymentStatusDraft, setPaymentStatusDraft] = useState('pending');
     const [paymentUpdating, setPaymentUpdating] = useState(false);
     const [paymentUpdatingId, setPaymentUpdatingId] = useState(null);
@@ -6223,6 +6227,62 @@ function AdminPage() {
         setApprovalUpdateError('');
     }
 
+    function editRegistration(registration) {
+        setEditingRegistration(registration);
+        setRegistrationEditForm({
+            participantName: registration.participantName || '',
+            institutionName: registration.institutionName || '',
+            groupCoordinatorName: registration.groupCoordinatorName || '',
+            groupCoordinatorEmail: registration.groupCoordinatorEmail || '',
+            groupCoordinatorWhatsapp: registration.groupCoordinatorWhatsapp || '',
+            expectedParticipants: registration.expectedParticipants || '',
+            stateOfResidence: registration.stateOfResidence || '',
+            organization: registration.organization || '',
+            whatsappNumber: registration.whatsappNumber || '',
+            email: registration.email || '',
+            gender: registration.gender || '',
+            foodPreference: registration.foodPreference || '',
+            courseOfStudy: registration.courseOfStudy || '',
+            collegeWithState: registration.collegeWithState || '',
+            transactionDetails: registration.transactionDetails || '',
+            transactionDate: registration.transactionDate || '',
+            category: registration.category || '',
+            ipaMemberId: registration.ipaMemberId || '',
+            studentCompetitions: registration.studentCompetitions || [],
+            selectedWorkshops: registration.selectedWorkshops || [],
+            presentationType: registration.presentationType || 'Not Participating',
+            groupMembers: registration.groupMembers || [],
+        });
+        setRegistrationEditError('');
+        window.history.pushState({}, '', `/admin/registrations/${registration.id}/edit`);
+    }
+
+    function closeRegistrationEdit() {
+        setEditingRegistration(null);
+        window.history.pushState({}, '', '/admin/registrations');
+    }
+
+    async function saveRegistrationEdit(event) {
+        event.preventDefault();
+        if (!editingRegistration) return;
+        setRegistrationEditSaving(true);
+        setRegistrationEditError('');
+        try {
+            const { registration } = await apiRequest(`admin/registrations/${editingRegistration.id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(registrationEditForm),
+            });
+            setRegistrations((current) => current.map((item) => item.id === registration.id ? registration : item));
+            if (selectedRegistration?.id === registration.id) setSelectedRegistration(registration);
+            setEditingRegistration(null);
+            window.history.pushState({}, '', '/admin/registrations');
+        } catch (error) {
+            setRegistrationEditError(error.message);
+        } finally {
+            setRegistrationEditSaving(false);
+        }
+    }
+
     async function updateRegistrationPayment() {
         if (!selectedRegistration) return;
         setPaymentUpdating(true);
@@ -6495,8 +6555,21 @@ function AdminPage() {
     }, [activeModule, session]);
 
     useEffect(() => {
+        const editMatch = window.location.pathname.match(/^\/admin\/registrations\/(\d+)\/edit$/);
+        if (!editMatch || editingRegistration || !registrations.length) return;
+        const registration = registrations.find((item) => String(item.id) === editMatch[1]);
+        if (registration) editRegistration(registration);
+    }, [registrations, editingRegistration]);
+
+    useEffect(() => {
         if (['dashboard', 'programs'].includes(activeModule) && session) {
             loadPrograms();
+        }
+        if (activeModule === 'registrations' && session) {
+            apiRequest('programs').then((payload) => {
+                setPrograms(payload.programs || []);
+                setPricingCategories(payload.categories || []);
+            }).catch((error) => setProgramsError(error.message));
         }
     }, [activeModule, session]);
 
@@ -6720,9 +6793,14 @@ function AdminPage() {
         if (registrationFilters.maxAmount !== '' && totalAmount > Number(registrationFilters.maxAmount)) return false;
         return true;
     });
+    const registrationEditCategory = pricingCategories.find((category) => category.name === registrationEditForm.category);
+    const registrationEditPrograms = programs.filter((program) => program.isActive && program.categoryPricing?.some((price) =>
+        String(price.categoryId) === String(registrationEditCategory?.id) && price.isAvailable
+    ));
     const allRegistrationStudents = registrations.flatMap((registration) => {
-            if (registration.registrationMode === 'group' && registration.groupMembers.length) {
-                return registration.groupMembers.map((member, index) => ({
+            if (registration.registrationMode === 'group') {
+                const groupMembers = Array.isArray(registration.groupMembers) ? registration.groupMembers : [];
+                return groupMembers.map((member, index) => ({
                     id: `${registration.id}-${index}`,
                     registrationNumber: member.registrationNumber || `${registration.registrationNumber}-${String(index + 1).padStart(3, '0')}`,
                     parentRegistrationNumber: registration.registrationNumber,
@@ -6797,7 +6875,13 @@ function AdminPage() {
                 updatedAt: registration.updatedAt,
             }];
         });
-    const approvedPaidStudents = allRegistrationStudents.filter((student) =>
+    const approvedStudents = allRegistrationStudents.filter((student) =>
+        student.approvalStatus === 'approved'
+    );
+    const successfulPaymentStudents = allRegistrationStudents.filter((student) =>
+        student.paymentStatus === 'success'
+    );
+    const eligibleStudents = allRegistrationStudents.filter((student) =>
         student.registrationStatus === 'submitted' &&
         student.paymentStatus === 'success' &&
         student.approvalStatus === 'approved'
@@ -8317,6 +8401,7 @@ function AdminPage() {
 
                     {canViewModule('registrations') && activeModule === 'registrations' && (
                         <div className="mt-6">
+                            {!editingRegistration && <>
                             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                                 {[
                                     ['All Records', registrations.length],
@@ -8497,6 +8582,11 @@ function AdminPage() {
                                                         {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(registration.submittedAt || registration.updatedAt))}
                                                     </td>
                                                     <td className="px-4 py-4 text-right">
+                                                        {can('registration.update') && (
+                                                            <button type="button" onClick={() => editRegistration(registration)} className="mr-2 rounded-md border border-emerald-700 bg-white px-3 py-2 text-xs font-bold text-emerald-800 shadow-sm hover:bg-emerald-50">
+                                                                Edit
+                                                            </button>
+                                                        )}
                                                         <button type="button" onClick={() => viewRegistration(registration)} className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-xs font-bold text-zinc-700 shadow-sm hover:bg-zinc-100">
                                                             View details
                                                         </button>
@@ -8505,6 +8595,102 @@ function AdminPage() {
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
+                            )}
+                            </>}
+
+                            {editingRegistration && (
+                                <div aria-label="Edit registration page">
+                                    <form onSubmit={saveRegistrationEdit} className="admin-card w-full overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
+                                        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-zinc-200 bg-white px-5 py-4 sm:px-6">
+                                            <div>
+                                                <p className="font-mono text-xs font-bold text-emerald-700">{editingRegistration.registrationNumber || `Draft #${editingRegistration.id}`}</p>
+                                                <h2 className="mt-1 text-xl font-semibold text-zinc-950">Edit registration</h2>
+                                            </div>
+                                            <button type="button" onClick={closeRegistrationEdit} className="rounded-md border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100">Back to registrations</button>
+                                        </div>
+                                        <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
+                                            {(editingRegistration.registrationMode === 'group' ? [
+                                                ['groupCoordinatorName', 'Coordinator name', 'text'],
+                                                ['groupCoordinatorEmail', 'Coordinator email', 'email'],
+                                                ['groupCoordinatorWhatsapp', 'Coordinator WhatsApp', 'text'],
+                                                ['expectedParticipants', 'Expected participants', 'number'],
+                                                ['institutionName', 'Institution / College', 'text'],
+                                            ] : [
+                                                ['participantName', 'Participant name', 'text'],
+                                                ['email', 'Email', 'email'],
+                                                ['whatsappNumber', 'WhatsApp', 'text'],
+                                                ['institutionName', 'Institution', 'text'],
+                                                ['organization', 'Organization', 'text'],
+                                                ['courseOfStudy', 'Course of study', 'text'],
+                                                ['collegeWithState', 'College / State', 'text'],
+                                                ['gender', 'Gender', 'text'],
+                                                ['foodPreference', 'Food preference', 'text'],
+                                            ]).map(([name, label, type]) => (
+                                                <label key={name} className="text-sm font-semibold text-zinc-800">
+                                                    {label}
+                                                    <input type={type} min={type === 'number' ? '1' : undefined} value={registrationEditForm[name] || ''} onChange={(event) => setRegistrationEditForm((current) => ({ ...current, [name]: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm font-normal" />
+                                                </label>
+                                            ))}
+                                            <label className="text-sm font-semibold text-zinc-800">
+                                                State
+                                                <input value={registrationEditForm.stateOfResidence || ''} onChange={(event) => setRegistrationEditForm((current) => ({ ...current, stateOfResidence: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm font-normal" />
+                                            </label>
+                                            <label className="text-sm font-semibold text-zinc-800">
+                                                Transaction reference
+                                                <input value={registrationEditForm.transactionDetails || ''} onChange={(event) => setRegistrationEditForm((current) => ({ ...current, transactionDetails: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm font-normal" />
+                                            </label>
+                                            <label className="text-sm font-semibold text-zinc-800">
+                                                Transaction date
+                                                <input type="date" value={registrationEditForm.transactionDate || ''} onChange={(event) => setRegistrationEditForm((current) => ({ ...current, transactionDate: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm font-normal" />
+                                            </label>
+                                            <label className="text-sm font-semibold text-zinc-800 sm:col-span-2">
+                                                Registration category
+                                                <select value={registrationEditForm.category || ''} onChange={(event) => setRegistrationEditForm((current) => ({ ...current, category: event.target.value, studentCompetitions: [], selectedWorkshops: [], groupMembers: (current.groupMembers || []).map((member) => ({ ...member, competitions: [], workshops: [] })) }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-sm font-normal">
+                                                    {pricingCategories.filter((category) => category.isActive).map((category) => <option key={category.id} value={category.name}>{category.name}</option>)}
+                                                </select>
+                                            </label>
+                                            <label className="text-sm font-semibold text-zinc-800 sm:col-span-2">
+                                                IPA Member ID (when required by category)
+                                                <input value={registrationEditForm.ipaMemberId || ''} onChange={(event) => setRegistrationEditForm((current) => ({ ...current, ipaMemberId: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 px-3 py-2.5 text-sm font-normal" />
+                                            </label>
+                                            {editingRegistration.registrationMode === 'individual' && (
+                                                <>
+                                                    {[['competition', 'Student competitions', 'studentCompetitions'], ['workshop', 'Workshops', 'selectedWorkshops']].map(([type, label, field]) => (
+                                                        <fieldset key={type} className="rounded-lg border border-zinc-200 p-4 sm:col-span-2">
+                                                            <legend className="px-1 text-sm font-bold text-zinc-900">{label}</legend>
+                                                            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                                                {registrationEditPrograms.filter((program) => program.type === type).map((program) => {
+                                                                    const checked = (registrationEditForm[field] || []).includes(program.name);
+                                                                    return <label key={program.id} className="flex gap-3 rounded-md border border-zinc-200 p-3 text-sm"><input type="checkbox" checked={checked} onChange={() => setRegistrationEditForm((current) => ({ ...current, [field]: checked ? current[field].filter((name) => name !== program.name) : [...(current[field] || []), program.name] }))} /><span><strong>{program.name}</strong><span className="block text-xs text-zinc-500">Rs. {program.categoryPricing.find((price) => String(price.categoryId) === String(registrationEditCategory?.id))?.price || 0}</span></span></label>;
+                                                                })}
+                                                            </div>
+                                                        </fieldset>
+                                                    ))}
+                                                    <label className="text-sm font-semibold text-zinc-800 sm:col-span-2">Presentation
+                                                        <select value={registrationEditForm.presentationType || 'Not Participating'} onChange={(event) => setRegistrationEditForm((current) => ({ ...current, presentationType: event.target.value }))} className="admin-input mt-2 w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-sm font-normal"><option>Not Participating</option><option>Poster Presentation</option></select>
+                                                    </label>
+                                                </>
+                                            )}
+                                            {editingRegistration.registrationMode === 'group' && (
+                                                <div className="space-y-4 sm:col-span-2">
+                                                    <h3 className="font-bold text-zinc-950">Group student program assignments</h3>
+                                                    {(registrationEditForm.groupMembers || []).map((member, memberIndex) => (
+                                                        <div key={`${member.registrationNumber}-${memberIndex}`} className="rounded-lg border border-zinc-200 p-4">
+                                                            <p className="font-bold text-zinc-900">{member.name} <span className="font-mono text-xs text-zinc-500">{member.registrationNumber}</span></p>
+                                                            {[['competition', 'Competitions', 'competitions'], ['workshop', 'Workshops', 'workshops']].map(([type, label, field]) => <fieldset key={type} className="mt-3"><legend className="text-xs font-bold uppercase text-zinc-500">{label}</legend><div className="mt-2 grid gap-2 sm:grid-cols-2">{registrationEditPrograms.filter((program) => program.type === type).map((program) => { const checked = (member[field] || []).includes(program.name); return <label key={program.id} className="flex gap-2 text-sm"><input type="checkbox" checked={checked} onChange={() => setRegistrationEditForm((current) => ({ ...current, groupMembers: current.groupMembers.map((item, index) => index === memberIndex ? { ...item, [field]: checked ? (item[field] || []).filter((name) => name !== program.name) : [...(item[field] || []), program.name] } : item) }))} />{program.name}</label>; })}</div></fieldset>)}
+                                                            <label className="mt-3 block text-xs font-bold uppercase text-zinc-500">Presentation<select value={member.presentationType || 'Not Participating'} onChange={(event) => setRegistrationEditForm((current) => ({ ...current, groupMembers: current.groupMembers.map((item, index) => index === memberIndex ? { ...item, presentationType: event.target.value } : item) }))} className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-normal normal-case"><option>Not Participating</option><option>Poster Presentation</option></select></label>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {registrationEditError && <p className="sm:col-span-2 rounded-lg bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{registrationEditError}</p>}
+                                        </div>
+                                        <div className="sticky bottom-0 flex justify-end gap-3 border-t border-zinc-200 bg-white px-5 py-4 sm:px-6">
+                                            <button type="button" onClick={closeRegistrationEdit} className="rounded-md border border-zinc-300 px-4 py-2.5 text-sm font-semibold text-zinc-700">Cancel</button>
+                                            <button type="submit" disabled={registrationEditSaving} className="rounded-md bg-emerald-800 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{registrationEditSaving ? 'Saving...' : 'Save changes'}</button>
+                                        </div>
+                                    </form>
                                 </div>
                             )}
 
@@ -9099,15 +9285,18 @@ function AdminPage() {
                             <div className="grid gap-4 md:grid-cols-3">
                                 <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
                                     <p className="text-xs font-bold uppercase text-zinc-500">Eligible Students</p>
-                                    <p className="mt-2 text-2xl font-bold text-zinc-950">{approvedPaidStudents.length.toLocaleString('en-IN')}</p>
+                                    <p className="mt-2 text-2xl font-bold text-zinc-950">{eligibleStudents.length.toLocaleString('en-IN')}</p>
+                                    <p className="mt-1 text-xs text-zinc-500">Submitted, paid, and approved</p>
                                 </div>
                                 <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                                    <p className="text-xs font-bold uppercase text-zinc-500">Approved Registrations</p>
-                                    <p className="mt-2 text-2xl font-bold text-zinc-950">{registrations.filter((registration) => registration.approvalStatus === 'approved').length.toLocaleString('en-IN')}</p>
+                                    <p className="text-xs font-bold uppercase text-zinc-500">Approved Students</p>
+                                    <p className="mt-2 text-2xl font-bold text-zinc-950">{approvedStudents.length.toLocaleString('en-IN')}</p>
+                                    <p className="mt-1 text-xs text-zinc-500">Individual students, including group members</p>
                                 </div>
                                 <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-                                    <p className="text-xs font-bold uppercase text-zinc-500">Payment Success</p>
-                                    <p className="mt-2 text-2xl font-bold text-zinc-950">{registrations.filter((registration) => registration.paymentStatus === 'success').length.toLocaleString('en-IN')}</p>
+                                    <p className="text-xs font-bold uppercase text-zinc-500">Students with Payment Success</p>
+                                    <p className="mt-2 text-2xl font-bold text-zinc-950">{successfulPaymentStudents.length.toLocaleString('en-IN')}</p>
+                                    <p className="mt-1 text-xs text-zinc-500">Individual students, including group members</p>
                                 </div>
                             </div>
 

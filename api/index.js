@@ -2855,6 +2855,53 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             return send(response, 200, { registrations: rows.map(mapAdminRegistration) });
         }
 
+        const registrationEditMatch = path.match(/^admin\/registrations\/(\d+)$/);
+        if (registrationEditMatch && request.method === 'PATCH') {
+            if (!requirePermission(session, 'registration.update')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            const data = request.body || {};
+            for (const [label, value] of [
+                ['Email', data.email],
+                ['Coordinator email', data.groupCoordinatorEmail],
+            ]) {
+                if (String(value || '').trim() && !isValidMailRecipient(value)) {
+                    return send(response, 400, { error: `Enter a valid ${label.toLowerCase()}.` });
+                }
+            }
+            const rows = await sql`
+                SELECT * FROM event_registrations
+                WHERE id = ${Number(registrationEditMatch[1])}
+            `;
+            if (!rows.length) {
+                return send(response, 404, { error: 'Registration not found.' });
+            }
+            const competitions = await sql`
+                SELECT competition_name
+                FROM registration_competitions
+                WHERE registration_id = ${rows[0].id}
+                ORDER BY id
+            `;
+            const existing = mapRegistration(rows[0], competitions.map((item) => item.competition_name));
+            const merged = { ...existing, ...data, draftToken: existing.draftToken, registrationMode: existing.registrationMode };
+            const groupMembers = normalizeGroupMembers(merged.groupMembers);
+            merged.groupMembers = groupMembers;
+            merged.competitionParticipation = merged.registrationMode === 'group'
+                ? groupMembers.some((member) => member.competitions.length) ? 'participating' : 'not_participating'
+                : Array.isArray(merged.studentCompetitions) && merged.studentCompetitions.length ? 'participating' : 'not_participating';
+            merged.workshopParticipation = merged.registrationMode === 'group'
+                ? groupMembers.some((member) => member.workshops.length) ? 'participating' : 'not_participating'
+                : Array.isArray(merged.selectedWorkshops) && merged.selectedWorkshops.length ? 'participating' : 'not_participating';
+            await saveRegistration(sql, merged, rows[0].registration_status === 'submitted');
+            const updatedRows = await sql`SELECT * FROM event_registrations WHERE id = ${rows[0].id}`;
+            const updatedCompetitions = await sql`
+                SELECT competition_name FROM registration_competitions
+                WHERE registration_id = ${rows[0].id} ORDER BY id
+            `;
+            updatedRows[0].student_competitions = updatedCompetitions.map((item) => item.competition_name);
+            return send(response, 200, { registration: mapAdminRegistration(updatedRows[0]) });
+        }
+
         if (path === 'admin/programs' && request.method === 'GET') {
             if (!requirePermission(session, 'program.view')) {
                 return send(response, 403, { error: 'Permission denied.' });
