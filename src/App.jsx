@@ -67,7 +67,6 @@ const pageHighlights = {
     'Register for Placement Drive': 'Reserve placement drive participation and keep employment-related details ready.',
     'Registered Participants': 'Reserved listing area for verified delegates after admin approval.',
     'Submit Abstract Here': 'Submit abstracts for review once the scientific submission form opens.',
-    'For Oral Presentation': 'Check oral presentation eligibility, format, timing, and review requirements.',
     'Poster Presentation': 'Review poster presentation rules, display size, and scientific evaluation details.',
     'Instructions and Model Poster': 'Download author instructions, model poster layout, and formatting guidance.',
     'Accepted Papers': 'Published list area for accepted abstracts, presentation codes, and session allocation.',
@@ -110,21 +109,23 @@ const homeContentDefaults = {
 };
 
 const importantDatesMarquee = [
-    'Early Bird Registration end date has been extended to 15 August 2026.',
+    '🇮🇳 Happy Independence Day 2026!',
+    '🌼🪔 Wishing you all a happy and prosperous Onam 2026!',
+    'Early Bird Registration end date has been extended to 22 August 2026.',
     'Regular Registration closes by 16 September 2026.',
-    'Abstract Submission date has been extended to 15 August 2026.',
-    'Abstract acceptance emails will be sent by 30 September 2026.',
+    'Abstract Submission date has been extended to 30 August 2026.',
+    'Abstract acceptance emails will be sent by 10 September 2026.',
     'Use only the official poster template provided on the web portal for presentation competitions.',
-    'Find poster and abstract preparation guidelines under Scientific Service on the website.',
+    'Find poster and abstract preparation guidelines under Scientific Services on the website.',
     'All Pre-Congress Workshops: 18 September 2026.',
     'FIP Vaccination Training Workshop: 21 & 22 September 2026.',
     'Group Registration is live now.',
     'Group Registration end date: 10 September 2026.',
     'Spot Registration is available on 18 & 19 September 2026.',
     'E-Poster Competition: 19 & 20 September 2026.',
-    'Oral Presentation Competition: 19 & 20 September 2026.',
     'Only links for video and reel competitions will be accepted.',
     'Submit a one-page abstract for the Case Challenge Competition.',
+    'Check your registered email address for updates.',
 ];
 
 function normalizeHomeContent(data = {}) {
@@ -4581,7 +4582,7 @@ function StudentSkillCompetitionsPage() {
                         'Language: English only.',
                         'English subtitles are mandatory.',
                         'Background music permitted, copyright-free only.',
-                        'Last date for video submission: 15 August 2026.',
+                        'Last date for video submission: 31 August 2026.',
                     ],
                 },
                 {
@@ -4626,7 +4627,7 @@ function StudentSkillCompetitionsPage() {
                         'Pharmacy students must appear in the video.',
                         'Offensive, misleading, or unscientific content is prohibited.',
                         'Organizers may use selected videos for educational and promotional purposes with due acknowledgement.',
-                        'Last date for video submission: 15 August 2026.',
+                        'Last date for video submission: 31 August 2026.',
                         "Judges' decision shall be final.",
                     ],
                 },
@@ -5929,6 +5930,7 @@ function AdminPage() {
     });
     const [selectedRegistration, setSelectedRegistration] = useState(null);
     const [editingRegistration, setEditingRegistration] = useState(null);
+    const [registrationEditReturnPath, setRegistrationEditReturnPath] = useState('/admin/registrations');
     const [registrationEditForm, setRegistrationEditForm] = useState({});
     const [registrationEditSaving, setRegistrationEditSaving] = useState(false);
     const [registrationEditError, setRegistrationEditError] = useState('');
@@ -6227,8 +6229,9 @@ function AdminPage() {
         setApprovalUpdateError('');
     }
 
-    function editRegistration(registration) {
+    function editRegistration(registration, returnPath = '/admin/registrations') {
         setEditingRegistration(registration);
+        setRegistrationEditReturnPath(returnPath);
         setRegistrationEditForm({
             participantName: registration.participantName || '',
             institutionName: registration.institutionName || '',
@@ -6259,7 +6262,7 @@ function AdminPage() {
 
     function closeRegistrationEdit() {
         setEditingRegistration(null);
-        window.history.pushState({}, '', '/admin/registrations');
+        window.history.pushState({}, '', registrationEditReturnPath);
     }
 
     async function saveRegistrationEdit(event) {
@@ -6275,7 +6278,7 @@ function AdminPage() {
             setRegistrations((current) => current.map((item) => item.id === registration.id ? registration : item));
             if (selectedRegistration?.id === registration.id) setSelectedRegistration(registration);
             setEditingRegistration(null);
-            window.history.pushState({}, '', '/admin/registrations');
+            window.history.pushState({}, '', registrationEditReturnPath);
         } catch (error) {
             setRegistrationEditError(error.message);
         } finally {
@@ -6802,6 +6805,8 @@ function AdminPage() {
                 const groupMembers = Array.isArray(registration.groupMembers) ? registration.groupMembers : [];
                 return groupMembers.map((member, index) => ({
                     id: `${registration.id}-${index}`,
+                    parentRegistrationId: registration.id,
+                    groupMemberIndex: index,
                     registrationNumber: member.registrationNumber || `${registration.registrationNumber}-${String(index + 1).padStart(3, '0')}`,
                     parentRegistrationNumber: registration.registrationNumber,
                     registrationMode: 'group',
@@ -6840,6 +6845,8 @@ function AdminPage() {
 
             return [{
                 id: `${registration.id}-individual`,
+                parentRegistrationId: registration.id,
+                groupMemberIndex: null,
                 registrationNumber: registration.registrationNumber,
                 parentRegistrationNumber: '',
                 registrationMode: registration.registrationMode,
@@ -8607,7 +8614,9 @@ function AdminPage() {
                                                 <p className="font-mono text-xs font-bold text-emerald-700">{editingRegistration.registrationNumber || `Draft #${editingRegistration.id}`}</p>
                                                 <h2 className="mt-1 text-xl font-semibold text-zinc-950">Edit registration</h2>
                                             </div>
-                                            <button type="button" onClick={closeRegistrationEdit} className="rounded-md border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100">Back to registrations</button>
+                                            <button type="button" onClick={closeRegistrationEdit} className="rounded-md border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100">
+                                                {registrationEditReturnPath === '/admin/students' ? 'Back to students' : 'Back to registrations'}
+                                            </button>
                                         </div>
                                         <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6">
                                             {(editingRegistration.registrationMode === 'group' ? [
@@ -9412,6 +9421,7 @@ function AdminPage() {
                                                 <th className="px-4 py-3">College / State</th>
                                                 <th className="px-4 py-3">Programs</th>
                                                 <th className="px-4 py-3">Status</th>
+                                                <th className="px-4 py-3 text-right">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-200 bg-white">
@@ -9454,6 +9464,20 @@ function AdminPage() {
                                                         <span className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-bold capitalize ${approvalStatusBadgeClass(student.approvalStatus)}`}>
                                                             Approval: {formatAdminStatus(student.approvalStatus)}
                                                         </span>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-right">
+                                                        {can('registration.update') && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const registration = registrations.find((item) => item.id === student.parentRegistrationId);
+                                                                    if (registration) editRegistration(registration, '/admin/students');
+                                                                }}
+                                                                className="rounded-md border border-emerald-700 bg-white px-3 py-2 text-xs font-bold text-emerald-800 shadow-sm hover:bg-emerald-50"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -10663,7 +10687,7 @@ function ScientificServicePage() {
                     </h1>
                     <div className="mt-5 max-w-2xl border-l-4 border-[#df0867] bg-[#0d124f]/50 px-4 py-3 backdrop-blur-sm">
                         <p className="text-base leading-7 text-blue-100">
-                            Submit your research for oral or poster presentation. Review the core areas, author guidelines, and best scientific practices before preparing your abstract.
+                            Submit your research for E-Poster presentation. Review the core areas, author guidelines, and best scientific practices before preparing your abstract.
                         </p>
                     </div>
 
@@ -10734,12 +10758,12 @@ function ScientificServicePage() {
 
                     <div className="grid gap-10 lg:grid-cols-2">
                         <div className="mt-8 rounded-2xl border border-emerald-100 bg-emerald-50 p-6 sm:p-8">
-                            <h3 className="text-base font-bold text-emerald-900 sm:text-lg">Requirements for Poster and Oral Presentations</h3>
+                            <h3 className="text-base font-bold text-emerald-900 sm:text-lg">Requirements for E-Poster Presentations</h3>
                             <ul className="mt-5 space-y-3">
                                 {[
                                     'Who can present: Only students, faculty, and researchers having a valid Registration ID for the 14th National IPA Student Congress.',
                                     'Registration is a prerequisite for all presentations and abstract submissions.',
-                                    'Participants must specify their preferred mode of presentation—Oral or E-Poster—during registration. No alteration is possible after completion of registration.',
+                                    'Participants must select E-Poster presentation during registration. No alteration is possible after completion of registration.',
                                     'There is no separate fee for presentation competitions.',
                                     'Separate competition categories are available for students and faculty/researchers.',
                                     'The date and time of presentations will be notified through the registered email address.',
@@ -10753,7 +10777,7 @@ function ScientificServicePage() {
                             </ul>
 
                             <div className="mt-7 border-t border-emerald-200 pt-6">
-                                <h3 className="text-base font-bold text-emerald-900 sm:text-lg">Types and Scope for Poster and Oral Presentations</h3>
+                                <h3 className="text-base font-bold text-emerald-900 sm:text-lg">Types and Scope for E-Poster Presentations</h3>
                                 <p className="mt-4 text-sm font-semibold leading-6 text-emerald-950">Original and unpublished work in the following categories is accepted:</p>
                                 <ul className="mt-3 space-y-2">
                                     {['Research articles', 'Review articles', 'Case studies', 'Case series, etc.'].map((item) => (
@@ -10773,7 +10797,7 @@ function ScientificServicePage() {
 
                         <div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-6 sm:p-8">
                             <div className="flex items-center gap-3">
-                                <h3 className="text-base font-bold text-[#0d124f] sm:text-lg">Stages of E-Poster and Oral Presentation Competition</h3>
+                                <h3 className="text-base font-bold text-[#0d124f] sm:text-lg">Stages of the E-Poster Presentation Competition</h3>
                             </div>
                             <div className="mt-5 space-y-5 text-sm leading-6 text-blue-950">
                                 <div className="flex items-start gap-3">
@@ -10788,11 +10812,11 @@ function ScientificServicePage() {
                                 <div className="flex items-start gap-3">
                                     <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#0d124f] text-xs font-bold text-white">2</span>
                                     <div>
-                                    <h4 className="font-bold text-[#0d124f]">E-Poster or Oral Presentation (Offline)</h4>
+                                    <h4 className="font-bold text-[#0d124f]">E-Poster Presentation (Offline)</h4>
                                     <ul className="mt-2 space-y-2">
                                         {[
-                                            'All selected participants will be notified through their registered email address to participate in the E-Poster or Oral Presentation competition at the 14th National IPA Student Congress.',
-                                            'The exact date, time, and poster code for presentation will be communicated separately to participants selected for E-Poster and Oral Presentations.',
+                                            'All selected participants will be notified through their registered email address to participate in the E-Poster competition at the 14th National IPA Student Congress.',
+                                            'The exact date, time, and poster code will be communicated separately to participants selected for E-Poster Presentations.',
                                             'The poster code for competitions will be sent by email. Any alteration to the poster code is not permitted.',
                                         ].map((item) => (
                                             <li key={item} className="flex items-start gap-2">
@@ -11075,44 +11099,10 @@ function ScientificServicePage() {
                     <div className="max-w-2xl">
                         <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#df0867]">Results</p>
                         <h2 className="mt-2 text-2xl font-bold text-zinc-900 sm:text-3xl">Selected Abstracts</h2>
-                        <p className="mt-3 text-sm leading-6 text-zinc-500">Accepted abstracts for oral and poster presentations will be listed here after scientific committee review.</p>
+                        <p className="mt-3 text-sm leading-6 text-zinc-500">Accepted abstracts for E-Poster presentations will be listed here after scientific committee review.</p>
                     </div>
 
                     <div className="mt-8 divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
-                        {/* Oral */}
-                        <div>
-                            <button
-                                type="button"
-                                onClick={() => togglePanel('oral')}
-                                className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left transition hover:bg-zinc-50"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#0d124f] text-white">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="size-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 0 1-7 7m0 0a7 7 0 0 1-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 0 1-3-3V5a3 3 0 0 1 6 0v6a3 3 0 0 1-3 3Z" />
-                                        </svg>
-                                    </span>
-                                    <span className="text-sm font-bold uppercase tracking-wide text-zinc-900">Abstracts Selected for Final Oral Presentation</span>
-                                </div>
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className={`size-5 shrink-0 text-zinc-400 transition-transform duration-200 ${openPanel === 'oral' ? 'rotate-180' : ''}`}
-                                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="m19 9-7 7-7-7" />
-                                </svg>
-                            </button>
-                            {openPanel === 'oral' && (
-                                <div className="border-t border-zinc-100 bg-zinc-50 px-6 py-8 text-center">
-                                    <p className="text-sm font-medium text-zinc-500">The list of abstracts selected for oral presentation will be published here after the review process is complete.</p>
-                                    <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
-                                        <span className="size-1.5 rounded-full bg-amber-400" />
-                                        Coming Soon
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
                         {/* Poster results */}
                         <div>
                             <button

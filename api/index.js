@@ -988,9 +988,9 @@ async function notifyAbstractReviewed(contact, submission) {
             `Dear ${contact.name || 'Delegate'},`,
             `Your abstract submitted under registration ${submission.registrationNumber || contact.registrationNumber || '-'} has been marked ${formatStatusLabel(submission.status)}.`,
             submission.adminRemarks ? `Remarks: ${submission.adminRemarks}` : 'No additional remarks were added.',
-            submission.status === 'accepted'
-                ? 'You may submit your presentation link from the Scientific Service page when ready.'
-                : 'Please watch the portal and your registered email for further instructions.',
+            ...(submission.status === 'accepted'
+                ? []
+                : ['Please watch the portal and your registered email for further instructions.']),
         ],
     }).catch((error) => console.error('notifyAbstractReviewed failed:', error));
 }
