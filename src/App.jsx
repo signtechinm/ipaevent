@@ -416,9 +416,25 @@ const postCongressWorkshop = {
 };
 
 const sponsorShowcase = [
-    { tier: 'Title Sponsor', slots: 1, accent: 'from-[#df0867] to-[#f4a21b]' },
-    { tier: 'Premium Sponsors', slots: 2, accent: 'from-[#f4a21b] to-[#ffd36a]' },
-    { tier: 'Supporting Partners', slots: 2, accent: 'from-[#00652f] to-[#0f9f58]' },
+    {
+        tier: 'Title Sponsors',
+        accent: 'from-[#df0867] to-[#f4a21b]',
+        partners: [
+            { name: 'JSS Academy of Higher Education and Research', category: 'Academic Partner', logo: '/sponsors/jss-academy.jpeg' },
+            { name: 'Sami-Sabinsa Group', category: 'Industry Partner', logo: '/sponsors/sami-sabinsa.png' },
+            { name: 'HLL Lifecare Limited', category: 'Industry Partner', logo: '/sponsors/hll-lifecare.png' },
+        ],
+    },
+    {
+        tier: 'Premium Sponsors',
+        accent: 'from-[#f4a21b] to-[#ffd36a]',
+        partners: [
+            { name: 'Fourrts (India) Laboratories Pvt. Limited', category: 'Platinum Sponsor', logo: '/sponsors/fourrts.png' },
+            { name: 'SOTAX India Private Limited', category: 'Gold Sponsor', logo: '/sponsors/sotax.png' },
+            { name: 'Inga Pharmaceuticals', category: 'Gold Sponsor', logo: '/sponsors/inga-pharmaceuticals.png' },
+        ],
+    },
+    { tier: 'Supporting Partners', accent: 'from-[#00652f] to-[#0f9f58]' },
 ];
 
 const supportingPartners = [
@@ -1405,7 +1421,7 @@ function SponsorShowcase() {
                 </div>
 
                 <div className="mt-10 space-y-8">
-                    {sponsorShowcase.map(({ tier, slots, accent }) => (
+                    {sponsorShowcase.map(({ tier, accent, partners }) => (
                         <div key={tier}>
                             <div className="mb-4 flex items-center gap-4">
                                 <span className={`h-1 w-12 rounded-full bg-gradient-to-r ${accent}`} />
@@ -1436,21 +1452,23 @@ function SponsorShowcase() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className={`grid gap-4 ${slots === 1 ? 'mx-auto max-w-md' : 'md:grid-cols-2'}`}>
-                                    {Array.from({ length: slots }, (_, index) => (
+                                <div className="grid gap-4 md:grid-cols-3">
+                                    {partners.map((partner) => (
                                         <div
-                                            key={`${tier}-${index}`}
-                                            className="group flex min-h-36 items-center justify-center rounded-2xl bg-zinc-50 p-6 shadow-sm ring-1 ring-zinc-200 transition duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-xl"
+                                            key={partner.name}
+                                            className="group flex min-h-56 flex-col items-center justify-between rounded-2xl bg-zinc-50 p-6 text-center shadow-sm ring-1 ring-zinc-200 transition duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-xl"
                                         >
-                                            <div className="text-center">
-                                                <div className={`mx-auto mb-3 h-1.5 w-16 rounded-full bg-gradient-to-r ${accent}`} />
-                                                <p className="text-lg font-bold text-zinc-400 transition group-hover:text-[#11145f]">
-                                                    Sponsor Logo
-                                                </p>
-                                                <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-                                                    Coming soon
-                                                </p>
-                                            </div>
+                                            <span className="rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#11145f] ring-1 ring-zinc-200">
+                                                {partner.category}
+                                            </span>
+                                            <img
+                                                src={partner.logo}
+                                                alt={`${partner.name} logo`}
+                                                className="my-5 h-24 w-full max-w-64 object-contain"
+                                                loading="lazy"
+                                                decoding="async"
+                                            />
+                                            <p className="text-sm font-bold leading-5 text-zinc-700">{partner.name}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -1741,6 +1759,7 @@ function RegistrationPage() {
     const [formData, setFormData] = useState(initialRegistration);
     const [savedSections, setSavedSections] = useState({});
     const [notice, setNotice] = useState('');
+    const [upiCopied, setUpiCopied] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [programCatalog, setProgramCatalog] = useState([]);
     const [categoryCatalog, setCategoryCatalog] = useState([]);
@@ -1885,6 +1904,16 @@ function RegistrationPage() {
 
         return `upi://pay?${params.toString()}`;
     }, [totals.total]);
+
+    async function copyRegistrationUpiId() {
+        try {
+            await navigator.clipboard.writeText(registrationUpiId);
+            setUpiCopied(true);
+            window.setTimeout(() => setUpiCopied(false), 2000);
+        } catch {
+            setNotice('Unable to copy the UPI ID automatically. Please select and copy it manually.');
+        }
+    }
 
     function updateField(name, value) {
         setFormData((current) => ({ ...current, [name]: value }));
@@ -3249,10 +3278,34 @@ function RegistrationPage() {
                                                     <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Amount Payable</p>
                                                     <p className="mt-1 text-2xl font-black text-[#0d124f]">Rs. {totals.total.toLocaleString('en-IN')}</p>
                                                 </div>
-                                                <div className="rounded-lg bg-white px-4 py-3 ring-1 ring-sky-100">
-                                                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">UPI ID</p>
-                                                    <p className="mt-1 break-all font-mono text-base font-black text-[#0d124f]">{registrationUpiId}</p>
-                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={copyRegistrationUpiId}
+                                                    className="group rounded-lg bg-white px-4 py-3 text-left ring-1 ring-sky-100 transition hover:bg-sky-50 hover:ring-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                                                    aria-label={`Copy UPI ID ${registrationUpiId}`}
+                                                >
+                                                    <span className="flex items-center justify-between gap-2">
+                                                        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">UPI ID</span>
+                                                        <span className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-sky-700" aria-live="polite">
+                                                            {upiCopied ? (
+                                                                <>
+                                                                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                                                    </svg>
+                                                                    Copied
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75A1.125 1.125 0 0 1 3.75 20.625v-9.75c0-.621.504-1.125 1.125-1.125H8.25m7.5 7.5h3.375c.621 0 1.125-.504 1.125-1.125V6.108c0-.298-.119-.585-.33-.796l-3.232-3.232a1.125 1.125 0 0 0-.795-.33h-6.018c-.621 0-1.125.504-1.125 1.125v13.25c0 .621.504 1.125 1.125 1.125h5.875Z" />
+                                                                    </svg>
+                                                                    Copy
+                                                                </>
+                                                            )}
+                                                        </span>
+                                                    </span>
+                                                    <span className="mt-2 block whitespace-nowrap font-mono text-sm font-black tracking-tight text-[#0d124f] sm:text-base">{registrationUpiId}</span>
+                                                </button>
                                             </div>
                                             <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
                                                 <a
