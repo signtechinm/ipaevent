@@ -1761,6 +1761,7 @@ function RegistrationPage() {
     const [notice, setNotice] = useState('');
     const [upiCopied, setUpiCopied] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [mailDelivery, setMailDelivery] = useState(null);
     const [programCatalog, setProgramCatalog] = useState([]);
     const [categoryCatalog, setCategoryCatalog] = useState([]);
 
@@ -2293,11 +2294,12 @@ function RegistrationPage() {
         setNotice('Submitting...');
 
         try {
-            const { registration } = await apiRequest('registrations/submit', {
+            const { registration, mailDelivery: deliveryResult } = await apiRequest('registrations/submit', {
                 method: 'POST',
                 body: JSON.stringify(formData),
             });
             setFormData((current) => ({ ...current, ...registration }));
+            setMailDelivery(deliveryResult || null);
             window.localStorage.removeItem(registrationDraftKey);
             setSavedSections((current) => ({ ...current, payment: true, review: true, confirmation: true }));
             setActiveTab('confirmation');
@@ -2313,6 +2315,7 @@ function RegistrationPage() {
         window.localStorage.removeItem(registrationDraftKey);
         setFormData(initialRegistration);
         setSavedSections({});
+        setMailDelivery(null);
         setNotice('');
         setActiveTab('general');
     }
@@ -3466,6 +3469,21 @@ function RegistrationPage() {
                                         <p>Payment status: <span className="font-bold capitalize">{paymentStatusLabel}</span></p>
                                     </div>
                                 </div>
+                                {mailDelivery && (
+                                    mailDelivery.failedEmails?.length ? (
+                                        <div className="rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950">
+                                            <h4 className="font-bold">Registration saved, but email could not be sent to:</h4>
+                                            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+                                                {mailDelivery.failedEmails.map((email) => <li key={email}>{email}</li>)}
+                                            </ul>
+                                            <p className="mt-3 text-sm">All other registration emails were processed.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">
+                                            Registration emails were sent successfully to all recipients.
+                                        </div>
+                                    )
+                                )}
                                 <div className="grid gap-4 md:grid-cols-2">
                                     {(isGroupRegistration
                                         ? [
@@ -5983,6 +6001,7 @@ function AdminPage() {
     });
     const [selectedRegistration, setSelectedRegistration] = useState(null);
     const [editingRegistration, setEditingRegistration] = useState(null);
+    const [editingGroupMemberIndex, setEditingGroupMemberIndex] = useState(null);
     const [registrationEditReturnPath, setRegistrationEditReturnPath] = useState('/admin/registrations');
     const [registrationEditForm, setRegistrationEditForm] = useState({});
     const [registrationEditSaving, setRegistrationEditSaving] = useState(false);
@@ -6028,6 +6047,14 @@ function AdminPage() {
     const [abstractBookLoading, setAbstractBookLoading] = useState(false);
     const [abstractBookUploading, setAbstractBookUploading] = useState(false);
     const [abstractBookError, setAbstractBookError] = useState('');
+
+    useEffect(() => {
+        if (!editingRegistration || editingGroupMemberIndex === null) return;
+        const frame = window.requestAnimationFrame(() => {
+            document.getElementById(`group-member-editor-${editingGroupMemberIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        return () => window.cancelAnimationFrame(frame);
+    }, [editingRegistration, editingGroupMemberIndex]);
 
     async function loadAbstractBookAdmin() {
         setAbstractBookLoading(true);
@@ -6282,8 +6309,9 @@ function AdminPage() {
         setApprovalUpdateError('');
     }
 
-    function editRegistration(registration, returnPath = '/admin/registrations') {
+    function editRegistration(registration, returnPath = '/admin/registrations', groupMemberIndex = null) {
         setEditingRegistration(registration);
+        setEditingGroupMemberIndex(groupMemberIndex);
         setRegistrationEditReturnPath(returnPath);
         setRegistrationEditForm({
             participantName: registration.participantName || '',
@@ -6315,7 +6343,17 @@ function AdminPage() {
 
     function closeRegistrationEdit() {
         setEditingRegistration(null);
+        setEditingGroupMemberIndex(null);
         window.history.pushState({}, '', registrationEditReturnPath);
+    }
+
+    function updateEditingGroupMember(memberIndex, changes) {
+        setRegistrationEditForm((current) => ({
+            ...current,
+            groupMembers: (current.groupMembers || []).map((member, index) => (
+                index === memberIndex ? { ...member, ...changes } : member
+            )),
+        }));
     }
 
     async function saveRegistrationEdit(event) {
@@ -6331,6 +6369,7 @@ function AdminPage() {
             setRegistrations((current) => current.map((item) => item.id === registration.id ? registration : item));
             if (selectedRegistration?.id === registration.id) setSelectedRegistration(registration);
             setEditingRegistration(null);
+            setEditingGroupMemberIndex(null);
             window.history.pushState({}, '', registrationEditReturnPath);
         } catch (error) {
             setRegistrationEditError(error.message);
@@ -8665,7 +8704,11 @@ function AdminPage() {
                                         <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-zinc-200 bg-white px-5 py-4 sm:px-6">
                                             <div>
                                                 <p className="font-mono text-xs font-bold text-emerald-700">{editingRegistration.registrationNumber || `Draft #${editingRegistration.id}`}</p>
-                                                <h2 className="mt-1 text-xl font-semibold text-zinc-950">Edit registration</h2>
+                                                <h2 className="mt-1 text-xl font-semibold text-zinc-950">
+                                                    {editingGroupMemberIndex === null
+                                                        ? 'Edit registration'
+                                                        : `Edit student: ${registrationEditForm.groupMembers?.[editingGroupMemberIndex]?.name || 'Group member'}`}
+                                                </h2>
                                             </div>
                                             <button type="button" onClick={closeRegistrationEdit} className="rounded-md border border-zinc-200 px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100">
                                                 {registrationEditReturnPath === '/admin/students' ? 'Back to students' : 'Back to registrations'}
@@ -8736,12 +8779,50 @@ function AdminPage() {
                                             )}
                                             {editingRegistration.registrationMode === 'group' && (
                                                 <div className="space-y-4 sm:col-span-2">
-                                                    <h3 className="font-bold text-zinc-950">Group student program assignments</h3>
+                                                    <h3 className="font-bold text-zinc-950">Group student details and program assignments</h3>
                                                     {(registrationEditForm.groupMembers || []).map((member, memberIndex) => (
-                                                        <div key={`${member.registrationNumber}-${memberIndex}`} className="rounded-lg border border-zinc-200 p-4">
-                                                            <p className="font-bold text-zinc-900">{member.name} <span className="font-mono text-xs text-zinc-500">{member.registrationNumber}</span></p>
+                                                        <div
+                                                            key={`${member.registrationNumber}-${memberIndex}`}
+                                                            id={`group-member-editor-${memberIndex}`}
+                                                            className={`scroll-mt-28 rounded-lg border p-4 ${editingGroupMemberIndex === memberIndex ? 'border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-100' : 'border-zinc-200'}`}
+                                                        >
+                                                            <p className="font-bold text-zinc-900">Student {memberIndex + 1} <span className="font-mono text-xs text-zinc-500">{member.registrationNumber}</span></p>
+                                                            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                                                {[
+                                                                    ['name', 'Name', 'text'],
+                                                                    ['ipaMemberId', 'IPA Member ID', 'text'],
+                                                                    ['email', 'Email', 'email'],
+                                                                    ['whatsapp', 'WhatsApp', 'text'],
+                                                                    ['gender', 'Gender', 'text'],
+                                                                    ['course', 'Course', 'text'],
+                                                                    ['college', 'College', 'text'],
+                                                                    ['state', 'State', 'text'],
+                                                                    ['foodPreference', 'Food preference', 'text'],
+                                                                    ['category', 'Category', 'text'],
+                                                                ].map(([field, label, type]) => (
+                                                                    <label key={field} className="text-xs font-bold uppercase text-zinc-500">
+                                                                        {label}
+                                                                        <input
+                                                                            type={type}
+                                                                            value={member[field] || ''}
+                                                                            onChange={(event) => updateEditingGroupMember(memberIndex, { [field]: event.target.value })}
+                                                                            className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-normal normal-case text-zinc-900"
+                                                                        />
+                                                                    </label>
+                                                                ))}
+                                                            </div>
                                                             {[['competition', 'Competitions', 'competitions'], ['workshop', 'Workshops', 'workshops']].map(([type, label, field]) => <fieldset key={type} className="mt-3"><legend className="text-xs font-bold uppercase text-zinc-500">{label}</legend><div className="mt-2 grid gap-2 sm:grid-cols-2">{registrationEditPrograms.filter((program) => program.type === type).map((program) => { const checked = (member[field] || []).includes(program.name); return <label key={program.id} className="flex gap-2 text-sm"><input type="checkbox" checked={checked} onChange={() => setRegistrationEditForm((current) => ({ ...current, groupMembers: current.groupMembers.map((item, index) => index === memberIndex ? { ...item, [field]: checked ? (item[field] || []).filter((name) => name !== program.name) : [...(item[field] || []), program.name] } : item) }))} />{program.name}</label>; })}</div></fieldset>)}
                                                             <label className="mt-3 block text-xs font-bold uppercase text-zinc-500">Presentation<select value={member.presentationType || 'Not Participating'} onChange={(event) => setRegistrationEditForm((current) => ({ ...current, groupMembers: current.groupMembers.map((item, index) => index === memberIndex ? { ...item, presentationType: event.target.value } : item) }))} className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-normal normal-case"><option>Not Participating</option><option>Poster Presentation</option></select></label>
+                                                            <label className="mt-3 block text-xs font-bold uppercase text-zinc-500">HR Drive core area
+                                                                <select value={member.hrCoreArea || ''} onChange={(event) => updateEditingGroupMember(memberIndex, { hrCoreArea: event.target.value })} className="admin-input mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-normal normal-case">
+                                                                    <option value="">Not participating</option>
+                                                                    {hrCoreAreaOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+                                                                </select>
+                                                            </label>
+                                                            <label className="mt-3 flex items-center gap-2 text-sm font-semibold text-zinc-700">
+                                                                <input type="checkbox" checked={member.fipVaccinationEligibility === 'Yes'} onChange={(event) => updateEditingGroupMember(memberIndex, { fipVaccinationEligibility: event.target.checked ? 'Yes' : 'No' })} />
+                                                                Eligible for FIP vaccination training (BLS certificate/training letter)
+                                                            </label>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -9524,7 +9605,7 @@ function AdminPage() {
                                                                 type="button"
                                                                 onClick={() => {
                                                                     const registration = registrations.find((item) => item.id === student.parentRegistrationId);
-                                                                    if (registration) editRegistration(registration, '/admin/students');
+                                                                    if (registration) editRegistration(registration, '/admin/students', student.groupMemberIndex);
                                                                 }}
                                                                 className="rounded-md border border-emerald-700 bg-white px-3 py-2 text-xs font-bold text-emerald-800 shadow-sm hover:bg-emerald-50"
                                                             >

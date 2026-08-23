@@ -819,37 +819,61 @@ async function getRegistrationContactForMail(sql, registrationNumber) {
 }
 
 async function notifyRegistrationSubmitted(registration) {
-    const summaryRecipients = registration.registrationMode === 'group'
-        ? getUniqueMailRecipients([registration.groupCoordinatorEmail])
-        : getUniqueMailRecipients([getRegistrationMailRecipient(registration)]);
     const { htmlBody, textBody } = buildRegistrationSubmittedMail(registration);
+    const primaryRecipient = registration.registrationMode === 'group'
+        ? registration.groupCoordinatorEmail
+        : getRegistrationMailRecipient(registration);
+    const deliveries = [{
+        email: String(primaryRecipient || '').trim(),
+        message: {
+            to: primaryRecipient,
+            subject: '14th NSC - Registration details Submitted',
+            preview: 'Your NSC 2026 registration has been received.',
+            htmlBody,
+            textBody,
+        },
+    }];
 
-    await Promise.all(summaryRecipients.map((to) => sendStudentMail({
-        to,
-        subject: '14th NSC - Registration details Submitted',
-        preview: 'Your NSC 2026 registration has been received.',
-        htmlBody,
-        textBody,
-    }))).catch((error) => console.error('notifyRegistrationSubmitted coordinator failed:', error));
-
-    if (registration.registrationMode !== 'group') {
-        return;
-    }
-
-    const groupMembers = Array.isArray(registration.groupMembers) ? registration.groupMembers : [];
-    await Promise.all(groupMembers
-        .filter((member) => member.email)
-        .map((member, index) => {
+    if (registration.registrationMode === 'group') {
+        const groupMembers = Array.isArray(registration.groupMembers) ? registration.groupMembers : [];
+        groupMembers.forEach((member, index) => {
             const studentRegistration = buildGroupStudentRegistration(registration, member, index);
             const studentMail = buildRegistrationSubmittedMail(studentRegistration);
-            return sendStudentMail({
-                to: member.email,
-                subject: '14th NSC - Registration details Submitted',
-                preview: 'Your NSC 2026 student registration has been received.',
-                htmlBody: studentMail.htmlBody,
-                textBody: studentMail.textBody,
+            deliveries.push({
+                email: String(member.email || '').trim(),
+                message: {
+                    to: member.email,
+                    subject: '14th NSC - Registration details Submitted',
+                    preview: 'Your NSC 2026 student registration has been received.',
+                    htmlBody: studentMail.htmlBody,
+                    textBody: studentMail.textBody,
+                },
             });
-        })).catch((error) => console.error('notifyRegistrationSubmitted students failed:', error));
+        });
+    }
+
+    const results = await Promise.allSettled(deliveries.map(({ message }) => sendStudentMail(message)));
+    const sentEmails = [];
+    const failedEmails = [];
+
+    results.forEach((result, index) => {
+        const email = deliveries[index].email;
+        if (result.status === 'fulfilled' && !result.value?.skipped) {
+            if (email) sentEmails.push(email);
+            return;
+        }
+
+        if (email) failedEmails.push(email);
+        const reason = result.status === 'rejected'
+            ? result.reason?.message || result.reason
+            : result.value?.reason || 'unknown mail error';
+        console.error(`Registration mail failed for ${email || '(missing email)'}:`, reason);
+    });
+
+    return {
+        sentEmails: [...new Set(sentEmails)],
+        failedEmails: [...new Set(failedEmails)],
+    };
 }
 
 async function notifyPaymentUpdated(registration) {
@@ -2706,8 +2730,8 @@ export default async function handler(request, response) {
 
         if (path === 'registrations/submit' && request.method === 'POST') {
             const registration = await saveRegistration(sql, request.body || {}, true);
-            await notifyRegistrationSubmitted(registration);
-            return send(response, 200, { registration });
+            const mailDelivery = await notifyRegistrationSubmitted(registration);
+            return send(response, 200, { registration, mailDelivery });
         }
 
         if (path === 'sponsors/draft' && request.method === 'GET') {
