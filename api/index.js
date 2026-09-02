@@ -1004,6 +1004,70 @@ async function notifyApprovalUpdated(registration) {
 
 async function notifyAbstractReviewed(contact, submission) {
     if (!contact) return;
+    if (submission.status === 'accepted') {
+        const presentationDate = new Intl.DateTimeFormat('en-IN', {
+            day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata',
+        }).format(new Date(`${submission.presentationDate}T00:00:00+05:30`));
+        const templateUrl = 'https://nsc2026.ipakerala.org/e-poster-template.pptx';
+        const scientificServiceUrl = 'https://nsc2026.ipakerala.org/scientific-service';
+        const safeName = escapeHtml(contact.name || submission.participantName || 'Delegate');
+        const safePosterCode = escapeHtml(submission.posterCode);
+        const safePresentationDate = escapeHtml(presentationDate);
+        const safeRemarks = escapeHtml(submission.adminRemarks || '');
+        const htmlBody = `
+            <p>Dear ${safeName},</p>
+            <p><strong>Congratulations!</strong></p>
+            <p>The Scientific Services Committee (SSC) is pleased to inform you that your abstract has been accepted for the <strong>E-Poster Presentation</strong> at the 14th National IPA Student Congress, to be held in Kochi during 19–20 September 2026. The exact time schedule of your E-Poster presentation will be intimated and published shortly.</p>
+            <div style="margin:20px 0;padding:16px;border:1px solid #bbf7d0;border-radius:10px;background:#f0fdf4">
+                <p style="margin:0 0 8px"><strong>Poster Code:</strong> ${safePosterCode}</p>
+                <p style="margin:0"><strong>Presentation Date:</strong> ${safePresentationDate}</p>
+            </div>
+            ${safeRemarks ? `<p><strong>Committee remarks:</strong> ${safeRemarks}</p>` : ''}
+            <p><strong>Important Instructions and E-Poster Template</strong></p>
+            <ul>
+                <li>Use only the official template (PPT format only) provided on or downloaded from the Congress website. Posters in different formats or layouts will not be accepted for presentations.</li>
+                <li>Download the official E-Poster template here: <a href="${templateUrl}">${templateUrl}</a></li>
+                <li>It is desirable to share the presentation PPT well in advance for a seamless experience.</li>
+                <li>Please report to the E-Poster Committee one hour before your presentation schedule to verify files and complete pre-presentation formalities.</li>
+                <li>Please produce your registration details and the acceptance email received on your mobile phone for validation.</li>
+                <li>Refer to and follow all updated instructions and guidelines issued by the Local Organizing Committee (LoC) pertaining to poster competitions.</li>
+            </ul>
+            <p>Click for more information:<br><a href="${scientificServiceUrl}">${scientificServiceUrl}</a></p>
+            <p><strong>Points of contact</strong><br>Dr. Sabu MC: <a href="tel:+919447171808">9447171808</a><br>Dr. Boby Johns G: <a href="tel:+919846144409">9846144409</a></p>
+            <p><strong>For Scientific Services &amp; E-Poster Committee</strong></p>
+        `;
+        const textBody = [
+            `Dear ${contact.name || submission.participantName || 'Delegate'},`,
+            'Congratulations!',
+            'The Scientific Services Committee (SSC) is pleased to inform you that your abstract has been accepted for the E-Poster Presentation at the 14th National IPA Student Congress, to be held in Kochi during 19–20 September 2026. The exact time schedule of your E-Poster presentation will be intimated and published shortly.',
+            `Poster Code: ${submission.posterCode}`,
+            `Presentation Date: ${presentationDate}`,
+            submission.adminRemarks ? `Committee remarks: ${submission.adminRemarks}` : '',
+            'IMPORTANT INSTRUCTIONS AND E-POSTER TEMPLATE',
+            'Use only the official template (PPT format only) provided on or downloaded from the Congress website. Posters in different formats or layouts will not be accepted for presentations.',
+            `Download the official E-Poster template here: ${templateUrl}`,
+            'It is desirable to share the presentation PPT well in advance for a seamless experience.',
+            'Please report to the E-Poster Committee one hour before your presentation schedule to verify files and complete pre-presentation formalities.',
+            'Please produce your registration details and the acceptance email received on your mobile phone for validation.',
+            'Refer to and follow all updated instructions and guidelines issued by the Local Organizing Committee (LoC) pertaining to poster competitions.',
+            `Click for more information: ${scientificServiceUrl}`,
+            'Points of contact:',
+            'Dr. Sabu MC: 9447171808',
+            'Dr. Boby Johns G: 9846144409',
+            'For Scientific Services & E-Poster Committee',
+            'Regards,',
+            'NSC 2026 Secretariat',
+            'IPA Kerala State Branch',
+        ].filter(Boolean).join('\n\n');
+        await sendStudentMail({
+            to: contact.email,
+            subject: `Abstract accepted for E-Poster Presentation - ${submission.posterCode}`,
+            preview: `Congratulations! Your poster code is ${submission.posterCode} and your presentation date is ${presentationDate}.`,
+            htmlBody,
+            textBody,
+        }).catch((error) => console.error('notifyAbstractReviewed acceptance failed:', error));
+        return;
+    }
     await sendStudentMail({
         to: contact.email,
         subject: `Abstract review update - ${submission.registrationNumber || contact.registrationNumber}`,
@@ -1012,9 +1076,7 @@ async function notifyAbstractReviewed(contact, submission) {
             `Dear ${contact.name || 'Delegate'},`,
             `Your abstract submitted under registration ${submission.registrationNumber || contact.registrationNumber || '-'} has been marked ${formatStatusLabel(submission.status)}.`,
             submission.adminRemarks ? `Remarks: ${submission.adminRemarks}` : 'No additional remarks were added.',
-            ...(submission.status === 'accepted'
-                ? []
-                : ['Please watch the portal and your registered email for further instructions.']),
+            'Please watch the portal and your registered email for further instructions.',
         ],
     }).catch((error) => console.error('notifyAbstractReviewed failed:', error));
 }
@@ -1063,6 +1125,8 @@ async function ensureAbstractSubmissions(sql) {
             blob_path TEXT,
             status VARCHAR(30) NOT NULL DEFAULT 'pending',
             admin_remarks TEXT,
+            poster_code VARCHAR(80),
+            presentation_date DATE,
             reviewed_at TIMESTAMPTZ,
             poster_video_link TEXT,
             video_link_submitted_at TIMESTAMPTZ,
@@ -1076,6 +1140,8 @@ async function ensureAbstractSubmissions(sql) {
     await sql`ALTER TABLE abstract_submissions ALTER COLUMN file_data DROP NOT NULL`;
     await sql`ALTER TABLE abstract_submissions ADD COLUMN IF NOT EXISTS file_url TEXT`;
     await sql`ALTER TABLE abstract_submissions ADD COLUMN IF NOT EXISTS blob_path TEXT`;
+    await sql`ALTER TABLE abstract_submissions ADD COLUMN IF NOT EXISTS poster_code VARCHAR(80)`;
+    await sql`ALTER TABLE abstract_submissions ADD COLUMN IF NOT EXISTS presentation_date DATE`;
     await sql`ALTER TABLE abstract_submissions ADD COLUMN IF NOT EXISTS video_review_status VARCHAR(30) NOT NULL DEFAULT 'pending'`;
     await sql`ALTER TABLE abstract_submissions ADD COLUMN IF NOT EXISTS video_review_remarks TEXT`;
     await sql`ALTER TABLE abstract_submissions ADD COLUMN IF NOT EXISTS video_reviewed_at TIMESTAMPTZ`;
@@ -2274,6 +2340,8 @@ function mapAbstractSubmission(row) {
         blobPath: row.blob_path || '',
         status: row.status,
         adminRemarks: row.admin_remarks || '',
+        posterCode: row.poster_code || '',
+        presentationDate: row.presentation_date || null,
         reviewedAt: row.reviewed_at || null,
         posterVideoLink: row.poster_video_link || '',
         videoLinkSubmittedAt: row.video_link_submitted_at || null,
@@ -3540,15 +3608,58 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             if (!requirePermission(session, 'registration.view')) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
+            const requestedPage = Number.parseInt(String(request.query?.page || '1'), 10);
+            const requestedPageSize = Number.parseInt(String(request.query?.pageSize || '20'), 10);
+            const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+            const pageSize = [10, 20, 50].includes(requestedPageSize) ? requestedPageSize : 20;
+            const dateFrom = String(request.query?.dateFrom || '').trim();
+            const dateTo = String(request.query?.dateTo || '').trim();
+            const registrationNumber = String(request.query?.registrationNumber || '').trim().slice(0, 60);
+            const participantName = String(request.query?.participantName || '').trim().slice(0, 120);
+            const registrationPattern = `%${registrationNumber}%`;
+            const participantPattern = `%${participantName}%`;
+
+            if (dateFrom && !/^\d{4}-\d{2}-\d{2}$/.test(dateFrom)) {
+                throw inputError('Invalid start date.');
+            }
+            if (dateTo && !/^\d{4}-\d{2}-\d{2}$/.test(dateTo)) {
+                throw inputError('Invalid end date.');
+            }
+            if (dateFrom && dateTo && dateFrom > dateTo) {
+                throw inputError('Start date cannot be after end date.');
+            }
+
+            const countRows = await sql`
+                SELECT COUNT(*)::int AS total
+                FROM abstract_submissions
+                WHERE (${dateFrom} = '' OR submitted_at >= ${dateFrom || null}::date)
+                  AND (${dateTo} = '' OR submitted_at < (${dateTo || null}::date + INTERVAL '1 day'))
+                  AND (${registrationNumber} = '' OR registration_number ILIKE ${registrationPattern})
+                  AND (${participantName} = '' OR participant_name ILIKE ${participantPattern})
+            `;
+            const total = Number(countRows[0]?.total || 0);
+            const totalPages = Math.max(1, Math.ceil(total / pageSize));
+            const currentPage = Math.min(page, totalPages);
+            const offset = (currentPage - 1) * pageSize;
             const rows = await sql`
                 SELECT id, registration_number, participant_name, institution_name,
                        file_name, file_size, file_type, file_url, blob_path, status, admin_remarks,
+                       poster_code, presentation_date,
                        reviewed_at, poster_video_link, video_link_submitted_at,
                        video_review_status, video_review_remarks, video_reviewed_at, submitted_at
                 FROM abstract_submissions
+                WHERE (${dateFrom} = '' OR submitted_at >= ${dateFrom || null}::date)
+                  AND (${dateTo} = '' OR submitted_at < (${dateTo || null}::date + INTERVAL '1 day'))
+                  AND (${registrationNumber} = '' OR registration_number ILIKE ${registrationPattern})
+                  AND (${participantName} = '' OR participant_name ILIKE ${participantPattern})
                 ORDER BY submitted_at DESC
+                LIMIT ${pageSize}
+                OFFSET ${offset}
             `;
-            return send(response, 200, { abstracts: rows.map(mapAbstractSubmission) });
+            return send(response, 200, {
+                abstracts: rows.map(mapAbstractSubmission),
+                pagination: { page: currentPage, pageSize, total, totalPages },
+            });
         }
 
         // ── Admin: list skill competition video submissions ───────────
@@ -3634,7 +3745,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             if (!requirePermission(session, 'registration.update')) {
                 return send(response, 403, { error: 'Permission denied.' });
             }
-            const { status, adminRemarks, videoReviewStatus, videoReviewRemarks } = request.body || {};
+            const { status, adminRemarks, posterCode, presentationDate, videoReviewStatus, videoReviewRemarks } = request.body || {};
             if (videoReviewStatus !== undefined) {
                 if (!['approved', 'rejected'].includes(videoReviewStatus)) {
                     throw inputError('Invalid presentation review status. Must be approved or rejected.');
@@ -3658,10 +3769,23 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             if (!['accepted', 'rejected', 'pending'].includes(status)) {
                 throw inputError('Invalid abstract status. Must be accepted, rejected, or pending.');
             }
+            const normalizedPosterCode = String(posterCode || '').trim();
+            const normalizedPresentationDate = String(presentationDate || '').trim();
+            if (status === 'accepted' && !normalizedPosterCode) {
+                throw inputError('Poster code is required when accepting an abstract.');
+            }
+            if (status === 'accepted' && !/^\d{4}-\d{2}-\d{2}$/.test(normalizedPresentationDate)) {
+                throw inputError('A valid presentation date is required when accepting an abstract.');
+            }
+            if (normalizedPosterCode.length > 80) {
+                throw inputError('Poster code must be 80 characters or fewer.');
+            }
             const rows = await sql`
                 UPDATE abstract_submissions
                 SET status = ${status},
                     admin_remarks = ${adminRemarks ? String(adminRemarks).trim() : null},
+                    poster_code = ${normalizedPosterCode || null},
+                    presentation_date = ${normalizedPresentationDate || null}::date,
                     reviewed_at = NOW(),
                     updated_at = NOW()
                 WHERE id = ${absReviewMatch[1]}

@@ -330,6 +330,8 @@ CREATE TABLE IF NOT EXISTS abstract_submissions (
     blob_path TEXT,
     status VARCHAR(30) NOT NULL DEFAULT 'pending',
     admin_remarks TEXT,
+    poster_code VARCHAR(80),
+    presentation_date DATE,
     reviewed_at TIMESTAMPTZ,
     poster_video_link TEXT,
     video_link_submitted_at TIMESTAMPTZ,

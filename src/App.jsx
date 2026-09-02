@@ -6121,8 +6121,23 @@ function AdminPage() {
     const [adminAbstracts, setAdminAbstracts] = useState([]);
     const [adminAbstractsLoading, setAdminAbstractsLoading] = useState(false);
     const [adminAbstractsError, setAdminAbstractsError] = useState('');
+    const [adminAbstractPage, setAdminAbstractPage] = useState(1);
+    const [adminAbstractPageSize, setAdminAbstractPageSize] = useState(20);
+    const [adminAbstractTotal, setAdminAbstractTotal] = useState(0);
+    const [adminAbstractTotalPages, setAdminAbstractTotalPages] = useState(1);
+    const [abstractDateFrom, setAbstractDateFrom] = useState('');
+    const [abstractDateTo, setAbstractDateTo] = useState('');
+    const [abstractRegistrationFilter, setAbstractRegistrationFilter] = useState('');
+    const [abstractParticipantFilter, setAbstractParticipantFilter] = useState('');
+    const adminAbstractRequestId = useRef(0);
+    const adminAbstractSearchReady = useRef(false);
     const [abstractReviewing, setAbstractReviewing] = useState(null);
     const [abstractRemarksDraft, setAbstractRemarksDraft] = useState('');
+    const [abstractReviewStatusDraft, setAbstractReviewStatusDraft] = useState('accepted');
+    const [abstractPosterCodeDraft, setAbstractPosterCodeDraft] = useState('');
+    const [abstractPresentationDateDraft, setAbstractPresentationDateDraft] = useState('');
+    const [abstractReviewSaving, setAbstractReviewSaving] = useState(false);
+    const [abstractReviewError, setAbstractReviewError] = useState('');
     const [videoReviewing, setVideoReviewing] = useState(null);
     const [videoReviewRemarksDraft, setVideoReviewRemarksDraft] = useState('');
     const [skillVideos, setSkillVideos] = useState([]);
@@ -6137,18 +6152,37 @@ function AdminPage() {
         }
     }, []);
 
-    async function loadAdminAbstracts() {
+    async function loadAdminAbstracts(
+        page = adminAbstractPage,
+        pageSize = adminAbstractPageSize,
+        dateFrom = abstractDateFrom,
+        dateTo = abstractDateTo,
+        registrationNumber = abstractRegistrationFilter,
+        participantName = abstractParticipantFilter,
+    ) {
+        const requestId = adminAbstractRequestId.current + 1;
+        adminAbstractRequestId.current = requestId;
         setAdminAbstractsLoading(true);
         setAdminAbstractsError('');
         try {
-            const res = await fetch('/api/admin/abstracts');
+            const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+            if (dateFrom) params.set('dateFrom', dateFrom);
+            if (dateTo) params.set('dateTo', dateTo);
+            if (registrationNumber.trim()) params.set('registrationNumber', registrationNumber.trim());
+            if (participantName.trim()) params.set('participantName', participantName.trim());
+            const res = await fetch(`/api/admin/abstracts?${params.toString()}`);
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to load.');
+            if (requestId !== adminAbstractRequestId.current) return;
             setAdminAbstracts(data.abstracts || []);
+            setAdminAbstractPage(data.pagination?.page || 1);
+            setAdminAbstractPageSize(data.pagination?.pageSize || pageSize);
+            setAdminAbstractTotal(data.pagination?.total || 0);
+            setAdminAbstractTotalPages(data.pagination?.totalPages || 1);
         } catch (err) {
-            setAdminAbstractsError(err.message);
+            if (requestId === adminAbstractRequestId.current) setAdminAbstractsError(err.message);
         } finally {
-            setAdminAbstractsLoading(false);
+            if (requestId === adminAbstractRequestId.current) setAdminAbstractsLoading(false);
         }
     }
 
@@ -6179,20 +6213,61 @@ function AdminPage() {
         }
     }, [activeModule, activeAbstractsSection, activeSkillCompetitionSection, session]);
 
-    async function reviewAbstract(id, status) {
+    useEffect(() => {
+        if (activeModule !== 'abstracts' || activeAbstractsSection !== 'student-abstracts' || !session) return;
+        if (!adminAbstractSearchReady.current) {
+            adminAbstractSearchReady.current = true;
+            return;
+        }
+
+        const timer = window.setTimeout(() => {
+            loadAdminAbstracts(1);
+        }, 350);
+        return () => window.clearTimeout(timer);
+    }, [abstractRegistrationFilter, abstractParticipantFilter]);
+
+    function openAbstractReview(abs) {
+        setAbstractReviewing(abs.id);
+        setAbstractReviewStatusDraft(abs.status === 'pending' ? 'accepted' : abs.status);
+        setAbstractRemarksDraft(abs.adminRemarks || '');
+        setAbstractPosterCodeDraft(abs.posterCode || '');
+        setAbstractPresentationDateDraft(abs.presentationDate ? String(abs.presentationDate).slice(0, 10) : '');
+        setAbstractReviewError('');
+    }
+
+    function closeAbstractReview() {
+        if (abstractReviewSaving) return;
+        setAbstractReviewing(null);
+        setAbstractReviewError('');
+    }
+
+    async function reviewAbstract(event) {
+        event.preventDefault();
+        if (!abstractReviewing) return;
         try {
-            const res = await fetch(`/api/admin/abstracts/${id}`, {
+            setAbstractReviewSaving(true);
+            setAbstractReviewError('');
+            const res = await fetch(`/api/admin/abstracts/${abstractReviewing}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status, adminRemarks: abstractRemarksDraft }),
+                body: JSON.stringify({
+                    status: abstractReviewStatusDraft,
+                    adminRemarks: abstractRemarksDraft,
+                    posterCode: abstractPosterCodeDraft,
+                    presentationDate: abstractPresentationDateDraft,
+                }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to update.');
-            setAdminAbstracts((prev) => prev.map((a) => (a.id === id ? data.submission : a)));
+            setAdminAbstracts((prev) => prev.map((a) => (a.id === abstractReviewing ? data.submission : a)));
             setAbstractReviewing(null);
             setAbstractRemarksDraft('');
+            setAbstractPosterCodeDraft('');
+            setAbstractPresentationDateDraft('');
         } catch (err) {
-            alert(err.message);
+            setAbstractReviewError(err.message);
+        } finally {
+            setAbstractReviewSaving(false);
         }
     }
 
@@ -10222,11 +10297,83 @@ function AdminPage() {
                                     </div>
                                     <button
                                         type="button"
-                                        onClick={loadAdminAbstracts}
+                                        onClick={() => loadAdminAbstracts()}
                                         disabled={adminAbstractsLoading}
                                         className="rounded-lg bg-[#0d124f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1a2070] disabled:opacity-50"
                                     >
                                         {adminAbstractsLoading ? 'Loading…' : adminAbstracts.length ? 'Refresh' : 'Load Submissions'}
+                                    </button>
+                                </div>
+
+                                <div className="mt-5 flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                    <label className="text-xs font-semibold text-zinc-600">
+                                        Registration number
+                                        <input
+                                            type="search"
+                                            value={abstractRegistrationFilter}
+                                            onChange={(e) => setAbstractRegistrationFilter(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') loadAdminAbstracts(1);
+                                            }}
+                                            placeholder="Search registration no."
+                                            className="mt-1 block w-52 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800"
+                                        />
+                                    </label>
+                                    <label className="text-xs font-semibold text-zinc-600">
+                                        Participant name
+                                        <input
+                                            type="search"
+                                            value={abstractParticipantFilter}
+                                            onChange={(e) => setAbstractParticipantFilter(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') loadAdminAbstracts(1);
+                                            }}
+                                            placeholder="Search participant"
+                                            className="mt-1 block w-52 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800"
+                                        />
+                                    </label>
+                                    <label className="text-xs font-semibold text-zinc-600">
+                                        From submission date
+                                        <input
+                                            type="date"
+                                            value={abstractDateFrom}
+                                            max={abstractDateTo || undefined}
+                                            onChange={(e) => setAbstractDateFrom(e.target.value)}
+                                            className="mt-1 block rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800"
+                                        />
+                                    </label>
+                                    <label className="text-xs font-semibold text-zinc-600">
+                                        To submission date
+                                        <input
+                                            type="date"
+                                            value={abstractDateTo}
+                                            min={abstractDateFrom || undefined}
+                                            onChange={(e) => setAbstractDateTo(e.target.value)}
+                                            className="mt-1 block rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800"
+                                        />
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => loadAdminAbstracts(1)}
+                                        disabled={adminAbstractsLoading || Boolean(abstractDateFrom && abstractDateTo && abstractDateFrom > abstractDateTo)}
+                                        className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+                                    >
+                                        Apply filter
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setAbstractDateFrom('');
+                                            setAbstractDateTo('');
+                                            setAbstractRegistrationFilter('');
+                                            setAbstractParticipantFilter('');
+                                            setAdminAbstractPage(1);
+                                            loadAdminAbstracts(1, adminAbstractPageSize, '', '', '', '');
+                                        }}
+                                        disabled={adminAbstractsLoading || (!abstractDateFrom && !abstractDateTo && !abstractRegistrationFilter && !abstractParticipantFilter)}
+                                        className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 disabled:opacity-50"
+                                    >
+                                        Clear
                                     </button>
                                 </div>
 
@@ -10239,6 +10386,7 @@ function AdminPage() {
                                                 <tr className="border-b border-zinc-200">
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Reg. No.</th>
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Participant</th>
+                                                    <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Submitted</th>
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">File</th>
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Status</th>
                                                     <th className="pb-3 pr-4 text-xs font-bold uppercase text-zinc-500">Presentation Link</th>
@@ -10254,6 +10402,9 @@ function AdminPage() {
                                                             <p className="text-xs font-semibold text-zinc-800">{abs.participantName || '—'}</p>
                                                             <p className="text-xs text-zinc-500">{abs.institutionName || ''}</p>
                                                         </td>
+                                                        <td className="whitespace-nowrap py-3 pr-4 text-xs text-zinc-600">
+                                                            {abs.submittedAt ? new Date(abs.submittedAt).toLocaleDateString('en-IN') : '—'}
+                                                        </td>
                                                         <td className="py-3 pr-4">
                                                             <button
                                                                 type="button"
@@ -10267,6 +10418,8 @@ function AdminPage() {
                                                             <span className={`rounded-full px-2 py-0.5 text-xs font-bold uppercase ${abs.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : abs.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
                                                                 {abs.status}
                                                             </span>
+                                                            {abs.posterCode && <p className="mt-1 text-xs font-semibold text-zinc-700">Code: {abs.posterCode}</p>}
+                                                            {abs.presentationDate && <p className="text-xs text-zinc-500">{new Date(`${String(abs.presentationDate).slice(0, 10)}T00:00:00`).toLocaleDateString('en-IN')}</p>}
                                                         </td>
                                                         <td className="py-3 pr-4 max-w-[140px]">
                                                             {abs.posterVideoLink ? (
@@ -10317,29 +10470,13 @@ function AdminPage() {
                                                             )}
                                                         </td>
                                                         <td className="py-3">
-                                                            {abstractReviewing === abs.id ? (
-                                                                <div className="space-y-2">
-                                                                    <textarea
-                                                                        rows={2}
-                                                                        value={abstractRemarksDraft}
-                                                                        onChange={(e) => setAbstractRemarksDraft(e.target.value)}
-                                                                        placeholder="Remarks (optional)"
-                                                                        className="w-48 rounded border border-zinc-300 px-2 py-1 text-xs focus:outline-none"
-                                                                    />
-                                                                    <div className="flex gap-1">
-                                                                        <button type="button" onClick={() => reviewAbstract(abs.id, 'accepted')} className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Accept</button>
-                                                                        <button type="button" onClick={() => reviewAbstract(abs.id, 'rejected')} className="rounded bg-red-600 px-2 py-1 text-xs font-semibold text-white hover:bg-red-700">Reject</button>
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => { setAbstractReviewing(abs.id); setAbstractRemarksDraft(abs.adminRemarks || ''); }}
-                                                                    className="rounded border border-zinc-300 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100"
-                                                                >
-                                                                    Review
-                                                                </button>
-                                                            )}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openAbstractReview(abs)}
+                                                                className="rounded border border-zinc-300 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100"
+                                                            >
+                                                                Review
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 ))}
@@ -10348,8 +10485,144 @@ function AdminPage() {
                                     </div>
                                 )}
 
+                                {!adminAbstractsLoading && adminAbstractTotal > 0 && (
+                                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-4">
+                                        <p className="text-sm text-zinc-500">
+                                            Showing {((adminAbstractPage - 1) * adminAbstractPageSize) + 1}–{Math.min(adminAbstractPage * adminAbstractPageSize, adminAbstractTotal)} of {adminAbstractTotal}
+                                        </p>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <label className="text-xs font-semibold text-zinc-600">
+                                                Per page
+                                                <select
+                                                    value={adminAbstractPageSize}
+                                                    onChange={(e) => loadAdminAbstracts(1, Number(e.target.value), abstractDateFrom, abstractDateTo)}
+                                                    className="ml-2 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm"
+                                                >
+                                                    <option value={10}>10</option>
+                                                    <option value={20}>20</option>
+                                                    <option value={50}>50</option>
+                                                </select>
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => loadAdminAbstracts(adminAbstractPage - 1)}
+                                                disabled={adminAbstractPage <= 1}
+                                                className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 disabled:opacity-40"
+                                            >
+                                                Previous
+                                            </button>
+                                            <span className="px-1 text-sm font-medium text-zinc-600">
+                                                Page {adminAbstractPage} of {adminAbstractTotalPages}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => loadAdminAbstracts(adminAbstractPage + 1)}
+                                                disabled={adminAbstractPage >= adminAbstractTotalPages}
+                                                className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 disabled:opacity-40"
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {!adminAbstractsLoading && adminAbstracts.length === 0 && (
                                     <p className="mt-4 text-sm text-zinc-400">No submissions yet. Click "Load Submissions" to fetch data.</p>
+                                )}
+
+                                {abstractReviewing && (
+                                    <div
+                                        className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/60 p-4"
+                                        role="dialog"
+                                        aria-modal="true"
+                                        aria-labelledby="abstract-review-title"
+                                        onMouseDown={(e) => {
+                                            if (e.target === e.currentTarget) closeAbstractReview();
+                                        }}
+                                    >
+                                        <form onSubmit={reviewAbstract} className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div>
+                                                    <h3 id="abstract-review-title" className="text-lg font-bold text-zinc-900">Review Abstract</h3>
+                                                    <p className="mt-1 text-sm text-zinc-500">
+                                                        {adminAbstracts.find((item) => item.id === abstractReviewing)?.participantName || 'Participant'} · {adminAbstracts.find((item) => item.id === abstractReviewing)?.registrationNumber || ''}
+                                                    </p>
+                                                </div>
+                                                <button type="button" onClick={closeAbstractReview} disabled={abstractReviewSaving} aria-label="Close review form" className="rounded-lg px-2 py-1 text-xl text-zinc-500 hover:bg-zinc-100">×</button>
+                                            </div>
+
+                                            <div className="mt-5 space-y-4">
+                                                <label className="block text-sm font-semibold text-zinc-700">
+                                                    Review decision
+                                                    <select
+                                                        value={abstractReviewStatusDraft}
+                                                        onChange={(e) => setAbstractReviewStatusDraft(e.target.value)}
+                                                        className="mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm"
+                                                    >
+                                                        <option value="accepted">Accept</option>
+                                                        <option value="rejected">Reject</option>
+                                                        <option value="pending">Keep pending</option>
+                                                    </select>
+                                                </label>
+
+                                                {abstractReviewStatusDraft === 'accepted' && (
+                                                    <div className="grid gap-4 sm:grid-cols-2">
+                                                        <label className="block text-sm font-semibold text-zinc-700">
+                                                            Poster code <span className="text-red-600">*</span>
+                                                            <input
+                                                                type="text"
+                                                                value={abstractPosterCodeDraft}
+                                                                onChange={(e) => setAbstractPosterCodeDraft(e.target.value)}
+                                                                maxLength={80}
+                                                                required
+                                                                placeholder="e.g. EP-001"
+                                                                className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm"
+                                                            />
+                                                        </label>
+                                                        <label className="block text-sm font-semibold text-zinc-700">
+                                                            Presentation date <span className="text-red-600">*</span>
+                                                            <input
+                                                                type="date"
+                                                                value={abstractPresentationDateDraft}
+                                                                onChange={(e) => setAbstractPresentationDateDraft(e.target.value)}
+                                                                required
+                                                                className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm"
+                                                            />
+                                                        </label>
+                                                    </div>
+                                                )}
+
+                                                <label className="block text-sm font-semibold text-zinc-700">
+                                                    Remarks
+                                                    <textarea
+                                                        rows={4}
+                                                        value={abstractRemarksDraft}
+                                                        onChange={(e) => setAbstractRemarksDraft(e.target.value)}
+                                                        placeholder="Add committee remarks (optional)"
+                                                        className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2.5 text-sm"
+                                                    />
+                                                </label>
+
+                                                {abstractReviewStatusDraft === 'accepted' && (
+                                                    <p className="rounded-lg bg-sky-50 p-3 text-xs leading-5 text-sky-800">
+                                                        Saving this acceptance sends the student a formatted email containing the poster code, presentation date, template link, guidelines, and committee contact details.
+                                                    </p>
+                                                )}
+                                                {abstractReviewError && <p className="text-sm font-medium text-red-600">{abstractReviewError}</p>}
+                                            </div>
+
+                                            <div className="mt-6 flex justify-end gap-3 border-t border-zinc-200 pt-4">
+                                                <button type="button" onClick={closeAbstractReview} disabled={abstractReviewSaving} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 disabled:opacity-50">Cancel</button>
+                                                <button
+                                                    type="submit"
+                                                    disabled={abstractReviewSaving}
+                                                    className={`rounded-lg px-5 py-2 text-sm font-bold text-white disabled:opacity-50 ${abstractReviewStatusDraft === 'rejected' ? 'bg-red-600 hover:bg-red-700' : abstractReviewStatusDraft === 'accepted' ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-amber-600 hover:bg-amber-700'}`}
+                                                >
+                                                    {abstractReviewSaving ? 'Saving…' : abstractReviewStatusDraft === 'accepted' ? 'Accept & Send Email' : abstractReviewStatusDraft === 'rejected' ? 'Reject & Send Email' : 'Save as Pending'}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
                                 )}
                             </div>
                             )}
