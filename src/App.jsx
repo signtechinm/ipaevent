@@ -6260,6 +6260,17 @@ function AdminPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to update.');
             setAdminAbstracts((prev) => prev.map((a) => (a.id === abstractReviewing ? data.submission : a)));
+            if (!data.email?.sent) {
+                const reason = data.email?.reason === 'missing-recipient'
+                    ? 'No valid student email address was found.'
+                    : data.email?.reason === 'mailer-not-configured'
+                        ? 'The mail server is not configured.'
+                        : data.email?.reason === 'registration-contact-not-found'
+                            ? 'The registration contact could not be found.'
+                            : data.email?.reason || 'The mail server did not accept the message.';
+                setAbstractReviewError(`Review saved, but the email was not sent: ${reason}`);
+                return;
+            }
             setAbstractReviewing(null);
             setAbstractRemarksDraft('');
             setAbstractPosterCodeDraft('');

@@ -1003,11 +1003,21 @@ async function notifyApprovalUpdated(registration) {
 }
 
 async function notifyAbstractReviewed(contact, submission) {
-    if (!contact) return;
+    if (!contact) return { skipped: true, reason: 'registration-contact-not-found' };
     if (submission.status === 'accepted') {
+        const rawPresentationDate = submission.presentationDate;
+        const dateMatch = rawPresentationDate instanceof Date
+            ? rawPresentationDate.toISOString().match(/^(\d{4})-(\d{2})-(\d{2})/)
+            : String(rawPresentationDate || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (!dateMatch) {
+            return { failed: true, reason: 'invalid-presentation-date' };
+        }
+        const presentationDateValue = new Date(Date.UTC(
+            Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]),
+        ));
         const presentationDate = new Intl.DateTimeFormat('en-IN', {
-            day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata',
-        }).format(new Date(`${submission.presentationDate}T00:00:00+05:30`));
+            day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+        }).format(presentationDateValue);
         const templateUrl = 'https://nsc2026.ipakerala.org/e-poster-template.pptx';
         const scientificServiceUrl = 'https://nsc2026.ipakerala.org/scientific-service';
         const safeName = escapeHtml(contact.name || submission.participantName || 'Delegate');
@@ -1059,26 +1069,37 @@ async function notifyAbstractReviewed(contact, submission) {
             'NSC 2026 Secretariat',
             'IPA Kerala State Branch',
         ].filter(Boolean).join('\n\n');
-        await sendStudentMail({
-            to: contact.email,
-            subject: `Abstract accepted for E-Poster Presentation - ${submission.posterCode}`,
-            preview: `Congratulations! Your poster code is ${submission.posterCode} and your presentation date is ${presentationDate}.`,
-            htmlBody,
-            textBody,
-        }).catch((error) => console.error('notifyAbstractReviewed acceptance failed:', error));
-        return;
+        try {
+            const result = await sendStudentMail({
+                to: contact.email,
+                subject: `Abstract accepted for E-Poster Presentation - ${submission.posterCode}`,
+                preview: `Congratulations! Your poster code is ${submission.posterCode} and your presentation date is ${presentationDate}.`,
+                htmlBody,
+                textBody,
+            });
+            return result?.skipped ? result : { sent: true };
+        } catch (error) {
+            console.error('notifyAbstractReviewed acceptance failed:', error);
+            return { failed: true, reason: error.message || 'mail-delivery-failed' };
+        }
     }
-    await sendStudentMail({
-        to: contact.email,
-        subject: `Abstract review update - ${submission.registrationNumber || contact.registrationNumber}`,
-        preview: `Your abstract status is now ${formatStatusLabel(submission.status)}.`,
-        body: [
-            `Dear ${contact.name || 'Delegate'},`,
-            `Your abstract submitted under registration ${submission.registrationNumber || contact.registrationNumber || '-'} has been marked ${formatStatusLabel(submission.status)}.`,
-            submission.adminRemarks ? `Remarks: ${submission.adminRemarks}` : 'No additional remarks were added.',
-            'Please watch the portal and your registered email for further instructions.',
-        ],
-    }).catch((error) => console.error('notifyAbstractReviewed failed:', error));
+    try {
+        const result = await sendStudentMail({
+            to: contact.email,
+            subject: `Abstract review update - ${submission.registrationNumber || contact.registrationNumber}`,
+            preview: `Your abstract status is now ${formatStatusLabel(submission.status)}.`,
+            body: [
+                `Dear ${contact.name || 'Delegate'},`,
+                `Your abstract submitted under registration ${submission.registrationNumber || contact.registrationNumber || '-'} has been marked ${formatStatusLabel(submission.status)}.`,
+                submission.adminRemarks ? `Remarks: ${submission.adminRemarks}` : 'No additional remarks were added.',
+                'Please watch the portal and your registered email for further instructions.',
+            ],
+        });
+        return result?.skipped ? result : { sent: true };
+    } catch (error) {
+        console.error('notifyAbstractReviewed failed:', error);
+        return { failed: true, reason: error.message || 'mail-delivery-failed' };
+    }
 }
 
 async function notifyVideoReviewed(contact, submission) {
@@ -3794,8 +3815,8 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             if (!rows.length) return send(response, 404, { error: 'Submission not found.' });
             const submission = mapAbstractSubmission(rows[0]);
             const contact = await getRegistrationContactForMail(sql, rows[0].registration_number);
-            await notifyAbstractReviewed(contact, submission);
-            return send(response, 200, { submission });
+            const email = await notifyAbstractReviewed(contact, submission);
+            return send(response, 200, { submission, email });
         }
 
         return send(response, 404, { error: 'API route not found.' });
