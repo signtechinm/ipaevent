@@ -1037,7 +1037,7 @@ async function notifyAbstractReviewed(contact, submission) {
             <ul>
                 <li>Use only the official template (PPT format only) provided on or downloaded from the Congress website. Posters in different formats or layouts will not be accepted for presentations.</li>
                 <li>Download the official E-Poster template here: <a href="${templateUrl}">${templateUrl}</a></li>
-                <li>It is desirable to share the presentation PPT well in advance for a seamless experience.</li>
+                <li>It is desirable to share your PPT for poster presentations well in advance for a seamless experience.<br>Please email your PPT file to our official email ID <a href="mailto:ipakeralabranch@gmail.com">ipakeralabranch@gmail.com</a> as an attachment.<br>Ensure the attached file name is changed to the poster code mentioned in this email.<br>(For example: AB -001.pptx)</li>
                 <li>Please report to the E-Poster Committee one hour before your presentation schedule to verify files and complete pre-presentation formalities.</li>
                 <li>Please produce your registration details and the acceptance email received on your mobile phone for validation.</li>
                 <li>Refer to and follow all updated instructions and guidelines issued by the Local Organizing Committee (LoC) pertaining to poster competitions.</li>
@@ -1056,7 +1056,7 @@ async function notifyAbstractReviewed(contact, submission) {
             'IMPORTANT INSTRUCTIONS AND E-POSTER TEMPLATE',
             'Use only the official template (PPT format only) provided on or downloaded from the Congress website. Posters in different formats or layouts will not be accepted for presentations.',
             `Download the official E-Poster template here: ${templateUrl}`,
-            'It is desirable to share the presentation PPT well in advance for a seamless experience.',
+            'It is desirable to share your PPT for poster presentations well in advance for a seamless experience.\nPlease email your PPT file to our official email ID ipakeralabranch@gmail.com as an attachment.\nEnsure the attached file name is changed to the poster code mentioned in this email.\n(For example: AB -001.pptx)',
             'Please report to the E-Poster Committee one hour before your presentation schedule to verify files and complete pre-presentation formalities.',
             'Please produce your registration details and the acceptance email received on your mobile phone for validation.',
             'Refer to and follow all updated instructions and guidelines issued by the Local Organizing Committee (LoC) pertaining to poster competitions.',
