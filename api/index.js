@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { neon } from '@neondatabase/serverless';
 import { del, put } from '@vercel/blob';
 import nodemailer from 'nodemailer';
+import { abstractSubmissionClosed, abstractSubmissionClosedMessage } from '../src/abstractSubmissionPolicy.js';
 
 const sessionCookie = 'ipa_admin_session';
 const sessionDurationSeconds = 60 * 60 * 12;
@@ -2515,8 +2516,10 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
         const paymentReady = reg.payment_status === 'success';
         const approvalReady = reg.approval_status === 'approved';
         const registrationReady = reg.registration_status === 'submitted';
-        const canSubmitAbstract = paymentReady && approvalReady && registrationReady;
-        const eligibilityReason = !registrationReady
+        const canSubmitAbstract = !abstractSubmissionClosed && paymentReady && approvalReady && registrationReady;
+        const eligibilityReason = abstractSubmissionClosed
+            ? abstractSubmissionClosedMessage
+            : !registrationReady
             ? 'Registration must be submitted before abstract submission.'
             : !paymentReady
                 ? 'Payment must be marked success before abstract submission.'
@@ -2540,6 +2543,9 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
     }
 
     if (path === 'abstracts/submit' && request.method === 'POST') {
+        if (abstractSubmissionClosed) {
+            return send(response, 403, { error: abstractSubmissionClosedMessage });
+        }
         await ensureAbstractSubmissions(sql);
         const regNum = String(request.body?.registrationNumber || '').trim().toUpperCase();
         if (!regNum) throw inputError('Registration number is required.');

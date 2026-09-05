@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiRequest } from './api';
+import { abstractSubmissionClosed, abstractSubmissionClosedMessage } from './abstractSubmissionPolicy.js';
 
 const eventTheme = "Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era";
 const eventDate = '19–20 September 2026';
@@ -11000,6 +11001,10 @@ function ScientificServicePage() {
     }
 
     async function submitAbstract() {
+        if (abstractSubmissionClosed) {
+            setAbsSubmitError(abstractSubmissionClosedMessage);
+            return;
+        }
         if (!absFile) return;
         setAbsSubmitting(true);
         setAbsSubmitError('');
@@ -11260,15 +11265,15 @@ function ScientificServicePage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                             </svg>
                         </span>
-                        <h2 className="text-xl font-bold text-zinc-900">Submit Your Abstract File Here</h2>
+                        <h2 className="text-xl font-bold text-zinc-900">Abstract Submission</h2>
                     </div>
 
                     <div className="mt-6 w-full space-y-5">
                         <div>
                             <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-5">
-                                <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#df0867]">Initial Step</p>
-                                <p className="mt-2 text-sm font-semibold leading-6 text-zinc-900">After completing primary registration, verify your registration number below and submit a single-page abstract.</p>
-                                <p className="mt-2 text-xs leading-5 text-zinc-600">Tables and figures are excluded. Supported format: PDF file only. Maximum file size: 1 MB.</p>
+                                <p role="status" className="text-base font-bold text-[#df0867]">{abstractSubmissionClosedMessage}</p>
+                                <p className="mt-2 text-sm leading-6 text-zinc-700">The submission deadline has passed. New abstracts are no longer being accepted.</p>
+                                <p className="mt-2 text-xs leading-5 text-zinc-600">You can still check your existing abstract status and submit your presentation video link using your registration number below.</p>
                             </div>
                         </div>
 
@@ -11306,7 +11311,7 @@ function ScientificServicePage() {
                             </div>
                         )}
 
-                        {absRegInfo && absRegInfo.valid && !absRegInfo.canSubmitAbstract && (
+                        {absRegInfo && absRegInfo.valid && !absRegInfo.canSubmitAbstract && !absRegInfo.alreadySubmitted && (
                             <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
                                 <p className="text-sm font-semibold text-amber-900">{absRegInfo.participantName}</p>
                                 <p className="mt-1 text-xs text-amber-800">{absRegInfo.eligibilityReason || 'Your registration is not yet eligible for abstract submission.'}</p>
@@ -11319,7 +11324,7 @@ function ScientificServicePage() {
                         )}
 
                         {/* Valid + no abstract yet → upload form */}
-                        {absRegInfo && absRegInfo.valid && absRegInfo.canSubmitAbstract && !absRegInfo.alreadySubmitted && (
+                        {!abstractSubmissionClosed && absRegInfo && absRegInfo.valid && absRegInfo.canSubmitAbstract && !absRegInfo.alreadySubmitted && (
                             <>
                                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
                                     <p className="text-sm font-semibold text-emerald-800">{absRegInfo.participantName}</p>
