@@ -1747,6 +1747,61 @@ function mapAdminRegistration(row) {
     };
 }
 
+function buildAdminReportRows(rows) {
+    const output = [];
+    for (const row of rows) {
+        const base = {
+            registrationNumber: row.registration_number || '',
+            name: row.registration_mode === 'group' ? (row.group_coordinator_name || row.participant_name || '') : (row.participant_name || ''),
+            mobile: row.registration_mode === 'group' ? (row.group_coordinator_whatsapp || row.whatsapp_number || '') : (row.whatsapp_number || ''),
+            email: row.registration_mode === 'group' ? (row.group_coordinator_email || row.email || '') : (row.email || ''),
+            category: row.category || '',
+            college: row.institution_name || row.college_with_state || '',
+            state: row.state_of_residence || '',
+            foodPreference: row.food_preference || '',
+            paymentStatus: row.payment_status || '',
+            registrationMode: row.registration_mode || 'individual',
+            registerDate: row.created_at || '',
+            dateOfRegistration: row.submitted_at || row.created_at || '',
+            competitions: Array.isArray(row.student_competitions) ? row.student_competitions : [],
+            workshops: normalizeSelectedWorkshops(row.selected_workshops, row.pre_conference_workshop),
+            presentation: row.presentation_type || '',
+            hrCoreArea: row.hr_core_area || '',
+        };
+        if (row.registration_mode === 'group' && Array.isArray(row.group_members) && row.group_members.length) {
+            for (const member of row.group_members) {
+                output.push({
+                    ...base,
+                    memberRegistrationNumber: member.registrationNumber || '',
+                    name: member.name || base.name,
+                    mobile: member.whatsapp || base.mobile,
+                    email: member.email || base.email,
+                    category: member.category || base.category,
+                    college: member.college || base.college,
+                    state: member.state || base.state,
+                    foodPreference: member.foodPreference || base.foodPreference,
+                    competitions: Array.isArray(member.competitions) ? member.competitions : base.competitions,
+                    workshops: Array.isArray(member.workshops) ? member.workshops : base.workshops,
+                    presentation: member.presentationType || '',
+                    hrCoreArea: member.hrCoreArea || '',
+                });
+            }
+        } else {
+            output.push({ ...base, memberRegistrationNumber: '' });
+        }
+    }
+    return output;
+}
+
+function reportValue(row, type) {
+    if (type === 'registration') return row;
+    if (type === 'skill-competitions') return row.competitions.map((competition) => ({ ...row, program: competition }));
+    if (type === 'workshops') return row.workshops.map((workshop) => ({ ...row, program: workshop }));
+    if (type === 'presentations') return row.presentation && row.presentation !== 'Not Participating' ? [{ ...row, program: row.presentation }] : [];
+    if (type === 'hr-drive') return row.hrCoreArea ? [{ ...row, program: row.hrCoreArea }] : [];
+    return [];
+}
+
 async function saveRegistration(sql, data, submit = false) {
     await ensureRegistrationEnhancements(sql);
     await ensurePricingCatalog(sql);
@@ -2952,6 +3007,66 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             return send(response, 200, {
                 roles: roleRows.map(publicRole),
                 users: userRows.map(publicUser),
+            });
+        }
+
+        const reportMatch = path.match(/^admin\/reports\/(registrations|skill-competitions|workshops|presentations|hr-drive)$/);
+        if (reportMatch && request.method === 'GET') {
+            if (!requirePermission(session, 'report.view')) {
+                return send(response, 403, { error: 'Permission denied.' });
+            }
+            await ensureRegistrationEnhancements(sql);
+            const type = reportMatch[1];
+            const query = request.query || {};
+            const page = Math.max(1, Number.parseInt(query.page || '1', 10) || 1);
+            const pageSize = query.export === '1'
+                ? Math.min(5000, Math.max(10, Number.parseInt(query.pageSize || '5000', 10) || 5000))
+                : Math.min(100, Math.max(10, Number.parseInt(query.pageSize || '25', 10) || 25));
+            const search = String(query.search || '').trim().toLowerCase();
+            const mode = String(query.mode || 'individual');
+            const rows = await sql`
+                SELECT r.*,
+                    ARRAY(SELECT rc.competition_name FROM registration_competitions rc WHERE rc.registration_id = r.id ORDER BY rc.id) AS student_competitions
+                FROM event_registrations r
+                ORDER BY COALESCE(r.submitted_at, r.created_at) DESC, r.id DESC
+            `;
+            let reportRows = buildAdminReportRows(rows);
+            if (type === 'registrations') {
+                reportRows = reportRows.filter((row) => row.registrationMode === mode);
+                if (mode === 'group') {
+                    const seen = new Set();
+                    reportRows = reportRows.filter((row) => {
+                        if (seen.has(row.registrationNumber)) return false;
+                        seen.add(row.registrationNumber);
+                        return true;
+                    }).map((row) => ({ ...row, name: rows.find((source) => source.registration_number === row.registrationNumber)?.group_coordinator_name || row.name }));
+                }
+            }
+            reportRows = reportRows.flatMap((row) => reportValue(row, type));
+            if (search) reportRows = reportRows.filter((row) => [row.registrationNumber, row.memberRegistrationNumber, row.name, row.mobile, row.email, row.college, row.state, row.program].join(' ').toLowerCase().includes(search));
+            for (const [key, field] of [['category', 'category'], ['state', 'state'], ['paymentStatus', 'paymentStatus'], ['program', 'program']]) {
+                const value = String(query[key] || '').trim();
+                if (value) reportRows = reportRows.filter((row) => String(row[field] || '') === value);
+            }
+            if (query.dateFrom) reportRows = reportRows.filter((row) => new Date(row.dateOfRegistration || row.registerDate) >= new Date(`${query.dateFrom}T00:00:00`));
+            if (query.dateTo) reportRows = reportRows.filter((row) => new Date(row.dateOfRegistration || row.registerDate) <= new Date(`${query.dateTo}T23:59:59`));
+            const total = reportRows.length;
+            const start = (page - 1) * pageSize;
+            const pagedRows = reportRows.slice(start, start + pageSize);
+            const responseRows = pagedRows.map((row, index) => ({
+                ...row,
+                registrationNumber: row.memberRegistrationNumber || row.registrationNumber,
+                serialNumber: start + index + 1,
+            }));
+            return send(response, 200, {
+                rows: responseRows,
+                pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) },
+                filters: {
+                    categories: [...new Set(reportRows.map((row) => row.category).filter(Boolean))].sort(),
+                    states: [...new Set(reportRows.map((row) => row.state).filter(Boolean))].sort(),
+                    programs: [...new Set(reportRows.map((row) => row.program).filter(Boolean))].sort(),
+                    paymentStatuses: [...new Set(reportRows.map((row) => row.paymentStatus).filter(Boolean))].sort(),
+                },
             });
         }
 

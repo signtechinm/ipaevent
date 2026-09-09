@@ -5883,7 +5883,117 @@ const skillCompetitionAdminSections = [
     { id: 'startup-pitch-competition', label: 'Startup Pitch Competition', description: 'Review submitted startup pitch videos.' },
 ];
 
-const implementedAdminModules = new Set(['dashboard', 'registrations', 'students', 'payments', 'categories', 'pricing', 'programs', 'users', 'home-content', 'accommodation', 'scientific', 'abstracts', 'skill-competitions']);
+const reportsAdminSections = [
+    { id: 'registrations/individual', label: 'Individual Registrations' },
+    { id: 'registrations/group', label: 'Group Registrations' },
+    { id: 'skill-competitions', label: 'Student Skill Competition' },
+    { id: 'workshops', label: 'Workshops' },
+    { id: 'presentations', label: 'Presentation' },
+    { id: 'hr-drive', label: 'HR Drive' },
+];
+
+const implementedAdminModules = new Set(['dashboard', 'registrations', 'students', 'payments', 'categories', 'pricing', 'programs', 'users', 'home-content', 'accommodation', 'scientific', 'abstracts', 'skill-competitions', 'reports']);
+
+const reportDefinitions = {
+    'registrations/individual': { endpoint: 'registrations', title: 'Individual Registration General Information', mode: 'individual', columns: [['S.No.', 'serialNumber'], ['Registration No.', 'registrationNumber'], ['Name', 'name'], ['Mobile No.', 'mobile'], ['Email', 'email'], ['Category', 'category'], ['Institution / College', 'college'], ['State', 'state'], ['Register Date', 'registerDate'], ['Payment Status', 'paymentStatus'], ['Date of Registration', 'dateOfRegistration']] },
+    'registrations/group': { endpoint: 'registrations', title: 'Group Registration General Information', mode: 'group', columns: [['S.No.', 'serialNumber'], ['Registration No.', 'registrationNumber'], ['Name', 'name'], ['Mobile No.', 'mobile'], ['Email', 'email'], ['Category', 'category'], ['Institution / College', 'college'], ['State', 'state'], ['Register Date', 'registerDate'], ['Payment Status', 'paymentStatus'], ['Date of Registration', 'dateOfRegistration']] },
+    'skill-competitions': { endpoint: 'skill-competitions', title: 'Student Skill Competition Report', programLabel: 'Competition', columns: [['S.No.', 'serialNumber'], ['Registration No.', 'registrationNumber'], ['Name', 'name'], ['Mobile Number', 'mobile'], ['Email ID', 'email'], ['College Name', 'college'], ['State', 'state'], ['Competition', 'program']] },
+    workshops: { endpoint: 'workshops', title: 'Workshop Report', programLabel: 'Workshop', columns: [['S.No.', 'serialNumber'], ['Registration No.', 'registrationNumber'], ['Name', 'name'], ['Category', 'category'], ['Mobile No.', 'mobile'], ['Email ID', 'email'], ['College Name', 'college'], ['State', 'state'], ['Food Preferences', 'foodPreference'], ['Workshop', 'program']] },
+    presentations: { endpoint: 'presentations', title: 'Presentation Report', programLabel: 'Presentation Type', columns: [['S.No.', 'serialNumber'], ['Registration No.', 'registrationNumber'], ['Name', 'name'], ['Category', 'category'], ['Mobile No.', 'mobile'], ['Email ID', 'email'], ['College', 'college'], ['State', 'state'], ['Presentation Type', 'program']] },
+    'hr-drive': { endpoint: 'hr-drive', title: 'HR Drive Report', programLabel: 'Core Area Preferred', columns: [['S.No.', 'serialNumber'], ['Registration No.', 'registrationNumber'], ['Name', 'name'], ['Mobile Number', 'mobile'], ['Email ID', 'email'], ['College Name', 'college'], ['State', 'state'], ['Core Area Preferred', 'program']] },
+};
+
+function downloadReportCsv(filename, columns, rows) {
+    const quote = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const csv = [columns.map(([label]) => quote(label)).join(','), ...rows.map((row) => columns.map(([, key]) => quote(row[key])).join(','))].join('\r\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+function downloadReportExcel(filename, columns, rows) {
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    const html = `<table><thead><tr>${columns.map(([label]) => `<th>${escapeHtml(label)}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr>${columns.map(([, key]) => `<td>${escapeHtml(row[key])}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([`<html><meta charset="utf-8"><body>${html}</body></html>`], { type: 'application/vnd.ms-excel' }));
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
+}
+
+function downloadReportPdf(filename, title, columns, rows) {
+    const clean = (value) => String(value ?? '-').replace(/[^\x20-\x7E]/g, ' ').replace(/[\\()]/g, '\\$&');
+    const lines = [title, `Generated: ${new Date().toLocaleString('en-IN')}`, ...rows.map((row, index) => `${index + 1}. ${columns.slice(1).map(([label, key]) => `${label}: ${clean(row[key])}`).join(' | ')}`)];
+    const content = `BT /F1 8 Tf 36 560 Td ${lines.map((line, index) => `${index ? '0 -11 Td ' : ''}(${clean(line).slice(0, 180)}) Tj`).join(' ')} ET`;
+    const objects = [`<< /Type /Catalog /Pages 2 0 R >>`, `<< /Type /Pages /Kids [3 0 R] /Count 1 >>`, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 4 0 R >>`, `<< /Length ${content.length} >>\nstream\n${content}\nendstream`];
+    let pdf = '%PDF-1.4\n'; const offsets = [0]; objects.forEach((object, index) => { offsets.push(pdf.length); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; }); const xref = pdf.length; pdf += `xref\n0 5\n0000000000 65535 f \n${offsets.slice(1).map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+    const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob([pdf], { type: 'application/pdf' })); link.download = filename; link.click(); URL.revokeObjectURL(link.href);
+}
+
+function AdminReportsPage() {
+    const reportKey = window.location.pathname.replace(/^\/admin\/reports\//, '').replace(/^\/reports\//, '') || 'registrations/individual';
+    const definition = reportDefinitions[reportKey] || reportDefinitions['registrations/individual'];
+    const [rows, setRows] = useState([]);
+    const [filters, setFilters] = useState({ search: '', category: '', state: '', program: '', paymentStatus: '', pageSize: 25 });
+    const [meta, setMeta] = useState({ page: 1, pageSize: 25, total: 0, totalPages: 1 });
+    const [options, setOptions] = useState({ categories: [], states: [], programs: [], paymentStatuses: [] });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const load = async (page = 1, exportAll = false) => {
+        setLoading(true); setError('');
+        try {
+            const params = new URLSearchParams({ page: String(exportAll ? 1 : page), pageSize: String(exportAll ? 5000 : filters.pageSize), ...(definition.mode ? { mode: definition.mode } : {}) });
+            Object.entries(filters).forEach(([key, value]) => { if (value && key !== 'pageSize') params.set(key, value); });
+            if (exportAll) params.set('export', '1');
+            if (definition.mode) {
+                const registrationData = await apiRequest('admin/registrations');
+                const sourceRows = (registrationData.registrations || []).filter((item) => (item.registrationMode || 'individual') === definition.mode);
+                const mappedRows = sourceRows.map((item, index) => ({
+                    serialNumber: index + 1,
+                    registrationNumber: item.registrationNumber,
+                    name: item.registrationMode === 'group' ? (item.groupCoordinatorName || item.participantName) : item.participantName,
+                    mobile: item.registrationMode === 'group' ? (item.groupCoordinatorWhatsapp || item.whatsappNumber) : item.whatsappNumber,
+                    email: item.registrationMode === 'group' ? (item.groupCoordinatorEmail || item.email) : item.email,
+                    category: item.category,
+                    college: item.institutionName || item.collegeWithState,
+                    state: item.stateOfResidence,
+                    registerDate: item.createdAt,
+                    paymentStatus: item.paymentStatus,
+                    dateOfRegistration: item.submittedAt || item.createdAt,
+                }));
+                const haystack = (row) => Object.values(row).join(' ').toLowerCase();
+                const filteredRows = mappedRows.filter((row) => (!filters.search || haystack(row).includes(filters.search.toLowerCase())) && (!filters.category || row.category === filters.category) && (!filters.state || row.state === filters.state) && (!filters.paymentStatus || row.paymentStatus === filters.paymentStatus));
+                const total = filteredRows.length;
+                const pageSize = exportAll ? total || 1 : Number(filters.pageSize);
+                const start = exportAll ? 0 : (page - 1) * pageSize;
+                const result = { rows: filteredRows.slice(start, start + pageSize), pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) }, filters: { categories: [...new Set(mappedRows.map((row) => row.category).filter(Boolean))].sort(), states: [...new Set(mappedRows.map((row) => row.state).filter(Boolean))].sort(), programs: [], paymentStatuses: [...new Set(mappedRows.map((row) => row.paymentStatus).filter(Boolean))].sort() } };
+                if (exportAll) return result;
+                setRows(result.rows); setMeta(result.pagination); setOptions(result.filters); return;
+            }
+            const data = await apiRequest(`admin/reports/${definition.endpoint}?${params}`);
+            if (exportAll) return data;
+            setRows(data.rows || []); setMeta(data.pagination || meta); setOptions(data.filters || options);
+        } catch (err) { setError(err.message); } finally { setLoading(false); }
+    };
+    useEffect(() => { load(1); }, [reportKey, filters.search, filters.category, filters.state, filters.program, filters.paymentStatus, filters.pageSize]);
+    const exportReport = async (extension) => {
+        const data = await load(1, true);
+        const allRows = data?.rows || [];
+        const filename = `${reportKey.replace('/', '-')}-${new Date().toISOString().slice(0, 10)}.${extension}`;
+        if (extension === 'xls') downloadReportExcel(filename, definition.columns, allRows);
+        else downloadReportPdf(filename, definition.title, definition.columns, allRows);
+    };
+    const setFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }));
+    return <div className="space-y-5">
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Reports</p><h1 className="mt-1 text-2xl font-bold text-zinc-950">{definition.title}</h1><p className="mt-1 text-sm text-zinc-500">{meta.total} matching records</p></div><div className="flex gap-2"><button type="button" onClick={() => exportReport('xls')} className="rounded-md bg-emerald-700 px-3 py-2 text-xs font-bold text-white">Excel</button><button type="button" onClick={() => exportReport('pdf')} className="rounded-md bg-zinc-900 px-3 py-2 text-xs font-bold text-white">PDF</button></div></div>
+        <div className="grid gap-3 rounded-xl border border-zinc-200 bg-white p-4 md:grid-cols-4"><input value={filters.search} onChange={(e) => setFilter('search', e.target.value)} placeholder="Search name, reg. no., email..." className="rounded-md border border-zinc-300 px-3 py-2 text-sm" /><select value={filters.category} onChange={(e) => setFilter('category', e.target.value)} className="rounded-md border border-zinc-300 px-3 py-2 text-sm"><option value="">All categories</option>{options.categories.map((item) => <option key={item}>{item}</option>)}</select><select value={filters.state} onChange={(e) => setFilter('state', e.target.value)} className="rounded-md border border-zinc-300 px-3 py-2 text-sm"><option value="">All states</option>{options.states.map((item) => <option key={item}>{item}</option>)}</select><select value={filters.program} onChange={(e) => setFilter('program', e.target.value)} className="rounded-md border border-zinc-300 px-3 py-2 text-sm"><option value="">All {definition.programLabel || 'programs'}</option>{options.programs.map((item) => <option key={item}>{item}</option>)}</select></div>
+        {error && <div className="rounded-md bg-rose-50 p-3 text-sm text-rose-700">{error}</div>}
+        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white"><table className="min-w-full text-left text-xs"><thead className="bg-zinc-50 text-zinc-600"><tr>{definition.columns.map(([label]) => <th key={label} className="whitespace-nowrap px-3 py-3 font-bold">{label}</th>)}</tr></thead><tbody>{loading ? <tr><td colSpan={definition.columns.length} className="px-3 py-8 text-center text-zinc-500">Loading report...</td></tr> : rows.length ? rows.map((row) => <tr key={`${row.registrationNumber}-${row.serialNumber}-${row.program || ''}`} className="border-t border-zinc-100"><>{definition.columns.map(([, key]) => <td key={key} className="max-w-xs whitespace-nowrap px-3 py-3 text-zinc-700">{row[key] || '—'}</td>)}</></tr>) : <tr><td colSpan={definition.columns.length} className="px-3 py-8 text-center text-zinc-500">No records found.</td></tr>}</tbody></table></div>
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-zinc-600"><label>Rows per page <select value={filters.pageSize} onChange={(e) => setFilter('pageSize', Number(e.target.value))} className="ml-2 rounded border border-zinc-300 px-2 py-1"><option>25</option><option>50</option><option>100</option></select></label><div className="flex items-center gap-2"><button disabled={meta.page <= 1 || loading} onClick={() => load(meta.page - 1)} className="rounded border px-3 py-1 disabled:opacity-40">Previous</button><span>Page {meta.page} of {meta.totalPages}</span><button disabled={meta.page >= meta.totalPages || loading} onClick={() => load(meta.page + 1)} className="rounded border px-3 py-1 disabled:opacity-40">Next</button></div></div>
+    </div>;
+}
 
 function registrationStatusBadgeClass(status) {
     if (status === 'submitted') return 'bg-emerald-100 text-emerald-800';
@@ -5909,6 +6019,7 @@ function formatAdminStatus(status) {
 }
 
 function getAdminModuleFromPath() {
+    if (window.location.pathname.startsWith('/reports/')) return 'reports';
     const requestedModule = window.location.pathname.split('/')[2] || 'dashboard';
     return adminModules.some((module) => module.id === requestedModule) ? requestedModule : 'dashboard';
 }
@@ -5941,7 +6052,7 @@ function AdminPage() {
     const activeAbstractsSection = activeModule === 'abstracts' ? getAbstractsAdminSectionFromPath() : 'student-abstracts';
     const activeSkillCompetitionSection = activeModule === 'skill-competitions' ? getSkillCompetitionsAdminSectionFromPath() : skillCompetitionAdminSections[0].id;
     const activeUsersSection = activeModule === 'users' ? getUsersAdminSectionFromPath() : 'directory';
-    const [openAdminDropdown, setOpenAdminDropdown] = useState(['accommodation', 'abstracts', 'skill-competitions', 'users'].includes(activeModule) ? activeModule : '');
+    const [openAdminDropdown, setOpenAdminDropdown] = useState(['accommodation', 'abstracts', 'skill-competitions', 'users', 'reports'].includes(activeModule) ? activeModule : '');
     const [userSearch, setUserSearch] = useState('');
     const [roles, setRoles] = useState([]);
     const [users, setUsers] = useState([]);
@@ -8209,19 +8320,22 @@ function AdminPage() {
                                     {group.modules.map((moduleId) => {
                                         const module = adminModules.find((item) => item.id === moduleId);
                                         if (!module) return null;
-                                        if (module.id === 'accommodation' || module.id === 'abstracts' || module.id === 'skill-competitions' || module.id === 'users') {
+                                        if (module.id === 'accommodation' || module.id === 'abstracts' || module.id === 'skill-competitions' || module.id === 'users' || module.id === 'reports') {
                                             const isAccommodationMenu = module.id === 'accommodation';
                                             const isSkillCompetitionsMenu = module.id === 'skill-competitions';
                                             const isUsersMenu = module.id === 'users';
+                                            const isReportsMenu = module.id === 'reports';
                                             const submenuOpen = openAdminDropdown === module.id;
                                             const submenuId = `admin-${module.id}-submenu`;
                                             const sections = isAccommodationMenu
                                                 ? accommodationAdminSections
                                                 : isSkillCompetitionsMenu
                                                     ? skillCompetitionAdminSections
-                                                    : isUsersMenu
-                                                        ? usersAdminSections
-                                                        : abstractsAdminSections;
+                                                : isUsersMenu
+                                                    ? usersAdminSections
+                                                        : isReportsMenu
+                                                            ? reportsAdminSections
+                                                            : abstractsAdminSections;
                                             return (
                                                 <div key={module.id} className="relative shrink-0 lg:mb-2">
                                                     <button
@@ -8246,14 +8360,18 @@ function AdminPage() {
                                                         }`}
                                                     >
                                                         {sections.map((section) => {
-                                                            const isActiveSection = isAccommodationMenu
+                                                            const isActiveSection = isReportsMenu
+                                                                ? window.location.pathname === `/admin/reports/${section.id}`
+                                                                : isAccommodationMenu
                                                                 ? activeAccommodationSection === section.id
                                                                 : isSkillCompetitionsMenu
                                                                     ? activeSkillCompetitionSection === section.id
                                                                     : isUsersMenu
                                                                         ? activeUsersSection === section.id
                                                                         : activeAbstractsSection === section.id;
-                                                            const href = isAccommodationMenu
+                                                            const href = isReportsMenu
+                                                                ? `/admin/reports/${section.id}`
+                                                                : isAccommodationMenu
                                                                 ? `/admin/accommodation/${section.id}`
                                                                 : isSkillCompetitionsMenu
                                                                     ? `/admin/skill-competitions/${section.id}`
@@ -8382,6 +8500,10 @@ function AdminPage() {
                                 Required: <strong>{moduleViewPermission[activeModule] || 'unknown'}</strong>
                             </p>
                         </div>
+                    )}
+
+                    {canViewModule(activeModule) && activeModule === 'reports' && (
+                        <AdminReportsPage />
                     )}
 
                     {canViewModule(activeModule) && activeModule === 'dashboard' && (
@@ -12241,7 +12363,7 @@ function ThreeDPrintingWorkshopPage() {
 export default function App() {
     useRevealOnScroll();
     const isAdminLoginPage = window.location.pathname === '/admin/login';
-    const isAdminPage = window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/');
+    const isAdminPage = window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/') || window.location.pathname.startsWith('/reports/');
     const isRegistrationPage = window.location.pathname === '/registration';
     const isSponsorRegistrationPage = window.location.pathname === '/sponsor-registration';
     const isScientificServicePage = window.location.pathname === '/scientific-service';
