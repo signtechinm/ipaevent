@@ -11391,13 +11391,15 @@ function ScientificServicePage() {
                     </div>
 
                     <div className="mt-6 w-full space-y-5">
-                        <div>
-                            <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-5">
-                                <p role="status" className="text-base font-bold text-[#df0867]">{abstractSubmissionClosedMessage}</p>
-                                <p className="mt-2 text-sm leading-6 text-zinc-700">The submission deadline has passed. New abstracts are no longer being accepted.</p>
-                                <p className="mt-2 text-xs leading-5 text-zinc-600">You can still check your existing abstract status and submit your presentation video link using your registration number below.</p>
+                        {abstractSubmissionClosed && (
+                            <div>
+                                <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-5">
+                                    <p role="status" className="text-base font-bold text-[#df0867]">{abstractSubmissionClosedMessage}</p>
+                                    <p className="mt-2 text-sm leading-6 text-zinc-700">The submission deadline has passed. New abstracts are no longer being accepted.</p>
+                                    <p className="mt-2 text-xs leading-5 text-zinc-600">You can still check your existing abstract status and submit your presentation video link using your registration number below.</p>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Registration number input */}
                         <div>
