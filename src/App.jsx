@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiRequest } from './api';
 import { abstractSubmissionClosed, abstractSubmissionClosedMessage } from './abstractSubmissionPolicy.js';
+import { registrationSubmissionClosed, registrationSubmissionClosedMessage } from './registrationSubmissionPolicy.js';
 
 const eventTheme = "Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era";
 const eventDate = '19–20 September 2026';
@@ -1906,6 +1907,18 @@ function RegistrationPage() {
 
         return `upi://pay?${params.toString()}`;
     }, [totals.total]);
+
+    if (registrationSubmissionClosed) {
+        return (
+            <section className="bg-white px-4 py-20 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-3xl rounded-2xl border border-zinc-200 bg-zinc-50 p-8 text-center shadow-sm sm:p-12">
+                    <p className="text-sm font-bold uppercase tracking-wide text-[#df0867]">Registration</p>
+                    <h1 className="mt-3 text-3xl font-black text-zinc-950 sm:text-4xl">{registrationSubmissionClosedMessage}</h1>
+                    <p className="mt-4 text-base leading-7 text-zinc-600">New registrations are no longer being accepted at this time.</p>
+                </div>
+            </section>
+        );
+    }
 
     async function copyRegistrationUpiId() {
         try {

@@ -4,6 +4,7 @@ import { neon } from '@neondatabase/serverless';
 import { del, put } from '@vercel/blob';
 import nodemailer from 'nodemailer';
 import { abstractSubmissionClosed, abstractSubmissionClosedMessage } from '../src/abstractSubmissionPolicy.js';
+import { registrationSubmissionClosed, registrationSubmissionClosedMessage } from '../src/registrationSubmissionPolicy.js';
 
 const sessionCookie = 'ipa_admin_session';
 const sessionDurationSeconds = 60 * 60 * 12;
@@ -2879,6 +2880,9 @@ export default async function handler(request, response) {
         }
 
         if (path === 'registrations/submit' && request.method === 'POST') {
+            if (registrationSubmissionClosed) {
+                return send(response, 403, { error: registrationSubmissionClosedMessage });
+            }
             const registration = await saveRegistration(sql, request.body || {}, true);
             const mailDelivery = await notifyRegistrationSubmitted(registration);
             return send(response, 200, { registration, mailDelivery });

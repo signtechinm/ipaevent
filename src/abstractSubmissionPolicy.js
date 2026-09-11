@@ -1,2 +1,2 @@
-export const abstractSubmissionClosed = false;
+export const abstractSubmissionClosed = true;
 export const abstractSubmissionClosedMessage = 'Abstract submission is closed.';
