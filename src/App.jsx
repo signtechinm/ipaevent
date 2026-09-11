@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { apiRequest } from './api';
-import { abstractSubmissionClosed, abstractSubmissionClosedMessage } from './abstractSubmissionPolicy.js';
-import { registrationSubmissionClosed, registrationSubmissionClosedMessage } from './registrationSubmissionPolicy.js';
+import { abstractSubmissionClosedMessage } from './abstractSubmissionPolicy.js';
+import { registrationSubmissionClosedMessage } from './registrationSubmissionPolicy.js';
 
 const eventTheme = "Pioneering India's Pharmaceutical Future: Bridging Innovation, Entrepreneurship, Industry, and Healthcare Practice in the Digital Era";
 const eventDate = '19–20 September 2026';
@@ -1757,6 +1757,8 @@ function HomeWelcome() {
 }
 
 function RegistrationPage() {
+    const [registrationOpen, setRegistrationOpen] = useState(false);
+    useEffect(() => { apiRequest('registration-status').then(({ open }) => setRegistrationOpen(open)).catch(() => setRegistrationOpen(false)); }, []);
     const [activeTab, setActiveTab] = useState('general');
     const [formData, setFormData] = useState(initialRegistration);
     const [savedSections, setSavedSections] = useState({});
@@ -1908,7 +1910,7 @@ function RegistrationPage() {
         return `upi://pay?${params.toString()}`;
     }, [totals.total]);
 
-    if (registrationSubmissionClosed) {
+    if (!registrationOpen) {
         return (
             <section className="bg-white px-4 py-20 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-3xl rounded-2xl border border-zinc-200 bg-zinc-50 p-8 text-center shadow-sm sm:p-12">
@@ -6088,6 +6090,8 @@ function AdminPage() {
     const [usersError, setUsersError] = useState('');
     const [notice, setNotice] = useState('');
     const [registrations, setRegistrations] = useState([]);
+    const [registrationOpen, setRegistrationOpen] = useState(false);
+    const [registrationStatusSaving, setRegistrationStatusSaving] = useState(false);
     const [registrationsLoading, setRegistrationsLoading] = useState(false);
     const [registrationsError, setRegistrationsError] = useState('');
     const [registrationSearch, setRegistrationSearch] = useState('');
@@ -6245,6 +6249,7 @@ function AdminPage() {
 
     const [adminAbstracts, setAdminAbstracts] = useState([]);
     const [adminAbstractsLoading, setAdminAbstractsLoading] = useState(false);
+    const [abstractSubmissionOpen, setAbstractSubmissionOpen] = useState(false);
     const [adminAbstractsError, setAdminAbstractsError] = useState('');
     const [adminAbstractPage, setAdminAbstractPage] = useState(1);
     const [adminAbstractPageSize, setAdminAbstractPageSize] = useState(20);
@@ -6304,11 +6309,29 @@ function AdminPage() {
             setAdminAbstractPageSize(data.pagination?.pageSize || pageSize);
             setAdminAbstractTotal(data.pagination?.total || 0);
             setAdminAbstractTotalPages(data.pagination?.totalPages || 1);
+            setAbstractSubmissionOpen(Boolean(data.abstractSubmissionOpen));
         } catch (err) {
             if (requestId === adminAbstractRequestId.current) setAdminAbstractsError(err.message);
         } finally {
             if (requestId === adminAbstractRequestId.current) setAdminAbstractsLoading(false);
         }
+    }
+
+    async function exportAdminAbstracts(extension) {
+        try {
+            const params = new URLSearchParams({ page: '1', pageSize: '5000', export: '1' });
+            if (abstractDateFrom) params.set('dateFrom', abstractDateFrom);
+            if (abstractDateTo) params.set('dateTo', abstractDateTo);
+            if (abstractRegistrationFilter.trim()) params.set('registrationNumber', abstractRegistrationFilter.trim());
+            if (abstractParticipantFilter.trim()) params.set('participantName', abstractParticipantFilter.trim());
+            const res = await fetch(`/api/admin/abstracts?${params.toString()}`);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to export abstracts.');
+            const columns = [['Registration No.', 'registrationNumber'], ['Participant', 'participantName'], ['Institution', 'institutionName'], ['File Name', 'fileName'], ['Status', 'status'], ['Poster Code', 'posterCode'], ['Presentation Date', 'presentationDate'], ['Submitted At', 'submittedAt']];
+            const filename = `abstract-submissions-${new Date().toISOString().slice(0, 10)}.${extension}`;
+            if (extension === 'xls') downloadReportExcel(filename, columns, data.abstracts || []);
+            else downloadReportPdf(filename, 'Abstract Submissions', columns, data.abstracts || []);
+        } catch (err) { setAdminAbstractsError(err.message); }
     }
 
     async function loadAdminSkillVideos() {
@@ -6505,6 +6528,7 @@ function AdminPage() {
         try {
             const payload = await apiRequest('admin/registrations');
             setRegistrations(payload.registrations || []);
+            setRegistrationOpen(Boolean(payload.registrationOpen));
         } catch (error) {
             setRegistrationsError(error.message);
         } finally {
@@ -8758,6 +8782,9 @@ function AdminPage() {
                                     >
                                         {registrationsLoading ? 'Loading...' : 'Refresh'}
                                     </button>
+                                    <button type="button" onClick={async () => { setRegistrationStatusSaving(true); try { const result = await apiRequest('admin/registration-status', { method: 'PATCH', body: JSON.stringify({ open: !registrationOpen }) }); setRegistrationOpen(result.open); } catch (error) { setRegistrationsError(error.message); } finally { setRegistrationStatusSaving(false); } }} disabled={registrationStatusSaving} className={`rounded-lg px-4 py-2.5 text-sm font-bold text-white ${registrationOpen ? 'bg-rose-700 hover:bg-rose-800' : 'bg-blue-700 hover:bg-blue-800'} disabled:cursor-not-allowed disabled:opacity-60`}>
+                                        {registrationStatusSaving ? 'Saving...' : registrationOpen ? 'Close Registration' : 'Open Registration'}
+                                    </button>
                                     <button
                                         type="button"
                                         onClick={exportRegistrations}
@@ -10450,6 +10477,11 @@ function AdminPage() {
                                     >
                                         {adminAbstractsLoading ? 'Loading…' : adminAbstracts.length ? 'Refresh' : 'Load Submissions'}
                                     </button>
+                                    <button type="button" onClick={async () => { try { const result = await apiRequest('admin/abstract-submission-status', { method: 'PATCH', body: JSON.stringify({ open: !abstractSubmissionOpen }) }); setAbstractSubmissionOpen(result.open); } catch (error) { setAdminAbstractsError(error.message); } }} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${abstractSubmissionOpen ? 'bg-rose-700 hover:bg-rose-800' : 'bg-emerald-700 hover:bg-emerald-800'}`}>
+                                        {abstractSubmissionOpen ? 'Block Submission' : 'Unblock Submission'}
+                                    </button>
+                                    <button type="button" onClick={() => exportAdminAbstracts('xls')} className="rounded-lg border border-emerald-700 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50">Excel</button>
+                                    <button type="button" onClick={() => exportAdminAbstracts('pdf')} className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-100">PDF</button>
                                 </div>
 
                                 <div className="mt-5 flex flex-wrap items-end gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
@@ -11099,6 +11131,12 @@ function ScientificServicePage() {
     const [absFileErr, setAbsFileErr] = useState('');
     const [absSubmitting, setAbsSubmitting] = useState(false);
     const [absSubmitError, setAbsSubmitError] = useState('');
+    const [abstractSubmissionOpen, setAbstractSubmissionOpen] = useState(false);
+
+    useEffect(() => {
+        apiRequest('registration-status').catch(() => null);
+        apiRequest('abstract-submission-status').then(({ open }) => setAbstractSubmissionOpen(Boolean(open))).catch(() => setAbstractSubmissionOpen(false));
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -11136,7 +11174,7 @@ function ScientificServicePage() {
     }
 
     async function submitAbstract() {
-        if (abstractSubmissionClosed) {
+        if (!abstractSubmissionOpen) {
             setAbsSubmitError(abstractSubmissionClosedMessage);
             return;
         }
@@ -11404,7 +11442,7 @@ function ScientificServicePage() {
                     </div>
 
                     <div className="mt-6 w-full space-y-5">
-                        {abstractSubmissionClosed && (
+                        {!abstractSubmissionOpen && (
                             <div>
                                 <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-5">
                                     <p role="status" className="text-base font-bold text-[#df0867]">{abstractSubmissionClosedMessage}</p>
@@ -11461,7 +11499,7 @@ function ScientificServicePage() {
                         )}
 
                         {/* Valid + no abstract yet → upload form */}
-                        {!abstractSubmissionClosed && absRegInfo && absRegInfo.valid && absRegInfo.canSubmitAbstract && !absRegInfo.alreadySubmitted && (
+                        {abstractSubmissionOpen && absRegInfo && absRegInfo.valid && absRegInfo.canSubmitAbstract && !absRegInfo.alreadySubmitted && (
                             <>
                                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
                                     <p className="text-sm font-semibold text-emerald-800">{absRegInfo.participantName}</p>

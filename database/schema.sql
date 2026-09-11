@@ -46,6 +46,16 @@ CREATE TABLE IF NOT EXISTS event_registrations (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS event_settings (
+    setting_key VARCHAR(100) PRIMARY KEY,
+    setting_value JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO event_settings (setting_key, setting_value)
+VALUES ('registration_open', 'false'::jsonb)
+ON CONFLICT (setting_key) DO NOTHING;
+
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS group_members JSONB NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS approval_status VARCHAR(40) NOT NULL DEFAULT 'not_submitted';
 ALTER TABLE event_registrations ADD COLUMN IF NOT EXISTS selected_workshops JSONB NOT NULL DEFAULT '[]'::jsonb;

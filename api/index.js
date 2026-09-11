@@ -3,8 +3,8 @@ import bcrypt from 'bcryptjs';
 import { neon } from '@neondatabase/serverless';
 import { del, put } from '@vercel/blob';
 import nodemailer from 'nodemailer';
-import { abstractSubmissionClosed, abstractSubmissionClosedMessage } from '../src/abstractSubmissionPolicy.js';
-import { registrationSubmissionClosed, registrationSubmissionClosedMessage } from '../src/registrationSubmissionPolicy.js';
+import { abstractSubmissionClosedMessage } from '../src/abstractSubmissionPolicy.js';
+import { registrationSubmissionClosedMessage } from '../src/registrationSubmissionPolicy.js';
 
 const sessionCookie = 'ipa_admin_session';
 const sessionDurationSeconds = 60 * 60 * 12;
@@ -36,6 +36,27 @@ const standaloneSponsorFees = {
 const quantityBasedSponsorItems = new Set(['session', 'cultural-event']);
 const fipVaccinationWorkshopName = 'FIP IPA Vaccination Training (2 days)';
 const postCongressWorkshopNames = new Set([fipVaccinationWorkshopName]);
+
+async function ensureEventSettings(sql) {
+    await sql`CREATE TABLE IF NOT EXISTS event_settings (setting_key VARCHAR(100) PRIMARY KEY, setting_value JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
+    await sql`INSERT INTO event_settings (setting_key, setting_value) VALUES ('registration_open', 'false'::jsonb) ON CONFLICT (setting_key) DO NOTHING`;
+}
+
+async function isRegistrationOpen(sql) {
+    await ensureEventSettings(sql);
+    const rows = await sql`SELECT setting_value FROM event_settings WHERE setting_key = 'registration_open'`;
+    return rows[0]?.setting_value === true || rows[0]?.setting_value === 'true';
+}
+
+async function isAbstractSubmissionOpen(sql) {
+    await ensureEventSettings(sql);
+    const rows = await sql`SELECT setting_value FROM event_settings WHERE setting_key = 'abstract_submission_open'`;
+    if (!rows.length) {
+        await sql`INSERT INTO event_settings (setting_key, setting_value) VALUES ('abstract_submission_open', 'false'::jsonb) ON CONFLICT (setting_key) DO NOTHING`;
+        return false;
+    }
+    return rows[0].setting_value === true || rows[0].setting_value === 'true';
+}
 
 function workshopAreaForName(name) {
     return postCongressWorkshopNames.has(String(name || '').trim()) ? 'post' : 'pre';
@@ -2572,8 +2593,9 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
         const paymentReady = reg.payment_status === 'success';
         const approvalReady = reg.approval_status === 'approved';
         const registrationReady = reg.registration_status === 'submitted';
-        const canSubmitAbstract = !abstractSubmissionClosed && paymentReady && approvalReady && registrationReady;
-        const eligibilityReason = abstractSubmissionClosed
+        const abstractOpen = await isAbstractSubmissionOpen(sql);
+        const canSubmitAbstract = abstractOpen && paymentReady && approvalReady && registrationReady;
+        const eligibilityReason = !abstractOpen
             ? abstractSubmissionClosedMessage
             : !registrationReady
             ? 'Registration must be submitted before abstract submission.'
@@ -2599,7 +2621,7 @@ async function handlePublicAbstractRoute(path, request, response, sql) {
     }
 
     if (path === 'abstracts/submit' && request.method === 'POST') {
-        if (abstractSubmissionClosed) {
+        if (!(await isAbstractSubmissionOpen(sql))) {
             return send(response, 403, { error: abstractSubmissionClosedMessage });
         }
         await ensureAbstractSubmissions(sql);
@@ -2857,6 +2879,13 @@ export default async function handler(request, response) {
             return send(response, 200, { ok: true, databaseTime: rows[0].database_time });
         }
 
+        if (request.method === 'GET' && path === 'registration-status') {
+            return send(response, 200, { open: await isRegistrationOpen(sql) });
+        }
+        if (request.method === 'GET' && path === 'abstract-submission-status') {
+            return send(response, 200, { open: await isAbstractSubmissionOpen(sql) });
+        }
+
         if (request.method === 'GET' && path === 'programs') {
             await ensurePricingCatalog(sql);
             const categories = await sql`
@@ -2880,7 +2909,7 @@ export default async function handler(request, response) {
         }
 
         if (path === 'registrations/submit' && request.method === 'POST') {
-            if (registrationSubmissionClosed) {
+            if (!(await isRegistrationOpen(sql))) {
                 return send(response, 403, { error: registrationSubmissionClosedMessage });
             }
             const registration = await saveRegistration(sql, request.body || {}, true);
@@ -3090,7 +3119,15 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
                 FROM event_registrations r
                 ORDER BY COALESCE(r.submitted_at, r.updated_at) DESC, r.id DESC
             `;
-            return send(response, 200, { registrations: rows.map(mapAdminRegistration) });
+            return send(response, 200, { registrations: rows.map(mapAdminRegistration), registrationOpen: await isRegistrationOpen(sql) });
+        }
+
+        if (path === 'admin/registration-status' && request.method === 'PATCH') {
+            if (!requirePermission(session, 'registration.update')) return send(response, 403, { error: 'Permission denied.' });
+            await ensureEventSettings(sql);
+            const open = request.body?.open === true;
+            await sql`UPDATE event_settings SET setting_value = ${JSON.stringify(open)}::jsonb, updated_at = NOW() WHERE setting_key = 'registration_open'`;
+            return send(response, 200, { open });
         }
 
         const registrationEditMatch = path.match(/^admin\/registrations\/(\d+)$/);
@@ -3757,7 +3794,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             const requestedPage = Number.parseInt(String(request.query?.page || '1'), 10);
             const requestedPageSize = Number.parseInt(String(request.query?.pageSize || '20'), 10);
             const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
-            const pageSize = [10, 20, 50].includes(requestedPageSize) ? requestedPageSize : 20;
+            const pageSize = request.query?.export === '1' ? 5000 : ([10, 20, 50].includes(requestedPageSize) ? requestedPageSize : 20);
             const dateFrom = String(request.query?.dateFrom || '').trim();
             const dateTo = String(request.query?.dateTo || '').trim();
             const registrationNumber = String(request.query?.registrationNumber || '').trim().slice(0, 60);
@@ -3805,7 +3842,16 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             return send(response, 200, {
                 abstracts: rows.map(mapAbstractSubmission),
                 pagination: { page: currentPage, pageSize, total, totalPages },
+                abstractSubmissionOpen: await isAbstractSubmissionOpen(sql),
             });
+        }
+
+        if (path === 'admin/abstract-submission-status' && request.method === 'PATCH') {
+            if (!requirePermission(session, 'registration.update')) return send(response, 403, { error: 'Permission denied.' });
+            await ensureEventSettings(sql);
+            const open = request.body?.open === true;
+            await sql`INSERT INTO event_settings (setting_key, setting_value, updated_at) VALUES ('abstract_submission_open', ${JSON.stringify(open)}::jsonb, NOW()) ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()`;
+            return send(response, 200, { open });
         }
 
         // ── Admin: list skill competition video submissions ───────────
