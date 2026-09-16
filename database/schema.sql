@@ -114,6 +114,24 @@ CREATE INDEX IF NOT EXISTS event_registrations_whatsapp_idx ON event_registratio
 CREATE INDEX IF NOT EXISTS event_registrations_status_idx ON event_registrations (registration_status);
 CREATE INDEX IF NOT EXISTS event_registrations_payment_status_idx ON event_registrations (payment_status);
 CREATE INDEX IF NOT EXISTS event_registrations_approval_status_idx ON event_registrations (approval_status);
+
+CREATE TABLE IF NOT EXISTS participant_attendance (
+    registration_number VARCHAR(30) PRIMARY KEY,
+    attended BOOLEAN NOT NULL DEFAULT FALSE,
+    day_one_attended BOOLEAN NOT NULL DEFAULT FALSE,
+    day_two_attended BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE participant_attendance ADD COLUMN IF NOT EXISTS day_one_attended BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE participant_attendance ADD COLUMN IF NOT EXISTS day_two_attended BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS participant_event_participation (
+    registration_number VARCHAR(30) NOT NULL,
+    event_name VARCHAR(180) NOT NULL,
+    participated BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (registration_number, event_name)
+);
 CREATE UNIQUE INDEX IF NOT EXISTS event_registrations_ipa_member_id_key
     ON event_registrations (ipa_member_id)
     WHERE ipa_member_id IS NOT NULL AND ipa_member_id <> '';

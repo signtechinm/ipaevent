@@ -389,6 +389,24 @@ body {
     transition: color 220ms ease;
 }
 
+.certificate-print-area { position: fixed; left: -200vw; top: 0; width: 297mm; height: 210mm; background: white; }
+.certificate-print-area img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.certificate-name, .certificate-competition { position: absolute; z-index: 1; text-align: center; font-family: Georgia, serif; }
+.delegate-name { left: 21%; top: 48%; width: 75%; font-size: 30pt; letter-spacing: 2px; color: #304b39; }
+.competition-name { left: 8%; top: 49%; width: 84%; font: 700 25pt Georgia, serif; color: #11145f; }
+.certificate-competition { top: 64.3%; color: #111; text-align: center; }
+.certificate-competition-short { left: 25%; width: 35%; font: 700 16pt Arial, sans-serif; }
+.certificate-competition-medium { left: 22%; width: 41%; font: 700 14pt Arial, sans-serif; }
+.certificate-competition-long { left: 19%; width: 47%; font: 700 12pt Arial, sans-serif; }
+.certificate-number { position: absolute; z-index: 2; right: 3.8%; top: 4%; color: #243c30; font: 700 8pt Arial, sans-serif; line-height: 1.55; text-align: right; }
+@media print {
+  @page { size: A4 landscape; margin: 0; }
+  body { margin: 0; }
+  body * { visibility: hidden !important; }
+  .certificate-print-area, .certificate-print-area * { visibility: visible !important; }
+  .certificate-print-area { position: absolute; left: 0; top: 0; width: 297mm; height: 210mm; }
+}
+
 .nav-link::after {
     position: absolute;
     right: 0;

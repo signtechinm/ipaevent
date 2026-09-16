@@ -48,6 +48,7 @@ const siteMap = [
             'Partners and Sponsors',
         ],
     },
+    { title: 'Certificate', link: '/certificate', pages: [] },
 ];
 
 const pageHighlights = {
@@ -431,17 +432,23 @@ const sponsorShowcase = [
         tier: 'Premium Sponsors',
         accent: 'from-[#f4a21b] to-[#ffd36a]',
         partners: [
-            { name: 'Fourrts (India) Laboratories Pvt. Limited', category: 'Platinum Sponsor', logo: '/sponsors/fourrts.png' },
+            { name: 'Eazy Link Academy', category: 'Platinum Sponsor' },
+            { name: 'RELICARE', category: 'Gold Sponsor' },
+            { name: 'Fourrts (India) Laboratories Pvt. Limited', category: 'Gold Sponsor', logo: '/sponsors/fourrts.png' },
             { name: 'SOTAX India Private Limited', category: 'Gold Sponsor', logo: '/sponsors/sotax.png' },
             { name: 'Inga Pharmaceuticals', category: 'Gold Sponsor', logo: '/sponsors/inga-pharmaceuticals.png' },
+            { name: 'College of Pharmacy – Sri Ramakrishna Institute of Paramedical Sciences', category: 'Bronze Sponsor' },
+            { name: 'Al Shifa College of Pharmacy', category: 'Bronze Sponsor' },
         ],
     },
     { tier: 'Supporting Partners', accent: 'from-[#00652f] to-[#0f9f58]' },
 ];
 
 const supportingPartners = [
-    { name: 'Pharma First', logo: '/supportting partners/pharma-first-logo.png' },
-    { name: 'PHARMABIZ.com', logo: '/supportting partners/pharmabiz-logo.png' },
+    { name: 'St Joseph College of Pharmacy' }, { name: 'Nirmala College of Pharmacy' },
+    { name: 'Nirmala College of Health Science (NCHS, Pharmacy College)' },
+    { name: 'S.B.D. Institute of Pharmacy, Bangalore' }, { name: 'Mar Dioscorus College of Pharmacy' },
+    { name: 'Vikas Institute of Pharmaceutical Sciences' },
 ];
 
 const heroLogos = [
@@ -1440,13 +1447,7 @@ function SponsorShowcase() {
                                                         key={`${set}-${partner.name}`}
                                                         className="group flex min-h-36 w-[260px] shrink-0 items-center justify-center rounded-2xl bg-zinc-50 p-6 shadow-sm ring-1 ring-zinc-200 transition duration-300 hover:bg-white hover:shadow-xl sm:w-[300px]"
                                                     >
-                                                        <img
-                                                            src={partner.logo}
-                                                            alt={`${partner.name} logo`}
-                                                            className="h-24 w-56 object-contain"
-                                                            loading="lazy"
-                                                            decoding="async"
-                                                        />
+                                                        {partner.logo ? <img src={partner.logo} alt={`${partner.name} logo`} className="h-24 w-56 object-contain" loading="lazy" decoding="async" /> : <span className="text-center text-lg font-bold text-[#11145f]">{partner.name}</span>}
                                                     </div>
                                                 ))}
                                             </div>
@@ -5454,6 +5455,51 @@ function SponsorSection() {
     );
 }
 
+function CertificatePage() {
+    const [registrationNumber, setRegistrationNumber] = useState('');
+    const [result, setResult] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [selected, setSelected] = useState(null);
+
+    async function lookup(event) {
+        event.preventDefault();
+        setLoading(true); setError(''); setResult(null); setSelected(null);
+        try {
+            const data = await apiRequest(`certificates/check?registrationNumber=${encodeURIComponent(registrationNumber)}`);
+            if (!data.valid) throw new Error(data.pending ? 'Your registration is awaiting approval.' : 'Registration number not found.');
+            setResult(data);
+        } catch (err) { setError(err.message); } finally { setLoading(false); }
+    }
+
+    function printCertificate(certificate) {
+        setSelected(certificate);
+        window.setTimeout(() => window.print(), 100);
+    }
+
+    const isDelegate = selected?.type === 'delegate';
+    const competitionLabel = selected?.competitionName?.toLowerCase().includes('mastermind')
+        ? 'Quiz Pharma Mastermind 2026'
+        : selected?.competitionName?.replace(/\s*\([^)]*\)/g, '').trim();
+    const competitionClass = competitionLabel?.length > 28
+        ? 'certificate-competition-long'
+        : competitionLabel?.length > 20
+            ? 'certificate-competition-medium'
+            : 'certificate-competition-short';
+    return <div className="event-theme min-h-screen bg-zinc-50 py-14 text-zinc-950">
+        <main className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+            <div className="no-print mb-8"><p className="text-sm font-black uppercase tracking-[.18em] text-[#df0867]">14th National IPA Student Congress</p><h1 className="mt-2 text-4xl font-black text-[#11145f]">Certificates</h1><p className="mt-3 max-w-2xl text-zinc-600">Enter your registration number to view and download your participation certificates.</p></div>
+            <form onSubmit={lookup} className="no-print flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:flex-row">
+                <input value={registrationNumber} onChange={e => setRegistrationNumber(e.target.value.toUpperCase())} placeholder="Enter registration number" className="min-w-0 flex-1 rounded-lg border border-zinc-300 px-4 py-3 font-semibold uppercase outline-none focus:border-[#df0867]" required />
+                <button disabled={loading} className="rounded-lg bg-[#11145f] px-6 py-3 font-bold text-white disabled:opacity-60">{loading ? 'Searching…' : 'View certificates'}</button>
+            </form>
+            {error && <p className="no-print mt-4 rounded-lg bg-rose-50 p-4 font-semibold text-rose-700">{error}</p>}
+            {result && <section className="no-print mt-8"><div className="rounded-xl bg-emerald-50 p-5"><p className="text-sm font-bold text-emerald-800">{result.participantName}</p><p className="mt-1 text-xs font-bold uppercase tracking-wide text-emerald-700">Registration: {result.registrationNumber}</p></div><div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-white"><table className="w-full text-left"><thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500"><tr><th className="p-4">Certificate</th><th className="p-4 text-right">Action</th></tr></thead><tbody>{result.certificates.map(c => <tr key={c.id} className="border-t border-zinc-100"><td className="p-4 font-semibold">{c.title}</td><td className="p-4 text-right"><button type="button" onClick={() => printCertificate(c)} className="rounded-lg bg-[#df0867] px-4 py-2 text-sm font-bold text-white">Download PDF</button></td></tr>)}</tbody></table></div></section>}
+            {selected && <div className="certificate-print-area"><img src={isDelegate ? '/certificate-delegate-template-clean.png' : '/certificate-competition-template-clean.png'} alt="Certificate template" /><div className={`certificate-name ${isDelegate ? 'delegate-name' : 'competition-name'}`}>{result.participantName}</div>{!isDelegate && <div className={`certificate-competition ${competitionClass}`}>{competitionLabel}</div>}<div className="certificate-number">Reg. No.: {result.registrationNumber}<br />Certificate No.: {selected.certificateNumber}</div></div>}
+        </main>
+    </div>;
+}
+
 function Contact() {
     return (
         <footer className="event-footer relative overflow-hidden text-white">
@@ -5849,6 +5895,8 @@ const adminModules = [
     { id: 'categories', label: 'Categories', description: 'Create registration categories and configure their base registration fees.' },
     { id: 'programs', label: 'Programs', description: 'Manage event programs, schedules, and capacities.' },
     { id: 'students', label: 'Participants', description: 'Maintain student and institution records.' },
+    { id: 'attendance', label: 'Attendance', description: 'Mark participant attendance.' },
+    { id: 'event-participation', label: 'Event Participation', description: 'Record participation for registered events.' },
     { id: 'pricing', label: 'Pricing', description: 'Configure registration, competition, and workshop fees.' },
     { id: 'winners', label: 'Winners', description: 'Prepare and publish competition results.' },
     { id: 'reports', label: 'Reports', description: 'Generate operational and financial reports.' },
@@ -5863,7 +5911,7 @@ const adminModules = [
 
 const adminNavigationGroups = [
     { label: 'Overview', modules: ['dashboard'] },
-    { label: 'Registration', modules: ['registrations', 'students'] },
+    { label: 'Registration', modules: ['registrations', 'students', 'attendance', 'event-participation'] },
     { label: 'Event Setup', modules: ['categories', 'programs', 'pricing'] },
     { label: 'Content', modules: ['home-content', 'abstracts', 'skill-competitions', 'scientific', 'winners', 'accommodation'] },
     { label: 'Reports', modules: ['reports', 'payments'] },
@@ -5907,7 +5955,7 @@ const reportsAdminSections = [
     { id: 'hr-drive', label: 'HR Drive' },
 ];
 
-const implementedAdminModules = new Set(['dashboard', 'registrations', 'students', 'payments', 'categories', 'pricing', 'programs', 'users', 'home-content', 'accommodation', 'scientific', 'abstracts', 'skill-competitions', 'reports']);
+const implementedAdminModules = new Set(['dashboard', 'registrations', 'students', 'attendance', 'event-participation', 'payments', 'categories', 'pricing', 'programs', 'users', 'home-content', 'accommodation', 'scientific', 'abstracts', 'skill-competitions', 'reports']);
 
 const reportDefinitions = {
     'registrations/individual': { endpoint: 'registrations', title: 'Individual Registration General Information', mode: 'individual', columns: [['S.No.', 'serialNumber'], ['Registration No.', 'registrationNumber'], ['Name', 'name'], ['Mobile No.', 'mobile'], ['Email', 'email'], ['Category', 'category'], ['Institution / College', 'college'], ['State', 'state'], ['Register Date', 'registerDate'], ['Payment Status', 'paymentStatus'], ['Date of Registration', 'dateOfRegistration']] },
@@ -6057,6 +6105,24 @@ function getSkillCompetitionsAdminSectionFromPath() {
 function getUsersAdminSectionFromPath() {
     const requestedSection = window.location.pathname.split('/')[3] || 'directory';
     return usersAdminSections.some((section) => section.id === requestedSection) ? requestedSection : 'directory';
+}
+
+function AttendancePage({ participation = false }) {
+    const [rows, setRows] = useState([]); const [events, setEvents] = useState([]); const [search, setSearch] = useState(''); const [error, setError] = useState('');
+    useEffect(() => { apiRequest(participation ? 'admin/event-participation' : 'admin/attendance').then((d) => { setRows(d.students || []); setEvents(d.events || []); }).catch((e) => setError(e.message)); }, [participation]);
+    const filtered = rows.filter((r) => `${r.name} ${r.registrationNumber}`.toLowerCase().includes(search.toLowerCase()));
+    async function save(row, next, day = 'dayOne') {
+        const previous = participation ? row.selected : row[day];
+        setRows((old) => old.map((r) => r.registrationNumber === row.registrationNumber ? (participation ? { ...r, selected: next } : { ...r, [day]: next }) : r));
+        try {
+            if (participation) await apiRequest('admin/event-participation', { method: 'PATCH', body: JSON.stringify({ registrationNumber: row.registrationNumber, events: Object.keys(next).filter((e) => next[e]) }) });
+            else await apiRequest('admin/attendance', { method: 'PATCH', body: JSON.stringify({ registrationNumber: row.registrationNumber, attended: next, day }) });
+        } catch (e) {
+            setRows((old) => old.map((r) => r.registrationNumber === row.registrationNumber ? (participation ? { ...r, selected: previous } : { ...r, [day]: previous }) : r));
+            setError(e.message);
+        }
+    }
+    return <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-lg font-bold">{participation ? 'Event Participation' : 'Participant Attendance'}</h2><p className="mt-1 text-sm text-zinc-600">{participation ? 'Confirm the events each registered student participated in.' : 'Search by name or registration number and mark each event day.'}</p></div><input className="admin-input rounded-lg border border-zinc-300 px-3 py-2 text-sm" placeholder="Search name or register number…" value={search} onChange={(e) => setSearch(e.target.value)} /></div>{error && <p className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}<div className="mt-5 overflow-x-auto rounded-lg border border-zinc-200"><table className="min-w-full text-left text-sm"><thead className="bg-zinc-100 text-xs font-bold uppercase text-zinc-600"><tr><th className="px-4 py-3">Student</th><th className="px-4 py-3">Registration No.</th>{participation ? <th className="px-4 py-3">Registered events</th> : <><th className="px-4 py-3">Day 1 status</th><th className="px-4 py-3">Day 2 status</th></>}</tr></thead><tbody className="divide-y divide-zinc-200">{filtered.map((row) => <tr key={row.registrationNumber}><td className="px-4 py-3 font-semibold">{row.name}</td><td className="px-4 py-3 font-mono text-xs">{row.registrationNumber}</td>{participation ? <td className="px-4 py-3">{row.events.length ? row.events.map((event) => <label key={event} className="mr-4 inline-flex items-center gap-2"><input type="checkbox" checked={Boolean(row.selected?.[event])} onChange={(e) => save(row, { ...row.selected, [event]: e.target.checked })} />{event}</label>) : <span className="text-zinc-500">No events selected</span>}</td> : ['dayOne', 'dayTwo'].map((day, i) => <td key={day} className="px-4 py-3"><label className="inline-flex items-center gap-2"><input type="checkbox" checked={Boolean(row[day])} onChange={(e) => save(row, e.target.checked, day)} /><span className={row[day] ? 'font-semibold text-emerald-700' : 'text-zinc-500'}>{row[day] ? 'Present' : 'Not marked'}</span></label></td>)}</tr>)}</tbody></table></div></div>;
 }
 
 function AdminPage() {
@@ -6923,6 +6989,8 @@ function AdminPage() {
         dashboard: null,            // any authenticated user
         registrations: 'registration.view',
         students: 'registration.view',
+        attendance: 'registration.view',
+        'event-participation': 'registration.view',
         payments: 'payment.verify',
         categories: 'program.view',
         pricing: 'program.view',
@@ -9672,6 +9740,8 @@ function AdminPage() {
                         </div>
                     )}
 
+                    {canViewModule('attendance') && activeModule === 'attendance' && <AttendancePage />}
+                    {canViewModule('event-participation') && activeModule === 'event-participation' && <AttendancePage participation />}
                     {canViewModule('students') && activeModule === 'students' && (
                         <div className="mt-6">
                             <div className="grid gap-4 md:grid-cols-3">
@@ -12423,6 +12493,7 @@ export default function App() {
     const isStudentSkillCompetitionsPage = window.location.pathname === '/student-skill-competitions';
     const isAccommodationTravelPage = window.location.pathname === '/accommodation-travel';
     const isOrganizingTeamPage = window.location.pathname === '/organizing-team';
+    const isCertificatePage = window.location.pathname === '/certificate';
     const isThreeDPrintingWorkshopPage = window.location.pathname === '/workshops/3d-printing-in-pharmaceuticals';
     const isMolecularDockingWorkshopPage = window.location.pathname === '/workshops/molecular-docking-and-dynamics-simulation';
     const isNeurologicalScreeningWorkshopPage = window.location.pathname === '/workshops/advanced-neurological-screening-models';
@@ -12514,6 +12585,10 @@ export default function App() {
 
     if (isOrganizingTeamPage) {
         return <OrganizingTeamPage />;
+    }
+
+    if (isCertificatePage) {
+        return <><Header /><CertificatePage /></>;
     }
 
     return (

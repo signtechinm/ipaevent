@@ -1631,6 +1631,13 @@ async function ensureRegistrationEnhancements(sql) {
     `;
 }
 
+async function ensureParticipationTables(sql) {
+    await sql`CREATE TABLE IF NOT EXISTS participant_attendance (registration_number VARCHAR(30) PRIMARY KEY, attended BOOLEAN NOT NULL DEFAULT FALSE, day_one_attended BOOLEAN NOT NULL DEFAULT FALSE, day_two_attended BOOLEAN NOT NULL DEFAULT FALSE, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
+    await sql`ALTER TABLE participant_attendance ADD COLUMN IF NOT EXISTS day_one_attended BOOLEAN NOT NULL DEFAULT FALSE`;
+    await sql`ALTER TABLE participant_attendance ADD COLUMN IF NOT EXISTS day_two_attended BOOLEAN NOT NULL DEFAULT FALSE`;
+    await sql`CREATE TABLE IF NOT EXISTS participant_event_participation (registration_number VARCHAR(30) NOT NULL, event_name VARCHAR(180) NOT NULL, participated BOOLEAN NOT NULL DEFAULT FALSE, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY (registration_number, event_name))`;
+}
+
 function normalizeGroupMembers(value) {
     if (!Array.isArray(value)) {
         return [];
@@ -2908,6 +2915,29 @@ export default async function handler(request, response) {
             });
         }
 
+        if (request.method === 'GET' && path === 'certificates/check') {
+            const registrationNumber = String(request.query.registrationNumber || '').trim();
+            const reg = await findRegistrationForPublicNumber(sql, registrationNumber);
+            if (!reg) return send(response, 200, { valid: false, certificates: [] });
+            if (reg.registration_status !== 'submitted' || reg.approval_status !== 'approved') {
+                return send(response, 200, { valid: false, pending: true, certificates: [] });
+            }
+            await ensureParticipationTables(sql);
+            const attendance = await sql`SELECT day_one_attended, day_two_attended FROM participant_attendance WHERE registration_number = ${reg.canonicalRegistrationNumber}`;
+            if (!attendance[0]?.day_one_attended && !attendance[0]?.day_two_attended) return send(response, 200, { valid: false, pending: true, reason: 'attendance_required', certificates: [] });
+            const participation = await sql`SELECT event_name FROM participant_event_participation WHERE registration_number = ${reg.canonicalRegistrationNumber} AND participated = TRUE ORDER BY event_name`;
+            const competitions = participation.map((p) => p.event_name);
+            const certificates = [
+                { id: 'delegate', title: 'Delegate Participation Certificate', type: 'delegate' },
+                ...competitions.map((competition, index) => ({ id: `competition-${index}`, title: `${competition} Participation Certificate`, type: 'competition', competitionName: competition })),
+            ];
+            certificates.forEach((certificate) => {
+                const digest = crypto.createHash('sha256').update(`${reg.canonicalRegistrationNumber}:${certificate.id}`).digest('hex').slice(0, 8).toUpperCase();
+                certificate.certificateNumber = `NSC26-${digest}`;
+            });
+            return send(response, 200, { valid: true, registrationNumber: reg.canonicalRegistrationNumber, participantName: reg.contactName, certificates });
+        }
+
         if (path === 'registrations/submit' && request.method === 'POST') {
             if (!(await isRegistrationOpen(sql))) {
                 return send(response, 403, { error: registrationSubmissionClosedMessage });
@@ -3101,6 +3131,40 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
                     paymentStatuses: [...new Set(reportRows.map((row) => row.paymentStatus).filter(Boolean))].sort(),
                 },
             });
+        }
+
+        if (path === 'admin/attendance' && request.method === 'GET') {
+            if (!requirePermission(session, 'registration.view')) return send(response, 403, { error: 'Permission denied.' });
+            await ensureParticipationTables(sql); await ensureRegistrationEnhancements(sql);
+            const rows = await sql`SELECT r.* FROM event_registrations r WHERE r.registration_status = 'submitted' ORDER BY r.participant_name, r.registration_number`;
+            const students = rows.flatMap((row) => row.registration_mode === 'group' ? normalizeGroupMembers(row.group_members).map((m, i) => ({ registrationNumber: m.registrationNumber || groupMemberRegistrationNumber(row.registration_number, i), name: m.name || `Student ${i + 1}` })) : [{ registrationNumber: row.registration_number, name: row.participant_name || row.group_coordinator_name || '' }]);
+            const attendance = await sql`SELECT registration_number, day_one_attended, day_two_attended FROM participant_attendance`;
+            const byNumber = Object.fromEntries(attendance.map((a) => [a.registration_number, { dayOne: Boolean(a.day_one_attended), dayTwo: Boolean(a.day_two_attended) }]));
+            return send(response, 200, { students: students.map((s) => ({ ...s, ...(byNumber[s.registrationNumber] || { dayOne: false, dayTwo: false }) })) });
+        }
+        if (path === 'admin/attendance' && request.method === 'PATCH') {
+            if (!requirePermission(session, 'registration.update')) return send(response, 403, { error: 'Permission denied.' });
+            await ensureParticipationTables(sql); const number = String(request.body?.registrationNumber || '').trim(); const day = request.body?.day === 'dayTwo' ? 'day_two_attended' : 'day_one_attended';
+            if (!number) return send(response, 400, { error: 'Registration number is required.' });
+            if (day === 'day_two_attended') await sql`INSERT INTO participant_attendance (registration_number, day_two_attended, updated_at) VALUES (${number}, ${request.body?.attended === true}, NOW()) ON CONFLICT (registration_number) DO UPDATE SET day_two_attended = EXCLUDED.day_two_attended, updated_at = NOW()`;
+            else await sql`INSERT INTO participant_attendance (registration_number, day_one_attended, updated_at) VALUES (${number}, ${request.body?.attended === true}, NOW()) ON CONFLICT (registration_number) DO UPDATE SET day_one_attended = EXCLUDED.day_one_attended, updated_at = NOW()`;
+            return send(response, 200, { ok: true });
+        }
+        if (path === 'admin/event-participation' && request.method === 'GET') {
+            if (!requirePermission(session, 'registration.view')) return send(response, 403, { error: 'Permission denied.' });
+            await ensureParticipationTables(sql); await ensureRegistrationEnhancements(sql);
+            const rows = await sql`SELECT r.*, COALESCE(jsonb_agg(jsonb_build_object('eventName', p.event_name, 'participated', p.participated)) FILTER (WHERE p.event_name IS NOT NULL), '[]'::jsonb) AS participations FROM event_registrations r LEFT JOIN participant_event_participation p ON p.registration_number = r.registration_number WHERE r.registration_status = 'submitted' GROUP BY r.id ORDER BY r.participant_name, r.registration_number`;
+            const programs = await sql`SELECT name FROM event_programs WHERE is_active = TRUE ORDER BY sort_order, name`;
+            const students = rows.flatMap((row) => row.registration_mode === 'group' ? normalizeGroupMembers(row.group_members).map((m, i) => ({ registrationNumber: m.registrationNumber || groupMemberRegistrationNumber(row.registration_number, i), name: m.name || `Student ${i + 1}`, events: [...(m.competitions || []), ...(m.workshops || [])] })) : [{ registrationNumber: row.registration_number, name: row.participant_name || row.group_coordinator_name || '', events: [...(row.student_competitions || []), ...normalizeSelectedWorkshops(row.selected_workshops, row.pre_conference_workshop)] }]);
+            const selected = Object.fromEntries(rows.flatMap((r) => (r.participations || []).map((p) => [`${r.registration_number}|${p.eventName}`, p.participated])));
+            return send(response, 200, { events: programs.map((p) => p.name), students: students.map((s) => ({ ...s, events: s.events.filter(Boolean), selected: Object.fromEntries((s.events || []).map((e) => [e, Boolean(selected[`${s.registrationNumber}|${e}`])])) })) });
+        }
+        if (path === 'admin/event-participation' && request.method === 'PATCH') {
+            if (!requirePermission(session, 'registration.update')) return send(response, 403, { error: 'Permission denied.' });
+            await ensureParticipationTables(sql); const number = String(request.body?.registrationNumber || '').trim(); const events = Array.isArray(request.body?.events) ? request.body.events : [];
+            await sql`DELETE FROM participant_event_participation WHERE registration_number = ${number}`;
+            for (const event of events) await sql`INSERT INTO participant_event_participation (registration_number, event_name, participated, updated_at) VALUES (${number}, ${String(event)}, TRUE, NOW())`;
+            return send(response, 200, { ok: true });
         }
 
         if (path === 'admin/registrations' && request.method === 'GET') {
