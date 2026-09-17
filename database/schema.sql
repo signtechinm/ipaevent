@@ -373,6 +373,17 @@ CREATE TABLE IF NOT EXISTS abstract_submissions (
 CREATE INDEX IF NOT EXISTS abstract_submissions_status_idx ON abstract_submissions (status);
 CREATE INDEX IF NOT EXISTS abstract_submissions_registration_idx ON abstract_submissions (registration_number);
 
+CREATE TABLE IF NOT EXISTS poster_presentations (
+    id BIGSERIAL PRIMARY KEY,
+    registration_number VARCHAR(40) NOT NULL UNIQUE,
+    participant_name TEXT NOT NULL,
+    poster_title TEXT NOT NULL,
+    participated BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS poster_presentations_participated_idx ON poster_presentations (participated);
+
 CREATE TABLE IF NOT EXISTS skill_competition_video_submissions (
     id BIGSERIAL PRIMARY KEY,
     registration_number VARCHAR(30) NOT NULL,

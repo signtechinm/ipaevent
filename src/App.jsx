@@ -5478,7 +5478,8 @@ function CertificatePage() {
     }
 
     const isDelegate = selected?.type === 'delegate';
-    const competitionLabel = selected?.competitionName?.toLowerCase().includes('mastermind')
+    const isPoster = selected?.type === 'poster';
+    const competitionLabel = isPoster ? selected?.posterTitle : selected?.competitionName?.toLowerCase().includes('mastermind')
         ? 'Quiz Pharma Mastermind 2026'
         : selected?.competitionName?.replace(/\s*\([^)]*\)/g, '').trim();
     const competitionClass = competitionLabel?.length > 28
@@ -5495,7 +5496,7 @@ function CertificatePage() {
             </form>
             {error && <p className="no-print mt-4 rounded-lg bg-rose-50 p-4 font-semibold text-rose-700">{error}</p>}
             {result && <section className="no-print mt-8"><div className="rounded-xl bg-emerald-50 p-5"><p className="text-sm font-bold text-emerald-800">{result.participantName}</p><p className="mt-1 text-xs font-bold uppercase tracking-wide text-emerald-700">Registration: {result.registrationNumber}</p></div><div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-white"><table className="w-full text-left"><thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500"><tr><th className="p-4">Certificate</th><th className="p-4 text-right">Action</th></tr></thead><tbody>{result.certificates.map(c => <tr key={c.id} className="border-t border-zinc-100"><td className="p-4 font-semibold">{c.title}</td><td className="p-4 text-right"><button type="button" onClick={() => printCertificate(c)} className="rounded-lg bg-[#df0867] px-4 py-2 text-sm font-bold text-white">Download PDF</button></td></tr>)}</tbody></table></div></section>}
-            {selected && <div className="certificate-print-area"><img src={isDelegate ? '/certificate-delegate-template-clean.png' : '/certificate-competition-template-clean.png'} alt="Certificate template" /><div className={`certificate-name ${isDelegate ? 'delegate-name' : 'competition-name'}`}>{result.participantName}</div>{!isDelegate && <div className={`certificate-competition ${competitionClass}`}>{competitionLabel}</div>}<div className="certificate-number">Reg. No.: {result.registrationNumber}<br />Certificate No.: {selected.certificateNumber}</div></div>}
+            {selected && <div className="certificate-print-area"><img src={isDelegate ? '/certificate-delegate-template-clean.png' : '/certificate-competition-template-clean.png'} alt="Certificate template" /><div className={`certificate-name ${isDelegate ? 'delegate-name' : 'competition-name'}`}>{result.participantName}</div>{!isDelegate && <div className={`certificate-competition ${competitionClass}`}>{isPoster ? `Poster Title: ${competitionLabel}` : competitionLabel}</div>}<div className="certificate-number">Reg. No.: {result.registrationNumber}<br />Certificate No.: {selected.certificateNumber}</div></div>}
         </main>
     </div>;
 }

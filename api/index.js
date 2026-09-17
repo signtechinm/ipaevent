@@ -1636,6 +1636,7 @@ async function ensureParticipationTables(sql) {
     await sql`ALTER TABLE participant_attendance ADD COLUMN IF NOT EXISTS day_one_attended BOOLEAN NOT NULL DEFAULT FALSE`;
     await sql`ALTER TABLE participant_attendance ADD COLUMN IF NOT EXISTS day_two_attended BOOLEAN NOT NULL DEFAULT FALSE`;
     await sql`CREATE TABLE IF NOT EXISTS participant_event_participation (registration_number VARCHAR(30) NOT NULL, event_name VARCHAR(180) NOT NULL, participated BOOLEAN NOT NULL DEFAULT FALSE, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY (registration_number, event_name))`;
+    await sql`CREATE TABLE IF NOT EXISTS poster_presentations (id BIGSERIAL PRIMARY KEY, registration_number VARCHAR(40) NOT NULL UNIQUE, participant_name TEXT NOT NULL, poster_title TEXT NOT NULL, participated BOOLEAN NOT NULL DEFAULT FALSE, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW())`;
 }
 
 function normalizeGroupMembers(value) {
@@ -2927,9 +2928,11 @@ export default async function handler(request, response) {
             if (!attendance[0]?.day_one_attended && !attendance[0]?.day_two_attended) return send(response, 200, { valid: false, pending: true, reason: 'attendance_required', certificates: [] });
             const participation = await sql`SELECT p.event_name FROM participant_event_participation p JOIN event_programs ep ON ep.name = p.event_name AND ep.program_type = 'competition' WHERE p.registration_number = ${reg.canonicalRegistrationNumber} AND p.participated = TRUE ORDER BY p.event_name`;
             const competitions = participation.map((p) => p.event_name);
+            const posterRows = await sql`SELECT poster_title FROM poster_presentations WHERE registration_number = ${reg.canonicalRegistrationNumber} AND participated = TRUE LIMIT 1`;
             const certificates = [
                 { id: 'delegate', title: 'Delegate Participation Certificate', type: 'delegate' },
                 ...competitions.map((competition, index) => ({ id: `competition-${index}`, title: `${competition} Participation Certificate`, type: 'competition', competitionName: competition })),
+                ...(posterRows.length ? [{ id: 'poster-presentation', title: 'Poster Presentation Certificate', type: 'poster', posterTitle: posterRows[0].poster_title }] : []),
             ];
             certificates.forEach((certificate) => {
                 const digest = crypto.createHash('sha256').update(`${reg.canonicalRegistrationNumber}:${certificate.id}`).digest('hex').slice(0, 8).toUpperCase();
@@ -3155,9 +3158,9 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             await ensureParticipationTables(sql); await ensureRegistrationEnhancements(sql);
             const rows = await sql`SELECT r.*, COALESCE(jsonb_agg(jsonb_build_object('eventName', p.event_name, 'participated', p.participated)) FILTER (WHERE p.event_name IS NOT NULL), '[]'::jsonb) AS participations FROM event_registrations r LEFT JOIN participant_event_participation p ON p.registration_number = r.registration_number WHERE r.registration_status = 'submitted' GROUP BY r.id ORDER BY r.participant_name, r.registration_number`;
             const programs = await sql`SELECT name FROM event_programs WHERE is_active = TRUE AND program_type = 'competition' ORDER BY sort_order, name`;
-            const students = rows.flatMap((row) => row.registration_mode === 'group' ? normalizeGroupMembers(row.group_members).map((m, i) => ({ registrationNumber: m.registrationNumber || groupMemberRegistrationNumber(row.registration_number, i), name: m.name || `Student ${i + 1}`, events: [...(m.competitions || [])] })) : [{ registrationNumber: row.registration_number, name: row.participant_name || row.group_coordinator_name || '', events: [...(row.student_competitions || [])] }]);
+            const students = rows.flatMap((row) => row.registration_mode === 'group' ? normalizeGroupMembers(row.group_members).map((m, i) => ({ registrationNumber: m.registrationNumber || groupMemberRegistrationNumber(row.registration_number, i), name: m.name || `Student ${i + 1}`, events: [...(m.competitions || []), ...(m.presentationType === 'Poster Presentation' ? ['Poster Presentation'] : [])] })) : [{ registrationNumber: row.registration_number, name: row.participant_name || row.group_coordinator_name || '', events: [...(row.student_competitions || []), ...(row.presentation_type === 'Poster Presentation' ? ['Poster Presentation'] : [])] }]);
             const selected = Object.fromEntries(rows.flatMap((r) => (r.participations || []).map((p) => [`${r.registration_number}|${p.eventName}`, p.participated])));
-            return send(response, 200, { events: programs.map((p) => p.name), students: students.map((s) => ({ ...s, events: s.events.filter(Boolean), selected: Object.fromEntries((s.events || []).map((e) => [e, Boolean(selected[`${s.registrationNumber}|${e}`])])) })) });
+            return send(response, 200, { events: [...programs.map((p) => p.name), 'Poster Presentation'], students: students.map((s) => ({ ...s, events: s.events.filter(Boolean), selected: Object.fromEntries((s.events || []).map((e) => [e, Boolean(selected[`${s.registrationNumber}|${e}`] || selected[`${s.registrationNumber}|Poster Presentation`])])) })) });
         }
         if (path === 'admin/event-participation' && request.method === 'PATCH') {
             if (!requirePermission(session, 'registration.update')) return send(response, 403, { error: 'Permission denied.' });
