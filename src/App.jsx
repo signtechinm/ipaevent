@@ -5896,7 +5896,7 @@ const adminModules = [
     { id: 'programs', label: 'Programs', description: 'Manage event programs, schedules, and capacities.' },
     { id: 'students', label: 'Participants', description: 'Maintain student and institution records.' },
     { id: 'attendance', label: 'Attendance', description: 'Mark participant attendance.' },
-    { id: 'event-participation', label: 'Event Participation', description: 'Record participation for registered events.' },
+    { id: 'event-participation', label: 'Skill Competition Participation', description: 'Record participation for registered skill competitions.' },
     { id: 'pricing', label: 'Pricing', description: 'Configure registration, competition, and workshop fees.' },
     { id: 'winners', label: 'Winners', description: 'Prepare and publish competition results.' },
     { id: 'reports', label: 'Reports', description: 'Generate operational and financial reports.' },

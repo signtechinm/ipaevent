@@ -2925,7 +2925,7 @@ export default async function handler(request, response) {
             await ensureParticipationTables(sql);
             const attendance = await sql`SELECT day_one_attended, day_two_attended FROM participant_attendance WHERE registration_number = ${reg.canonicalRegistrationNumber}`;
             if (!attendance[0]?.day_one_attended && !attendance[0]?.day_two_attended) return send(response, 200, { valid: false, pending: true, reason: 'attendance_required', certificates: [] });
-            const participation = await sql`SELECT event_name FROM participant_event_participation WHERE registration_number = ${reg.canonicalRegistrationNumber} AND participated = TRUE ORDER BY event_name`;
+            const participation = await sql`SELECT p.event_name FROM participant_event_participation p JOIN event_programs ep ON ep.name = p.event_name AND ep.program_type = 'competition' WHERE p.registration_number = ${reg.canonicalRegistrationNumber} AND p.participated = TRUE ORDER BY p.event_name`;
             const competitions = participation.map((p) => p.event_name);
             const certificates = [
                 { id: 'delegate', title: 'Delegate Participation Certificate', type: 'delegate' },
@@ -3154,8 +3154,8 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             if (!requirePermission(session, 'registration.view')) return send(response, 403, { error: 'Permission denied.' });
             await ensureParticipationTables(sql); await ensureRegistrationEnhancements(sql);
             const rows = await sql`SELECT r.*, COALESCE(jsonb_agg(jsonb_build_object('eventName', p.event_name, 'participated', p.participated)) FILTER (WHERE p.event_name IS NOT NULL), '[]'::jsonb) AS participations FROM event_registrations r LEFT JOIN participant_event_participation p ON p.registration_number = r.registration_number WHERE r.registration_status = 'submitted' GROUP BY r.id ORDER BY r.participant_name, r.registration_number`;
-            const programs = await sql`SELECT name FROM event_programs WHERE is_active = TRUE ORDER BY sort_order, name`;
-            const students = rows.flatMap((row) => row.registration_mode === 'group' ? normalizeGroupMembers(row.group_members).map((m, i) => ({ registrationNumber: m.registrationNumber || groupMemberRegistrationNumber(row.registration_number, i), name: m.name || `Student ${i + 1}`, events: [...(m.competitions || []), ...(m.workshops || [])] })) : [{ registrationNumber: row.registration_number, name: row.participant_name || row.group_coordinator_name || '', events: [...(row.student_competitions || []), ...normalizeSelectedWorkshops(row.selected_workshops, row.pre_conference_workshop)] }]);
+            const programs = await sql`SELECT name FROM event_programs WHERE is_active = TRUE AND program_type = 'competition' ORDER BY sort_order, name`;
+            const students = rows.flatMap((row) => row.registration_mode === 'group' ? normalizeGroupMembers(row.group_members).map((m, i) => ({ registrationNumber: m.registrationNumber || groupMemberRegistrationNumber(row.registration_number, i), name: m.name || `Student ${i + 1}`, events: [...(m.competitions || [])] })) : [{ registrationNumber: row.registration_number, name: row.participant_name || row.group_coordinator_name || '', events: [...(row.student_competitions || [])] }]);
             const selected = Object.fromEntries(rows.flatMap((r) => (r.participations || []).map((p) => [`${r.registration_number}|${p.eventName}`, p.participated])));
             return send(response, 200, { events: programs.map((p) => p.name), students: students.map((s) => ({ ...s, events: s.events.filter(Boolean), selected: Object.fromEntries((s.events || []).map((e) => [e, Boolean(selected[`${s.registrationNumber}|${e}`])])) })) });
         }
