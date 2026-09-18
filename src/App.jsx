@@ -5478,7 +5478,26 @@ function CertificatePage() {
 
     function printCertificate(certificate) {
         setSelected(certificate);
-        window.setTimeout(() => window.print(), 100);
+        const templateName = certificate.type === 'delegate' ? 'delegate' : certificate.type === 'poster' ? 'poster-presentation' : 'competition';
+        const participant = result?.participantName?.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'participant';
+        const previousTitle = document.title;
+        document.title = `${participant}-${templateName}-certificate`;
+
+        // Vercel can render the page before the static template image has
+        // finished loading. Wait for it before opening the print dialog so
+        // the certificate background is present in the PDF preview.
+        window.setTimeout(() => {
+            const image = document.querySelector('.certificate-print-area img');
+            const print = () => {
+                window.print();
+                window.setTimeout(() => { document.title = previousTitle; }, 500);
+            };
+            if (!image || image.complete) print();
+            else {
+                image.addEventListener('load', print, { once: true });
+                image.addEventListener('error', print, { once: true });
+            }
+        }, 0);
     }
 
     const isDelegate = selected?.type === 'delegate';
