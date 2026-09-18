@@ -42,6 +42,10 @@
             "destination": "/index.html"
         },
         {
+            "source": "/certificate",
+            "destination": "/index.html"
+        },
+        {
             "source": "/workshops/:path*",
             "destination": "/index.html"
         }
