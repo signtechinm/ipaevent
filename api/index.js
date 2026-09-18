@@ -3137,7 +3137,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
         }
 
         if (path === 'admin/attendance' && request.method === 'GET') {
-            if (!requirePermission(session, 'registration.view')) return send(response, 403, { error: 'Permission denied.' });
+            if (!requirePermission(session, 'attendance.view')) return send(response, 403, { error: 'Permission denied.' });
             await ensureParticipationTables(sql); await ensureRegistrationEnhancements(sql);
             const rows = await sql`SELECT r.* FROM event_registrations r WHERE r.registration_status = 'submitted' ORDER BY r.participant_name, r.registration_number`;
             const students = rows.flatMap((row) => row.registration_mode === 'group' ? normalizeGroupMembers(row.group_members).map((m, i) => ({ registrationNumber: m.registrationNumber || groupMemberRegistrationNumber(row.registration_number, i), name: m.name || `Student ${i + 1}` })) : [{ registrationNumber: row.registration_number, name: row.participant_name || row.group_coordinator_name || '' }]);
@@ -3146,7 +3146,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             return send(response, 200, { students: students.map((s) => ({ ...s, ...(byNumber[s.registrationNumber] || { dayOne: false, dayTwo: false }) })) });
         }
         if (path === 'admin/attendance' && request.method === 'PATCH') {
-            if (!requirePermission(session, 'registration.update')) return send(response, 403, { error: 'Permission denied.' });
+            if (!requirePermission(session, 'attendance.update')) return send(response, 403, { error: 'Permission denied.' });
             await ensureParticipationTables(sql); const number = String(request.body?.registrationNumber || '').trim(); const day = request.body?.day === 'dayTwo' ? 'day_two_attended' : 'day_one_attended';
             if (!number) return send(response, 400, { error: 'Registration number is required.' });
             if (day === 'day_two_attended') await sql`INSERT INTO participant_attendance (registration_number, day_two_attended, updated_at) VALUES (${number}, ${request.body?.attended === true}, NOW()) ON CONFLICT (registration_number) DO UPDATE SET day_two_attended = EXCLUDED.day_two_attended, updated_at = NOW()`;
@@ -3154,7 +3154,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             return send(response, 200, { ok: true });
         }
         if (path === 'admin/event-participation' && request.method === 'GET') {
-            if (!requirePermission(session, 'registration.view')) return send(response, 403, { error: 'Permission denied.' });
+            if (!requirePermission(session, 'competition-participation.view')) return send(response, 403, { error: 'Permission denied.' });
             await ensureParticipationTables(sql); await ensureRegistrationEnhancements(sql);
             const rows = await sql`SELECT r.*, COALESCE(jsonb_agg(jsonb_build_object('eventName', p.event_name, 'participated', p.participated)) FILTER (WHERE p.event_name IS NOT NULL), '[]'::jsonb) AS participations FROM event_registrations r LEFT JOIN participant_event_participation p ON p.registration_number = r.registration_number WHERE r.registration_status = 'submitted' GROUP BY r.id ORDER BY r.participant_name, r.registration_number`;
             const programs = await sql`SELECT name FROM event_programs WHERE is_active = TRUE AND program_type = 'competition' ORDER BY sort_order, name`;
@@ -3163,7 +3163,7 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             return send(response, 200, { events: [...programs.map((p) => p.name), 'Poster Presentation'], students: students.map((s) => ({ ...s, events: s.events.filter(Boolean), selected: Object.fromEntries((s.events || []).map((e) => [e, Boolean(selected[`${s.registrationNumber}|${e}`] || selected[`${s.registrationNumber}|Poster Presentation`])])) })) });
         }
         if (path === 'admin/event-participation' && request.method === 'PATCH') {
-            if (!requirePermission(session, 'registration.update')) return send(response, 403, { error: 'Permission denied.' });
+            if (!requirePermission(session, 'competition-participation.update')) return send(response, 403, { error: 'Permission denied.' });
             await ensureParticipationTables(sql); const number = String(request.body?.registrationNumber || '').trim(); const events = Array.isArray(request.body?.events) ? request.body.events : [];
             await sql`DELETE FROM participant_event_participation WHERE registration_number = ${number}`;
             for (const event of events) await sql`INSERT INTO participant_event_participation (registration_number, event_name, participated, updated_at) VALUES (${number}, ${String(event)}, TRUE, NOW())`;

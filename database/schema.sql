@@ -449,13 +449,13 @@ VALUES
         'role-super-admin',
         'Super Admin',
         'Full access to every admin module.',
-        '["registration.view","registration.update","registration.export","payment.verify","program.view","program.create","program.update","program.delete","winner.view","winner.create","winner.publish","report.view","report.export","home-content.view","home-content.update","accommodation.view","accommodation.update","scientific.view","scientific.update","abstracts.view","abstracts.update","user.view","user.create","user.update","role.manage","audit.view","content.view","content.update"]'::jsonb
+        '["registration.view","registration.update","registration.export","payment.verify","attendance.view","attendance.update","competition-participation.view","competition-participation.update","program.view","program.create","program.update","program.delete","winner.view","winner.create","winner.publish","report.view","report.export","home-content.view","home-content.update","accommodation.view","accommodation.update","scientific.view","scientific.update","abstracts.view","abstracts.update","user.view","user.create","user.update","role.manage","audit.view","content.view","content.update"]'::jsonb
     ),
     (
         'role-registration-staff',
         'Registration Staff',
         'Can view and update registrations.',
-        '["registration.view","registration.update"]'::jsonb
+        '["registration.view","registration.update","attendance.view","attendance.update","competition-participation.view","competition-participation.update"]'::jsonb
     ),
     (
         'role-finance-staff',

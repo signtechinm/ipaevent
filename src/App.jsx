@@ -904,6 +904,10 @@ const permissionGroups = [
         permissions: ['registration.view', 'registration.update', 'registration.export', 'payment.verify'],
     },
     {
+        title: 'Event Operations',
+        permissions: ['attendance.view', 'attendance.update', 'competition-participation.view', 'competition-participation.update'],
+    },
+    {
         title: 'Programs',
         permissions: ['program.view', 'program.create', 'program.update', 'program.delete'],
     },
@@ -5781,6 +5785,21 @@ function AdminSidebarIcon({ name }) {
                 <path d="M21 8v6" />
             </>
         ),
+        attendance: (
+            <>
+                <path d="M5 4h14v16H5V4Z" />
+                <path d="m8 9 1.5 1.5L12 8" />
+                <path d="M13.5 10H17" />
+                <path d="m8 14 1.5 1.5L12 13" />
+                <path d="M13.5 15H17" />
+            </>
+        ),
+        'event-participation': (
+            <>
+                <circle cx="12" cy="12" r="8" />
+                <path d="m8 12 2.5 2.5L16 9" />
+            </>
+        ),
         categories: (
             <>
                 <path d="M4 5h6v6H4V5Z" />
@@ -6108,7 +6127,7 @@ function getUsersAdminSectionFromPath() {
     return usersAdminSections.some((section) => section.id === requestedSection) ? requestedSection : 'directory';
 }
 
-function AttendancePage({ participation = false }) {
+function AttendancePage({ participation = false, canUpdate = true }) {
     const [rows, setRows] = useState([]); const [events, setEvents] = useState([]); const [search, setSearch] = useState(''); const [error, setError] = useState('');
     useEffect(() => { apiRequest(participation ? 'admin/event-participation' : 'admin/attendance').then((d) => { setRows(d.students || []); setEvents(d.events || []); }).catch((e) => setError(e.message)); }, [participation]);
     const filtered = rows.filter((r) => `${r.name} ${r.registrationNumber}`.toLowerCase().includes(search.toLowerCase()));
@@ -6123,7 +6142,7 @@ function AttendancePage({ participation = false }) {
             setError(e.message);
         }
     }
-    return <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-lg font-bold">{participation ? 'Event Participation' : 'Participant Attendance'}</h2><p className="mt-1 text-sm text-zinc-600">{participation ? 'Confirm the events each registered student participated in.' : 'Search by name or registration number and mark each event day.'}</p></div><input className="admin-input rounded-lg border border-zinc-300 px-3 py-2 text-sm" placeholder="Search name or register number…" value={search} onChange={(e) => setSearch(e.target.value)} /></div>{error && <p className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}<div className="mt-5 overflow-x-auto rounded-lg border border-zinc-200"><table className="min-w-full text-left text-sm"><thead className="bg-zinc-100 text-xs font-bold uppercase text-zinc-600"><tr><th className="px-4 py-3">Student</th><th className="px-4 py-3">Registration No.</th>{participation ? <th className="px-4 py-3">Registered events</th> : <><th className="px-4 py-3">Day 1 status</th><th className="px-4 py-3">Day 2 status</th></>}</tr></thead><tbody className="divide-y divide-zinc-200">{filtered.map((row) => <tr key={row.registrationNumber}><td className="px-4 py-3 font-semibold">{row.name}</td><td className="px-4 py-3 font-mono text-xs">{row.registrationNumber}</td>{participation ? <td className="px-4 py-3">{row.events.length ? row.events.map((event) => <label key={event} className="mr-4 inline-flex items-center gap-2"><input type="checkbox" checked={Boolean(row.selected?.[event])} onChange={(e) => save(row, { ...row.selected, [event]: e.target.checked })} />{event}</label>) : <span className="text-zinc-500">No events selected</span>}</td> : ['dayOne', 'dayTwo'].map((day, i) => <td key={day} className="px-4 py-3"><label className="inline-flex items-center gap-2"><input type="checkbox" checked={Boolean(row[day])} onChange={(e) => save(row, e.target.checked, day)} /><span className={row[day] ? 'font-semibold text-emerald-700' : 'text-zinc-500'}>{row[day] ? 'Present' : 'Not marked'}</span></label></td>)}</tr>)}</tbody></table></div></div>;
+    return <div className="mt-6 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-lg font-bold">{participation ? 'Event Participation' : 'Participant Attendance'}</h2><p className="mt-1 text-sm text-zinc-600">{participation ? 'Confirm the events each registered student participated in.' : 'Search by name or registration number and mark each event day.'}</p>{!canUpdate && <p className="mt-2 text-xs font-semibold text-amber-700">View-only access. Ask an administrator for update permission.</p>}</div><input className="admin-input rounded-lg border border-zinc-300 px-3 py-2 text-sm" placeholder="Search name or register number…" value={search} onChange={(e) => setSearch(e.target.value)} /></div>{error && <p className="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}<div className="mt-5 overflow-x-auto rounded-lg border border-zinc-200"><table className="min-w-full text-left text-sm"><thead className="bg-zinc-100 text-xs font-bold uppercase text-zinc-600"><tr><th className="px-4 py-3">Student</th><th className="px-4 py-3">Registration No.</th>{participation ? <th className="px-4 py-3">Registered events</th> : <><th className="px-4 py-3">Day 1 status</th><th className="px-4 py-3">Day 2 status</th></>}</tr></thead><tbody className="divide-y divide-zinc-200">{filtered.map((row) => <tr key={row.registrationNumber}><td className="px-4 py-3 font-semibold">{row.name}</td><td className="px-4 py-3 font-mono text-xs">{row.registrationNumber}</td>{participation ? <td className="px-4 py-3">{row.events.length ? row.events.map((event) => <label key={event} className="mr-4 inline-flex items-center gap-2"><input type="checkbox" disabled={!canUpdate} checked={Boolean(row.selected?.[event])} onChange={(e) => save(row, { ...row.selected, [event]: e.target.checked })} />{event}</label>) : <span className="text-zinc-500">No events selected</span>}</td> : ['dayOne', 'dayTwo'].map((day) => <td key={day} className="px-4 py-3"><label className="inline-flex items-center gap-2"><input type="checkbox" disabled={!canUpdate} checked={Boolean(row[day])} onChange={(e) => save(row, e.target.checked, day)} /><span className={row[day] ? 'font-semibold text-emerald-700' : 'text-zinc-500'}>{row[day] ? 'Present' : 'Not marked'}</span></label></td>)}</tr>)}</tbody></table></div></div>;
 }
 
 function AdminPage() {
@@ -6990,8 +7009,8 @@ function AdminPage() {
         dashboard: null,            // any authenticated user
         registrations: 'registration.view',
         students: 'registration.view',
-        attendance: 'registration.view',
-        'event-participation': 'registration.view',
+        attendance: 'attendance.view',
+        'event-participation': 'competition-participation.view',
         payments: 'payment.verify',
         categories: 'program.view',
         pricing: 'program.view',
@@ -9741,8 +9760,8 @@ function AdminPage() {
                         </div>
                     )}
 
-                    {canViewModule('attendance') && activeModule === 'attendance' && <AttendancePage />}
-                    {canViewModule('event-participation') && activeModule === 'event-participation' && <AttendancePage participation />}
+                    {canViewModule('attendance') && activeModule === 'attendance' && <AttendancePage canUpdate={can('attendance.update')} />}
+                    {canViewModule('event-participation') && activeModule === 'event-participation' && <AttendancePage participation canUpdate={can('competition-participation.update')} />}
                     {canViewModule('students') && activeModule === 'students' && (
                         <div className="mt-6">
                             <div className="grid gap-4 md:grid-cols-3">
