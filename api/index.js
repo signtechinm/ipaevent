@@ -3147,16 +3147,15 @@ if (path === 'admin/mailer/test' && request.method === 'POST') {
             await ensureParticipationTables(sql); await ensureRegistrationEnhancements(sql);
             const rows = await sql`SELECT r.* FROM event_registrations r WHERE r.registration_status = 'submitted' ORDER BY r.participant_name, r.registration_number`;
             const students = rows.flatMap((row) => row.registration_mode === 'group' ? normalizeGroupMembers(row.group_members).map((m, i) => ({ registrationNumber: m.registrationNumber || groupMemberRegistrationNumber(row.registration_number, i), name: m.name || `Student ${i + 1}` })) : [{ registrationNumber: row.registration_number, name: row.participant_name || row.group_coordinator_name || '' }]);
-            const attendance = await sql`SELECT registration_number, day_one_attended, day_two_attended FROM participant_attendance`;
-            const byNumber = Object.fromEntries(attendance.map((a) => [a.registration_number, { dayOne: Boolean(a.day_one_attended), dayTwo: Boolean(a.day_two_attended) }]));
-            return send(response, 200, { students: students.map((s) => ({ ...s, ...(byNumber[s.registrationNumber] || { dayOne: false, dayTwo: false }) })) });
+            const attendance = await sql`SELECT registration_number, attended, day_one_attended, day_two_attended FROM participant_attendance`;
+            const byNumber = Object.fromEntries(attendance.map((a) => [a.registration_number, { attended: Boolean(a.attended || a.day_one_attended || a.day_two_attended) }]));
+            return send(response, 200, { students: students.map((s) => ({ ...s, ...(byNumber[s.registrationNumber] || { attended: false }) })) });
         }
         if (path === 'admin/attendance' && request.method === 'PATCH') {
             if (!requirePermission(session, 'attendance.update')) return send(response, 403, { error: 'Permission denied.' });
-            await ensureParticipationTables(sql); const number = String(request.body?.registrationNumber || '').trim(); const day = request.body?.day === 'dayTwo' ? 'day_two_attended' : 'day_one_attended';
+            await ensureParticipationTables(sql); const number = String(request.body?.registrationNumber || '').trim(); const attended = request.body?.attended === true;
             if (!number) return send(response, 400, { error: 'Registration number is required.' });
-            if (day === 'day_two_attended') await sql`INSERT INTO participant_attendance (registration_number, day_two_attended, updated_at) VALUES (${number}, ${request.body?.attended === true}, NOW()) ON CONFLICT (registration_number) DO UPDATE SET day_two_attended = EXCLUDED.day_two_attended, updated_at = NOW()`;
-            else await sql`INSERT INTO participant_attendance (registration_number, day_one_attended, updated_at) VALUES (${number}, ${request.body?.attended === true}, NOW()) ON CONFLICT (registration_number) DO UPDATE SET day_one_attended = EXCLUDED.day_one_attended, updated_at = NOW()`;
+            await sql`INSERT INTO participant_attendance (registration_number, attended, day_one_attended, day_two_attended, updated_at) VALUES (${number}, ${attended}, ${attended}, ${attended}, NOW()) ON CONFLICT (registration_number) DO UPDATE SET attended = EXCLUDED.attended, day_one_attended = EXCLUDED.day_one_attended, day_two_attended = EXCLUDED.day_two_attended, updated_at = NOW()`;
             return send(response, 200, { ok: true });
         }
         if (path === 'admin/event-participation' && request.method === 'GET') {
