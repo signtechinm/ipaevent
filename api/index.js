@@ -2488,6 +2488,7 @@ async function findRegistrationForPublicNumber(sql, registrationNumber) {
                r.institution_name, r.group_coordinator_name, r.group_coordinator_email,
                r.group_coordinator_whatsapp, r.email, r.whatsapp_number,
                r.payment_status, r.approval_status, r.registration_status,
+               r.presentation_type,
                gm.member AS group_member
         FROM event_registrations r
         LEFT JOIN LATERAL (
@@ -2513,6 +2514,7 @@ async function findRegistrationForPublicNumber(sql, registrationNumber) {
         contactWhatsapp: member?.whatsapp || row.whatsapp_number || row.group_coordinator_whatsapp || '',
         displayInstitution: member?.college || row.institution_name || '',
         isGroupMember: Boolean(member),
+        presentationType: member?.presentationType || member?.presentation_type || row.presentation_type || '',
     };
 }
 
@@ -2928,11 +2930,15 @@ export default async function handler(request, response) {
             if (!attendance[0]?.day_one_attended && !attendance[0]?.day_two_attended) return send(response, 200, { valid: false, pending: true, reason: 'attendance_required', certificates: [] });
             const participation = await sql`SELECT p.event_name FROM participant_event_participation p JOIN event_programs ep ON ep.name = p.event_name AND ep.program_type = 'competition' WHERE p.registration_number = ${reg.canonicalRegistrationNumber} AND p.participated = TRUE ORDER BY p.event_name`;
             const competitions = participation.map((p) => p.event_name);
-            const posterRows = await sql`SELECT poster_title FROM poster_presentations WHERE registration_number = ${reg.canonicalRegistrationNumber} AND participated = TRUE LIMIT 1`;
+            // Poster records may have been entered with different casing or
+            // whitespace, so do not let formatting differences hide an
+            // otherwise valid poster certificate.
+            const posterRows = await sql`SELECT poster_title, participated FROM poster_presentations WHERE LOWER(TRIM(registration_number)) = LOWER(TRIM(${reg.canonicalRegistrationNumber})) LIMIT 1`;
+            const posterFromRegistration = !posterRows.length && String(reg.presentationType || '').toLowerCase().includes('poster');
             const certificates = [
                 { id: 'delegate', title: 'Delegate Participation Certificate', type: 'delegate' },
                 ...competitions.map((competition, index) => ({ id: `competition-${index}`, title: `${competition} Participation Certificate`, type: 'competition', competitionName: competition })),
-                ...(posterRows.length ? [{ id: 'poster-presentation', title: 'Poster Presentation Certificate', type: 'poster', posterTitle: posterRows[0].poster_title }] : []),
+                ...((posterRows.length || posterFromRegistration) ? [{ id: 'poster-presentation', title: 'Poster Presentation Certificate', type: 'poster', posterTitle: posterRows[0]?.poster_title || 'Poster Presentation' }] : []),
             ];
             certificates.forEach((certificate) => {
                 const digest = crypto.createHash('sha256').update(`${reg.canonicalRegistrationNumber}:${certificate.id}`).digest('hex').slice(0, 8).toUpperCase();

@@ -394,7 +394,9 @@ body {
 .certificate-name, .certificate-competition { position: absolute; z-index: 1; text-align: center; font-family: Georgia, serif; }
 .delegate-name { left: 21%; top: 48%; width: 75%; font-size: 30pt; letter-spacing: 2px; color: #304b39; }
 .competition-name { left: 8%; top: 49%; width: 84%; font: 700 25pt Georgia, serif; color: #11145f; }
+.poster-name { left: 8%; top: 47%; width: 84%; font: 700 24pt Georgia, serif; color: #11145f; }
 .certificate-competition { top: 64.3%; color: #111; text-align: center; }
+.poster-title { left: 14.2%; top: 68.4%; width: 78.8%; font: 700 15pt Arial, sans-serif; color: #111; text-align: left; }
 .certificate-competition-short { left: 25%; width: 35%; font: 700 16pt Arial, sans-serif; }
 .certificate-competition-medium { left: 22%; width: 41%; font: 700 14pt Arial, sans-serif; }
 .certificate-competition-long { left: 19%; width: 47%; font: 700 12pt Arial, sans-serif; }
