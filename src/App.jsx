@@ -1127,11 +1127,11 @@ function Hero() {
                         {eventDate}
                     </p>
                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                        <a href="#fourteenth-ipa-national-students-congress-souvenir" className="button-pop rounded-lg bg-[#df0867] px-5 py-3 text-center text-sm font-bold text-white hover:bg-[#bd0758]">
+                        <a href="/14TH%20NATIONAL%20IPA%20STUDENTS%20CONGRESS%20-2026%20SOUVENIR%20DIGITAL%20COPY.pdf" download="14TH NATIONAL IPA STUDENTS CONGRESS -2026 SOUVENIR DIGITAL COPY.pdf" className="button-pop rounded-lg bg-[#df0867] px-5 py-3 text-center text-sm font-bold text-white hover:bg-[#bd0758]">
                             Souvenir
                         </a>
                         <a href={informationBrochurePdf} target="_blank" rel="noopener noreferrer" className="button-pop rounded-lg bg-[#1b2074] px-5 py-3 text-center text-sm font-bold text-white shadow-lg shadow-black/15 hover:bg-[#1b2074]">
-                            Congress Brochures
+                            Congress Schedule
                         </a>
                     </div>
                 </div>
