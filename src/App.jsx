@@ -1029,9 +1029,18 @@ function Header() {
                     {siteMap.map((section) => (
                         <div key={section.title} className="group relative">
                             <a
-                                className="nav-link block rounded-lg px-3 py-2 hover:text-[#df0867]"
+                                className={section.title === 'Certificate'
+                                    ? 'button-pop inline-flex items-center gap-2 rounded-lg bg-[#df0867] px-3 py-2 font-semibold text-white shadow-sm hover:bg-[#bd0758]'
+                                    : 'nav-link block rounded-lg px-3 py-2 hover:text-[#df0867]'}
                                 href={section.link ?? `/#${slugify(section.title)}`}
                             >
+                                {section.title === 'Certificate' && (
+                                    <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M12 3v12" />
+                                        <path d="m7 10 5 5 5-5" />
+                                        <path d="M5 21h14" />
+                                    </svg>
+                                )}
                                 {section.title}
                             </a>
                             {section.pages.length > 0 && (
@@ -1054,9 +1063,6 @@ function Header() {
                 </nav>
 
                 <div className="flex items-center gap-2">
-                    <a href="/registration" className="button-pop rounded-lg bg-[#df0867] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#bd0758]">
-                        Register
-                    </a>
                     <details className="relative xl:hidden">
                         <summary className="list-none rounded-lg border border-zinc-300 px-3 py-2 text-sm font-bold text-zinc-800 marker:hidden">
                             Menu
@@ -1064,7 +1070,19 @@ function Header() {
                         <div className="absolute right-0 top-full mt-3 max-h-[78vh] w-[min(88vw,420px)] overflow-auto rounded-lg border border-zinc-200 bg-white p-3 shadow-2xl">
                             {siteMap.map((section) => (
                                 <div key={section.title} className="border-b border-zinc-100 py-3 last:border-0">
-                                    <a href={section.link ?? `/#${slugify(section.title)}`} className="block px-2 text-sm font-bold text-emerald-800">
+                                    <a
+                                        href={section.link ?? `/#${slugify(section.title)}`}
+                                        className={section.title === 'Certificate'
+                                            ? 'button-pop inline-flex items-center gap-2 rounded-lg bg-[#df0867] px-3 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#bd0758]'
+                                            : 'block px-2 text-sm font-bold text-emerald-800'}
+                                    >
+                                        {section.title === 'Certificate' && (
+                                            <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M12 3v12" />
+                                                <path d="m7 10 5 5 5-5" />
+                                                <path d="M5 21h14" />
+                                            </svg>
+                                        )}
                                         {section.title}
                                     </a>
                                     {section.pages.length > 0 && (
@@ -6148,18 +6166,28 @@ function getUsersAdminSectionFromPath() {
 
 function AttendancePage({ participation = false, canUpdate = true }) {
     const [rows, setRows] = useState([]); const [events, setEvents] = useState([]); const [search, setSearch] = useState(''); const [error, setError] = useState('');
-    useEffect(() => { apiRequest(participation ? 'admin/event-participation' : 'admin/attendance').then((d) => { setRows(d.students || []); setEvents(d.events || []); }).catch((e) => setError(e.message)); }, [participation]);
+    const selectedRef = useRef({});
+    const saveQueueRef = useRef({});
+    useEffect(() => { apiRequest(participation ? 'admin/event-participation' : 'admin/attendance').then((d) => { setRows(d.students || []); setEvents(d.events || []); if (participation) selectedRef.current = Object.fromEntries((d.students || []).map((student) => [student.registrationNumber, { ...(student.selected || {}) }])); }).catch((e) => setError(e.message)); }, [participation]);
     const filtered = rows.filter((r) => `${r.name} ${r.registrationNumber}`.toLowerCase().includes(search.toLowerCase()));
-    async function save(row, next, day = 'dayOne') {
-        const previous = participation ? row.selected : row[day];
+    function save(row, value, day = 'dayOne') {
+        const number = row.registrationNumber;
+        const previous = participation ? (selectedRef.current[number] || row.selected || {}) : row[day];
+        const changedEvent = participation ? Object.keys(value).find((event) => value[event] !== (row.selected || {})[event]) : null;
+        const next = participation && changedEvent ? { ...previous, [changedEvent]: value[changedEvent] } : value;
+        if (participation) selectedRef.current[number] = next;
         setRows((old) => old.map((r) => r.registrationNumber === row.registrationNumber ? (participation ? { ...r, selected: next } : { ...r, attended: next }) : r));
-        try {
-            if (participation) await apiRequest('admin/event-participation', { method: 'PATCH', body: JSON.stringify({ registrationNumber: row.registrationNumber, events: Object.keys(next).filter((e) => next[e]) }) });
-            else await apiRequest('admin/attendance', { method: 'PATCH', body: JSON.stringify({ registrationNumber: row.registrationNumber, attended: next }) });
-        } catch (e) {
-            setRows((old) => old.map((r) => r.registrationNumber === row.registrationNumber ? (participation ? { ...r, selected: previous } : { ...r, attended: previous }) : r));
-            setError(e.message);
-        }
+        const previousRequest = saveQueueRef.current[number] || Promise.resolve();
+        saveQueueRef.current[number] = previousRequest.catch(() => {}).then(async () => {
+            try {
+                if (participation) await apiRequest('admin/event-participation', { method: 'PATCH', body: JSON.stringify({ registrationNumber: number, events: Object.keys(next).filter((event) => next[event]) }) });
+                else await apiRequest('admin/attendance', { method: 'PATCH', body: JSON.stringify({ registrationNumber: number, attended: next }) });
+            } catch (e) {
+                if (participation) selectedRef.current[number] = previous;
+                setRows((old) => old.map((r) => r.registrationNumber === number ? (participation ? { ...r, selected: previous } : { ...r, attended: previous }) : r));
+                setError(e.message);
+            }
+        });
     }
     const attendanceCards = !participation ? (() => {
         const present = filtered.filter((row) => row.attended).length;
